@@ -2,8 +2,8 @@
 // screens look like a phone with "Always" allowed; "I'm here" uses the browser's location.
 export const TASK = 'road-dues-location';
 export const handleLocations = async () => {};
-export const locationStatus = async () => ({ foreground: true, background: true, canAsk: true });
-export const requestLocation = async () => ({ foreground: true, background: true });
+export const locationStatus = async () => ({ foreground: true, background: true, noBackground: false, canAsk: true });
+export const requestLocation = async () => ({ foreground: true, background: true, noBackground: false });
 export const startTracking = async () => false;
 export function currentPosition() {
   if (!navigator.geolocation) return Promise.resolve(null);

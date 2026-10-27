@@ -65,7 +65,8 @@ export function useLocationStatus() {
 export function LocationNotice({ extra }) {
   const c = useTheme();
   const [st, refresh] = useLocationStatus();
-  if (!st || st.background) return null;
+  // Nothing to fix if "Always" is on, or can't exist here (Expo Go) and "While Using" is on.
+  if (!st || st.background || (st.foreground && st.noBackground)) return null;
   const off = !st.foreground;
   async function fix() {
     if (st.canAsk) { const r = await requestLocation(); if (r.background) startTracking(); refresh(); }
@@ -430,6 +431,7 @@ export function SettingsScreen({ go, onLang }) {
 export function Onboarding({ onDone, onLang }) {
   const s = useStore(); const c = useTheme();
   const [notif, setNotif] = useState(false); const [loc, setLoc] = useState({ foreground: false, background: false }); const [asked, setAsked] = useState(false);
+  const locDone = loc.background || (loc.foreground && loc.noBackground);
   return (
     <Screen>
       <Wrap>{LANGS.map(([k, n]) => <Chip key={k} title={n} on={(s.settings.lang || 'en') === k} onPress={() => onLang(k)} />)}</Wrap>
@@ -438,8 +440,8 @@ export function Onboarding({ onDone, onLang }) {
       <Card><Txt bold>{t('permNotifT')}</Txt><Txt muted>{t('permNotifB')}</Txt>
         <Btn title={notif ? t('allowed') + ' ✓' : t('allow')} disabled={notif} onPress={async () => { setNotif(await requestNotifPermission()); await setupCategories(); }} /></Card>
       <Card><Txt bold>{t('permLocT')}</Txt><Txt muted>{t('permLocB')}</Txt>
-        <Btn title={loc.background ? t('allowed') + ' ✓' : t('allow')} disabled={loc.background} onPress={async () => { const r = await requestLocation(); setLoc(r); setAsked(true); if (r.background) startTracking(); }} />
-        {asked && !loc.foreground ? <Warn>{t('locOffB')}</Warn> : loc.foreground && !loc.background ? <Warn>{t('locLimitedB')}</Warn> : null}</Card>
+        <Btn title={locDone ? t('allowed') + ' ✓' : t('allow')} disabled={locDone} onPress={async () => { const r = await requestLocation(); setLoc(r); setAsked(true); if (r.background) startTracking(); }} />
+        {asked && !loc.foreground ? <Warn>{t('locOffB')}</Warn> : loc.foreground && !locDone ? <Warn>{t('locLimitedB')}</Warn> : null}</Card>
       <Card>
         <Txt bold>{t('discTitle')}</Txt>
         <Txt>{t('disc1')}</Txt><Txt>{t('disc2')}</Txt><Txt bold color={c.red}>{t('disc3')}</Txt><Txt>{t('disc4')}</Txt>
