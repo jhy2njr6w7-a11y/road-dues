@@ -24,8 +24,9 @@ export default function App() {
   const s = useStore();
   const c = useTheme();
   const af = useArabicFont();
-  // Number-plate fonts and the Arabic UI font (licensed, not in git: see README). System font until loaded.
-  useFonts({ ...PLATE_FONTS, JannaLT: require('./assets/fonts/JannaLT-Bold.ttf') });
+  // Number-plate fonts and the Arabic UI font (licensed, not in git: see README). Nothing is drawn until
+  // they load: text measured with the fallback font and then drawn in Janna (much taller) gets clipped on iOS.
+  const [fontsLoaded, fontError] = useFonts({ ...PLATE_FONTS, JannaLT: require('./assets/fonts/JannaLT-Bold.ttf') });
   const [ready, setReady] = useState(isLoaded());
   const [tab, setTab] = useState('today');
   const [prefill, setPrefill] = useState(null);
@@ -104,7 +105,7 @@ export default function App() {
     return onNotificationResponse(handle);
   }, [go]);
 
-  if (!ready) return <View style={{ flex: 1, backgroundColor: c.bg }} />;
+  if (!ready || (!fontsLoaded && !fontError)) return <View style={{ flex: 1, backgroundColor: c.bg }} />;
   const rtl = s.settings.lang === 'ar';
   const screenProps = { go, onLang: setLang };
 
