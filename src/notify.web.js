@@ -6,6 +6,7 @@ export const PARK_CHECK_ID = 'park-check';
 const noop = async () => {};
 export const setupCategories = noop;
 export const requestNotifPermission = async () => true;
+export const notifStatus = async () => ({ granted: true, canAsk: true });
 export const scheduleParkCheck = noop;
 export const cancelParkCheck = noop;
 export const scheduleExpiry = noop;

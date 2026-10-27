@@ -16,6 +16,7 @@ export const DEFAULT_STATE = {
   drive: { lastMoving: null, lastLat: null, lastLng: null }, // used by the background task
   campaigns: [],            // fine discount campaigns from campaigns.json (see src/campaigns.js)
   campaignsAt: null,        // when the list was last downloaded
+  trackingVersion: null,    // options the background GPS was started with (see startTracking)
   seenCampaigns: null,      // campaign ids already announced (null until the first download)
 };
 

@@ -2,8 +2,9 @@
 // Location data is processed on the phone only and never uploaded.
 import * as Location from 'expo-location';
 import * as TaskManager from 'expo-task-manager';
-import { loadState, update, newId } from './store';
-import { setLangCode } from './i18n';
+import { Alert, Platform } from 'react-native';
+import { loadState, update, newId, getState } from './store';
+import { setLangCode, t } from './i18n';
 import { GATES, gatePos, distanceM, crossingCharge, emirateAt, isPaidTime, buildSms, EMIRATES } from './data';
 import { scheduleParkCheck, cancelParkCheck, notifySalik, cancelExpiry } from './notify';
 import { refreshCampaigns } from './campaigns';
@@ -75,30 +76,46 @@ export async function locationStatus() {
   return { foreground: fg.granted, background: bg.granted, noBackground: !!bg.unavailable, canAsk: fg.canAskAgain !== false && bg.canAskAgain !== false };
 }
 
+// Android 11+ never shows "Allow all the time" in the pop-up: the request opens the app's location
+// settings page instead. Say what to tap first, or people press Back and stay on "While using".
+const explainAndroidBackground = () => new Promise((resolve) => Alert.alert(t('bgAndroidT'), t('bgAndroidB'), [{ text: t('continuePay'), onPress: resolve }], { cancelable: false }));
+
 export async function requestLocation() {
   const fg = await Location.requestForegroundPermissionsAsync();
   if (!fg.granted) return { foreground: false, background: false };
+  if (Platform.OS === 'android' && Platform.Version >= 30) {
+    const cur = await Location.getBackgroundPermissionsAsync().catch(() => NO_BACKGROUND);
+    if (!cur.granted && cur.canAskAgain !== false) await explainAndroidBackground();
+  }
   const bg = await Location.requestBackgroundPermissionsAsync().catch(() => NO_BACKGROUND);
   return { foreground: true, background: bg.granted, noBackground: !!bg.unavailable };
 }
+
+// Bump when the options below change, so phones already tracking restart with the new ones.
+const TRACKING_VERSION = 2;
 
 export async function startTracking() {
   try {
     const { background } = await locationStatus();
     if (!background) return false;
     const running = await Location.hasStartedLocationUpdatesAsync(TASK).catch(() => false);
-    if (running) return true;
+    if (running && getState().trackingVersion === TRACKING_VERSION) return true;
+    if (running) await Location.stopLocationUpdatesAsync(TASK);
     await Location.startLocationUpdatesAsync(TASK, {
       accuracy: Location.Accuracy.High,
       activityType: Location.ActivityType.AutomotiveNavigation,
       distanceInterval: 30,
-      pausesUpdatesAutomatically: true,     // iOS pauses GPS when the phone is still: saves battery
+      // Must stay off: once iOS pauses updates it doesn't resume them in the background, so after the
+      // first stop the app would never see the next drive (no Salik gates, no parking reminders).
+      // While parked, distanceInterval keeps the task quiet.
+      pausesUpdatesAutomatically: false,
       showsBackgroundLocationIndicator: false,
       foregroundService: {                  // Android requires a visible notification while tracking
-        notificationTitle: 'Road Dues',
-        notificationBody: 'Watching for parking and Salik gates',
+        notificationTitle: t('appName'),
+        notificationBody: t('trackBody'),
       },
     });
+    await update((x) => { x.trackingVersion = TRACKING_VERSION; });
   } catch (e) { return false; } // e.g. Expo Go, or Android refusing to start the foreground service
   return true;
 }
