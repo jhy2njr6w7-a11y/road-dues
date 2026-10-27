@@ -8,7 +8,7 @@ export const CAT = { parking: 'parking', parkingZone: 'parking-zone', salik: 'sa
 export const ACT = { open: 'open', zone: 'zone', paid: 'paid', free: 'free', topup: 'topup', payFine: 'payfine', extend: 'extend' };
 
 Notifications.setNotificationHandler({
-  handleNotification: async () => ({ shouldShowBanner: true, shouldShowList: true, shouldPlaySound: true, shouldSetBadge: false, shouldShowAlert: true }),
+  handleNotification: async () => ({ shouldShowBanner: true, shouldShowList: true, shouldPlaySound: true, shouldSetBadge: false }),
 });
 
 /** Categories hold the action buttons. Re-register after a language change so button labels are translated. */
@@ -40,7 +40,7 @@ export async function requestNotifPermission() {
 }
 
 function content(title, body, categoryIdentifier, data = {}) {
-  return { title, body, categoryIdentifier, data, sound: true, interruptionLevel: 'timeSensitive', ...(Platform.OS === 'android' ? { channelId: 'reminders' } : {}) };
+  return { title, body, categoryIdentifier, data, sound: true, interruptionLevel: 'timeSensitive' };
 }
 const at = (date) => ({ type: Notifications.SchedulableTriggerInputTypes.DATE, date: new Date(date), channelId: 'reminders' });
 
@@ -77,7 +77,7 @@ export async function notifySalik({ gate, charge, balance, low }) {
   if (balance < 0) { title = t('salikNegT'); body = t('salikNegB', v); }
   else if (balance < low) { title = t('salikLowT'); body = t('salikLowB', v); }
   else { title = t('salikGateT', v); body = t('salikGateB', v); }
-  await Notifications.scheduleNotificationAsync({ identifier: 'salik-balance', content: content(title, body, balance < low ? CAT.salik : undefined, { kind: 'salik' }), trigger: null });
+  await Notifications.scheduleNotificationAsync({ identifier: 'salik-balance', content: content(title, body, balance < low ? CAT.salik : undefined, { kind: 'salik' }), trigger: { channelId: 'reminders' } });
 }
 
 // ---------- Fine discounts: 7 days and 1 day before the discount ends, at 09:00

@@ -85,7 +85,9 @@ export default function App() {
         go('fines');
       }
     };
-    Notifications.getLastNotificationResponseAsync().then(handle);
+    // The launch response survives until cleared; clear it so a restart doesn't repeat the action.
+    const last = Notifications.getLastNotificationResponse();
+    if (last) { Notifications.clearLastNotificationResponse(); handle(last); }
     const sub = Notifications.addNotificationResponseReceivedListener(handle);
     return () => sub.remove();
   }, [go]);
