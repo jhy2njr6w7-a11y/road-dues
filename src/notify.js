@@ -97,3 +97,12 @@ export async function rescheduleFineReminders(fines, enabled) {
     }
   }
 }
+
+/** Calls handle for the tap that launched the app (once) and for every later tap. Returns an unsubscribe function. */
+export function onNotificationResponse(handle) {
+  // The launch response survives until cleared; clear it so a restart doesn't repeat the action.
+  const last = Notifications.getLastNotificationResponse();
+  if (last) { Notifications.clearLastNotificationResponse(); handle(last); }
+  const sub = Notifications.addNotificationResponseReceivedListener(handle);
+  return () => sub.remove();
+}

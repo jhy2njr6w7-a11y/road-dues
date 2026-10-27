@@ -33,7 +33,7 @@ function Title({ k, onSettings }) {
 function DisclaimerCard() {
   const c = useTheme();
   return (
-    <View accessibilityRole="summary" style={{ backgroundColor: c.card, borderRadius: 14, padding: 14, gap: 8, borderLeftWidth: 4, borderLeftColor: c.red }}>
+    <View accessibilityRole="summary" style={{ backgroundColor: c.card, borderRadius: 14, padding: 14, gap: 8, borderStartWidth: 4, borderStartColor: c.red }}>
       <Txt bold>{t('discTitle')}</Txt>
       <Txt size={14} color={c.red} bold>{t('disc3')}</Txt>
       <Txt size={14} muted>{t('disc4')}</Txt>
@@ -72,7 +72,7 @@ export function LocationNotice({ extra }) {
     else Linking.openSettings();
   }
   return (
-    <View accessibilityRole="alert" style={{ backgroundColor: c.amber + '22', borderRadius: 14, padding: 14, gap: 8, borderLeftWidth: 4, borderLeftColor: c.amber }}>
+    <View accessibilityRole="alert" style={{ backgroundColor: c.amber + '22', borderRadius: 14, padding: 14, gap: 8, borderStartWidth: 4, borderStartColor: c.amber }}>
       <Txt bold>{t(off ? 'locOffT' : 'locLimitedT')}</Txt>
       <Txt size={14}>{t(off ? 'locOffB' : 'locLimitedB')}</Txt>
       {off && extra ? <Txt size={14}>{t(extra)}</Txt> : null}

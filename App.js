@@ -1,12 +1,12 @@
 import React, { useEffect, useState, useCallback } from 'react';
 import { View, Text, Pressable, AppState, StatusBar } from 'react-native';
 import { SafeAreaProvider, SafeAreaView } from 'react-native-safe-area-context';
-import * as Notifications from 'expo-notifications';
 import { getLocales } from 'expo-localization';
+import './src/web-alert'; // web preview only: Alert.alert -> browser dialogs (no-op on phones)
 import './src/location'; // registers the background task at startup (must load before anything else runs)
 import { loadState, update, getState, useStore, isLoaded } from './src/store';
 import { t, setLangCode, T } from './src/i18n';
-import { setupCategories, ACT } from './src/notify';
+import { setupCategories, ACT, onNotificationResponse } from './src/notify';
 import { startTracking } from './src/location';
 import * as A from './src/actions';
 import { useTheme } from './src/ui';
@@ -85,11 +85,7 @@ export default function App() {
         go('fines');
       }
     };
-    // The launch response survives until cleared; clear it so a restart doesn't repeat the action.
-    const last = Notifications.getLastNotificationResponse();
-    if (last) { Notifications.clearLastNotificationResponse(); handle(last); }
-    const sub = Notifications.addNotificationResponseReceivedListener(handle);
-    return () => sub.remove();
+    return onNotificationResponse(handle);
   }, [go]);
 
   if (!ready) return <View style={{ flex: 1, backgroundColor: c.bg }} />;
