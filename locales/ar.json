@@ -1,10 +1,10 @@
 {
   "ios": {
-    "CFBundleDisplayName": "رسوم الطريق",
-    "NSLocationWhenInUseUsageDescription": "يستخدم رسوم الطريق موقعك لمعرفة الإمارة التي توقفت فيها وللتعرّف على بوابات سالك.",
-    "NSLocationAlwaysAndWhenInUseUsageDescription": "اختر \"السماح دائمًا\" ليذكّرك رسوم الطريق بدفع رسوم المواقف وينبهك لرصيد سالك حتى عند إغلاق التطبيق. موقعك لا يغادر هاتفك أبدًا."
+    "CFBundleDisplayName": "مواقف+",
+    "NSLocationWhenInUseUsageDescription": "يستخدم تطبيق مواقف+ موقعك لمعرفة الإمارة التي توقفت فيها وللتعرّف على بوابات سالك.",
+    "NSLocationAlwaysAndWhenInUseUsageDescription": "اختر \"السماح دائمًا\" ليذكّرك تطبيق مواقف+ بدفع رسوم المواقف وينبهك لرصيد سالك حتى عند إغلاق التطبيق. موقعك لا يغادر هاتفك أبدًا."
   },
   "android": {
-    "app_name": "رسوم الطريق"
+    "app_name": "مواقف+"
   }
 }

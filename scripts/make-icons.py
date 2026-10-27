@@ -1,5 +1,5 @@
 # Run: python3 scripts/make-icons.py assets   (needs Pillow and the Inter font)
-# Road Dues icon: the blue UAE parking-sign "P" on the app's ink colour, with a small green tick
+# Parking+ icon: the blue UAE parking-sign "P" on the app's ink colour, with a small green tick
 # badge (paid). Writes icon.png, adaptive-icon.png, splash-icon.png at 1024px into argv[1].
 import sys
 from PIL import Image, ImageDraw, ImageFont

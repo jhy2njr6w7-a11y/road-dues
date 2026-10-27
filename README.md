@@ -1,4 +1,4 @@
-# Road Dues: build and publish from Windows
+# Parking+: build and publish from Windows
 
 You don't need a Mac. Expo's cloud builds the iPhone and Android apps for you.
 
@@ -20,13 +20,20 @@ npx expo install expo-location expo-task-manager expo-notifications expo-sms exp
 
 `npx expo install` picks the versions that match your Expo SDK, so don't use plain `npm install` for these.
 
-## 2. Copy in the Road Dues files
+## 2. Copy in the Parking+ files
 From this zip, copy into the `RoadDuesApp` folder and replace when asked:
 - `App.js`
 - `app.json`
 - `eas.json`
 - the whole `src` folder
 - the `assets` folder
+
+## 2b. Add the Arabic font (once)
+Arabic text uses **Janna LT Bold**, a licensed font. It is not in GitHub (the repo is public), so copy your `Janna_LT_Bold.ttf` into the project as:
+```
+assets\fonts\JannaLT-Bold.ttf
+```
+Without it the app won't start. `eas build` includes it automatically (see `.easignore`). Make sure your Janna licence covers mobile apps.
 
 ## 3. Try it on your phone (Android, free)
 ```
@@ -66,7 +73,7 @@ EAS asks for your Apple ID and creates the certificates for you. The build takes
 1. **Turn on the website (once):** on github.com open the repo ▸ **Settings** ▸ **Pages**. Under "Build and deployment" choose **Deploy from a branch**, branch **main**, folder **/docs**, then **Save**. After a minute the pages are live:
    - Privacy policy: https://jhy2njr6w7-a11y.github.io/road-dues/privacy.html (already linked in the app)
    - Support page: https://jhy2njr6w7-a11y.github.io/road-dues/
-2. Put your contact email in `docs/privacy.html` and `docs/index.html` (replace `YOUR-EMAIL@example.com`).
+2. Put your contact email in `docs/privacy.html` and `docs/index.html` (replace `darbak9900@gmail.com`).
 3. Submit:
    ```
    eas submit --platform ios

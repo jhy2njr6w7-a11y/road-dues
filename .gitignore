@@ -39,3 +39,7 @@ yarn-error.*
 # generated native folders
 /ios
 /android
+
+# Licensed font: not redistributable, so it stays out of this public repo.
+# Copy it into assets/fonts/ locally; .easignore still sends it to EAS Build.
+assets/fonts/JannaLT-Bold.ttf

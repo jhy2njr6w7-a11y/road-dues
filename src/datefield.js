@@ -3,7 +3,7 @@
 import React, { useState } from 'react';
 import { View, Text, Pressable, Platform } from 'react-native';
 import DateTimePicker, { DateTimePickerAndroid } from '@react-native-community/datetimepicker';
-import { useTheme, Icon } from './ui';
+import { useTheme, useArabicFont, Icon } from './ui';
 import { getLang, LOCALE, t } from './i18n';
 import { parseDate } from './data';
 
@@ -11,7 +11,7 @@ const pad = (n) => String(n).padStart(2, '0');
 export const toYmd = (d) => `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
 
 export function DateField({ label, value, onChange, minDate, maxDate, placeholder, clearable }) {
-  const c = useTheme();
+  const c = useTheme(); const af = useArabicFont();
   const [open, setOpen] = useState(false);
   const date = value ? parseDate(value) : null;
   const shown = date ? date.toLocaleDateString(LOCALE[getLang()], { day: 'numeric', month: 'long', year: 'numeric' }) : placeholder || '';
@@ -23,12 +23,12 @@ export function DateField({ label, value, onChange, minDate, maxDate, placeholde
   }
   return (
     <View style={{ gap: 6 }}>
-      {label ? <Text style={{ color: c.muted, fontSize: 13, fontWeight: '600' }}>{label}</Text> : null}
+      {label ? <Text style={[{ color: c.muted, fontSize: 13, fontWeight: '600' }, af]}>{label}</Text> : null}
       <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
         <Pressable accessibilityRole="button" accessibilityLabel={label} onPress={press}
           style={{ flex: 1, minHeight: 50, borderRadius: 12, paddingHorizontal: 14, backgroundColor: c.field, flexDirection: 'row', alignItems: 'center', gap: 10 }}>
           <Icon name="calendar-outline" size={18} color={c.muted} />
-          <Text style={{ fontSize: 17, color: date ? c.fg : c.muted, flex: 1 }}>{shown}</Text>
+          <Text style={[{ fontSize: 17, color: date ? c.fg : c.muted, flex: 1 }, af]}>{shown}</Text>
         </Pressable>
         {clearable && date ? <Pressable accessibilityRole="button" accessibilityLabel={t('remove')} hitSlop={8} onPress={() => { onChange(''); setOpen(false); }}>
           <Icon name="close-circle" size={22} color={c.muted} /></Pressable> : null}
