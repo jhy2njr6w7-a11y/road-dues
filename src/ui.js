@@ -3,7 +3,9 @@
 import React from 'react';
 import { View, Text, Pressable, TextInput, StyleSheet, useColorScheme, Appearance } from 'react-native';
 import Ionicons from '@expo/vector-icons/Ionicons';
-import { brandColor, brandMark } from './data';
+import Svg, { Path } from 'react-native-svg';
+import { brandMark } from './data';
+import { BRAND_LOGOS } from './brand-logos';
 import { useStore } from './store';
 import { haptic } from './haptics';
 
@@ -183,20 +185,14 @@ export function Notice({ tone: tn = 'warn', icon = 'alert-circle', title, childr
 }
 export const Warn = ({ children }) => <Notice>{children}</Notice>;
 
-/** UAE-style plate: emirate code, then plate code and number. */
-export function Plate({ v, big }) {
-  const fs = big ? 18 : 14;
-  return (
-    <View style={{ flexDirection: 'row', alignSelf: 'flex-start', borderWidth: 1.5, borderColor: '#111', borderRadius: 6, overflow: 'hidden', direction: 'ltr', backgroundColor: '#fff' }}>
-      <Text style={{ backgroundColor: '#e3e7e6', color: '#111', paddingHorizontal: 7, paddingVertical: 2, fontWeight: '800', fontSize: fs, borderRightWidth: 1.5, borderColor: '#111' }}>{v.em}</Text>
-      <Text style={{ color: '#111', paddingHorizontal: 8, paddingVertical: 2, fontWeight: '800', fontSize: fs, fontVariant: ['tabular-nums'], letterSpacing: 1 }}>{v.code} {v.num}</Text>
-    </View>
-  );
-}
+/** Car brand: the maker's one-colour logo where we have it (src/brand-logos.js), otherwise its initials. */
 export function BrandBadge({ brand, size = 44 }) {
+  const c = useTheme();
+  const path = BRAND_LOGOS[brand];
   return (
-    <View accessibilityElementsHidden importantForAccessibility="no" style={{ width: size, height: size, borderRadius: size * 0.3, backgroundColor: brandColor(brand), alignItems: 'center', justifyContent: 'center' }}>
-      <Text style={{ color: '#fff', fontWeight: '800', fontSize: size * 0.36 }}>{brandMark(brand)}</Text>
+    <View accessibilityElementsHidden importantForAccessibility="no" style={{ width: size, height: size, borderRadius: size * 0.3, backgroundColor: c.chip, alignItems: 'center', justifyContent: 'center' }}>
+      {path ? <Svg width={size * 0.6} height={size * 0.6} viewBox="0 0 24 24"><Path d={path} fill={c.fg} /></Svg>
+        : <Text style={{ color: c.fg, fontWeight: '800', fontSize: size * 0.34 }}>{brandMark(brand)}</Text>}
     </View>
   );
 }

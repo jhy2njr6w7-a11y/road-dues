@@ -8,7 +8,7 @@ A free iPhone + Android app (Expo / React Native, JavaScript) for UAE drivers:
 - **Parking:** detects when the car stops during paid hours and asks "Did you pay for parking?". It builds the official parking SMS for the emirate the car is in and opens the Messages composer pre-filled. The user taps Send.
 - **Salik:** detects toll-gate crossings by GPS, charges the 2026 tariff, keeps an estimated balance the user entered, warns when low or negative.
 - **Fines:** user enters fines; reminders 7 days and 1 day before an early-payment discount ends.
-- **Vehicles:** several cars, one default; brand shown as a coloured initials badge (no real brand logos: trademark).
+- **Vehicles:** several cars, one default; brand shown as the maker's one-colour logo outline (Simple Icons, CC0) where available, initials otherwise. Saif chose this over full-colour logos to keep trademark/store-review risk low; if a store objects, fall back to initials.
 - **Languages:** English, Arabic (RTL), Hindi, Chinese (Simplified), Russian.
 - **Privacy:** all data on the device (AsyncStorage). No server, no accounts, no analytics.
 - **Payments:** the app never takes payments. Buttons open official sites; parking goes by SMS. In-app payment would need a licensed partner and a UAE trade license (out of scope).
@@ -38,6 +38,7 @@ A free iPhone + Android app (Expo / React Native, JavaScript) for UAE drivers:
 | `src/screens.js` | All screens, disclaimer sheet/card, location notice, onboarding |
 | `src/i18n.js`, `src/i18n-extra.js` | Translations; every key must exist in all 5 languages with the same `{placeholders}` |
 | `src/campaigns.js`, `src/campaign-source.js`, `campaigns.json` | Fine discount campaigns: download, reminders, the published list (web preview uses demo campaigns from `campaign-source.web.js`) |
+| `src/plates.js`, `src/brand-logos.js` | Number plate per emirate (from photos; names typeset, no emblems) and car-maker logo outlines (`scripts/make-brand-logos.mjs`) |
 | `src/store.js` | AsyncStorage state shared by UI and background task |
 | `tests/logic.test.mjs` | `node tests/logic.test.mjs`: 900+ checks of rules and translations. Run after any rule or string change |
 | `docs/privacy.html`, `docs/index.html` | Privacy policy and support page, served by GitHub Pages (main ▸ /docs) at https://jhy2njr6w7-a11y.github.io/road-dues/ |

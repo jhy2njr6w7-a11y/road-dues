@@ -188,8 +188,6 @@ export function buildSms(em, vehicle, { zone = '', type = 'S', hours = 1 } = {})
 }
 
 export const BRANDS = ['Toyota', 'Nissan', 'Lexus', 'Mitsubishi', 'Hyundai', 'Kia', 'Honda', 'Mazda', 'Ford', 'Chevrolet', 'GMC', 'Jeep', 'Dodge', 'Mercedes-Benz', 'BMW', 'Audi', 'Volkswagen', 'Porsche', 'Land Rover', 'Range Rover', 'Tesla', 'MG', 'Geely', 'Changan', 'Other'];
-const HUES = ['#35618a', '#7a3e48', '#2f6b5a', '#6b5a2f', '#4b4a8a', '#8a5a35', '#3f6f7a', '#6e3f7a'];
-export function brandColor(b) { let h = 0; for (const c of b) h = (h * 31 + c.charCodeAt(0)) >>> 0; return HUES[h % HUES.length]; }
 export const brandMark = (b) => (b === 'Other' ? '•' : b.split(/[\s-]/).map((w) => w[0]).join('').slice(0, 2).toUpperCase());
 
 // Official channels (the app never handles card details)

@@ -3,11 +3,15 @@
   "version": "1.0.0",
   "main": "index.js",
   "dependencies": {
+    "@expo-google-fonts/aref-ruqaa": "^0.4.1",
+    "@expo-google-fonts/barlow-condensed": "^0.4.1",
+    "@expo-google-fonts/reem-kufi": "^0.4.2",
     "@expo/metro-runtime": "~58.0.15",
     "@expo/vector-icons": "^15.0.2",
     "@react-native-async-storage/async-storage": "2.2.0",
     "@react-native-community/datetimepicker": "9.2.1",
     "expo": "~58.0.19",
+    "expo-font": "~58.0.10",
     "expo-haptics": "~58.0.7",
     "expo-intent-launcher": "~58.0.3",
     "expo-localization": "~58.0.5",
@@ -21,6 +25,7 @@
     "react-dom": "19.3.0",
     "react-native": "0.88.0",
     "react-native-safe-area-context": "~5.10.1",
+    "react-native-svg": "15.16.0",
     "react-native-web": "~0.21.4"
   },
   "scripts": {
