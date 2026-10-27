@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { ScrollView, View, Text, Pressable, Modal, Linking, Alert, AppState } from 'react-native';
+import { ScrollView, View, Text, Pressable, Modal, Linking, Alert, AppState, Platform } from 'react-native';
 import { useStore, update, newId } from './store';
 import { t, emName, hrsOf, fmtDate, fmtTime, LANGS, getLang } from './i18n';
 import { EMIRATES, EM_ORDER, ISSUERS, GATES, BRANDS, aed, buildSms, cleanCode, ZONE_RE, fineOffer, discounted, daysLeft,
@@ -8,7 +8,8 @@ import { Card, Sec, Txt, Figure, Btn, Chip, Segmented, Toggle, Pill, List, ListR
   useTheme, styles, applyAppearance } from './ui';
 import * as A from './actions';
 import { currentPosition, requestLocation, locationStatus, startTracking } from './location';
-import { requestNotifPermission, setupCategories } from './notify';
+import { requestNotifPermission, setupCategories, notifStatus } from './notify';
+import { openBatterySettings } from './battery';
 import { openDisclaimer } from './disclaimer';
 import { refreshCampaigns, syncCampaignReminders } from './campaigns';
 
@@ -87,6 +88,29 @@ export function LocationNotice({ extra }) {
     <Notice icon="location-outline" title={t(off ? 'locOffT' : 'locLimitedT')}>
       <Txt size={14}>{t(off ? 'locOffB' : 'locLimitedB')}</Txt>
       {off && extra ? <Txt size={14}>{t(extra)}</Txt> : null}
+      <Btn small title={st.canAsk ? t('allow') : t('openSettings')} onPress={fix} style={{ alignSelf: 'flex-start' }} />
+    </Notice>
+  );
+}
+
+// ---------- Notifications off: every reminder depends on them, so say so where reminders are set
+function NotifNotice() {
+  const [st, setSt] = useState(null);
+  useEffect(() => {
+    let alive = true;
+    const check = () => notifStatus().then((x) => alive && setSt(x)).catch(() => {});
+    check();
+    const sub = AppState.addEventListener('change', (a) => { if (a === 'active') check(); });
+    return () => { alive = false; sub.remove(); };
+  }, []);
+  if (!st || st.granted) return null;
+  async function fix() {
+    if (st.canAsk) { await requestNotifPermission(); await setupCategories(); setSt(await notifStatus()); }
+    else Linking.openSettings();
+  }
+  return (
+    <Notice icon="notifications-off-outline" title={t('notifOffT')}>
+      <Txt size={14}>{t('notifOffB')}</Txt>
       <Btn small title={st.canAsk ? t('allow') : t('openSettings')} onPress={fix} style={{ alignSelf: 'flex-start' }} />
     </Notice>
   );
@@ -548,6 +572,7 @@ export function SettingsScreen({ go, onLang }) {
         options={['auto', 'light', 'dark'].map((k) => [k, t('look_' + k)])} />
       <LocationNotice />
       <Sec>{t('remindersH')}</Sec>
+      <NotifNotice />
       <List>
         {toggleRow('remParking', t('remParking'))}
         {toggleRow('remSalik', t('remSalik'))}
@@ -558,6 +583,9 @@ export function SettingsScreen({ go, onLang }) {
             <Btn ghost small title="+" onPress={() => setSetting('low')(Math.min(200, s.settings.low + 5))} />
           </View>} />
       </List>
+      {Platform.OS === 'android' ? <>
+        <List><ListRow icon="battery-half-outline" iconTone="warn" title={t('battT')} sub={t('battB')} chevron onPress={openBatterySettings} /></List>
+      </> : null}
       <Sec>{t('freeSpots')}</Sec>
       <List>
         {s.freeSpots.map((f) => <ListRow key={f.id} icon="location-outline" title={f.name}
@@ -605,6 +633,8 @@ export function Onboarding({ onDone, onLang }) {
           right={<Btn small ghost={notif} title={notif ? '✓' : t('allow')} disabled={notif} onPress={async () => { setNotif(await requestNotifPermission()); await setupCategories(); }} />} />
         <ListRow icon="location-outline" iconTone="info" title={t('permLocT')} sub={t('permLocB')}
           right={<Btn small ghost={locDone} title={locDone ? '✓' : t('allow')} disabled={locDone} onPress={async () => { const r = await requestLocation(); setLoc(r); setAsked(true); if (r.background) startTracking(); }} />} />
+        {Platform.OS === 'android' ? <ListRow icon="battery-half-outline" iconTone="info" title={t('battT')} sub={t('battB')}
+          right={<Btn small ghost title={t('openSettings')} onPress={openBatterySettings} />} /> : null}
       </List>
       {asked && !loc.foreground ? <Warn>{t('locOffB')}</Warn> : loc.foreground && !locDone ? <Warn>{t('locLimitedB')}</Warn> : null}
       <Card>

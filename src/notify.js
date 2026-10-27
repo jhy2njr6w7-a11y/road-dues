@@ -33,9 +33,15 @@ export async function setupCategories() {
   }
 }
 
+export async function notifStatus() {
+  const cur = await Notifications.getPermissionsAsync();
+  return { granted: cur.granted, canAsk: cur.canAskAgain !== false };
+}
 export async function requestNotifPermission() {
   const cur = await Notifications.getPermissionsAsync();
   if (cur.granted) return true;
+  // Android 13+ only shows the permission pop-up once the app has a notification channel.
+  if (Platform.OS === 'android') await Notifications.setNotificationChannelAsync('reminders', { name: 'Reminders', importance: Notifications.AndroidImportance.HIGH });
   const r = await Notifications.requestPermissionsAsync({ ios: { allowAlert: true, allowSound: true, allowBadge: false } });
   return r.granted;
 }

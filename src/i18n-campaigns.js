@@ -1,6 +1,7 @@
 // Strings for fine discount campaigns, the reworked Fines tab and the appearance settings.
 export const CAMPAIGN_STRINGS = {
 en: {
+  bgAndroidT: 'One more step', bgAndroidB: 'On the next screen, choose "Allow all the time", then go back to Road Dues. Without it, parking and Salik detection stop when the app is closed.', trackBody: 'Watching for parking and Salik gates', notifOffT: 'Notifications are off', notifOffB: "You won't get parking, Salik or fine discount reminders until you allow notifications.", battT: 'Keep running in the background', battB: 'Some phones stop apps to save battery. Choose "Don\'t optimise" or "Unrestricted" for Road Dues.',
   appearanceH: 'Appearance', look_auto: 'Automatic', look_light: 'Light', look_dark: 'Dark',
   finesTitle: 'Fine discounts', campH: 'Discount campaigns', campTitle: '{p}% off {issuer} fines',
   campUntil: 'Until {date} · {n} days left', campLastDay: 'Ends today', campStarts: 'Starts {date}',
@@ -15,6 +16,7 @@ en: {
   privacyShort: 'Your location, vehicles and fines stay on this phone. Road Dues has no servers. It only downloads a public list of fine discount campaigns, and sends nothing about you.',
 },
 ar: {
+  bgAndroidT: 'خطوة أخيرة', bgAndroidB: 'في الشاشة التالية اختر "السماح طوال الوقت" ثم عد إلى التطبيق. بدون ذلك يتوقف رصد المواقف وسالك عند إغلاق التطبيق.', trackBody: 'يراقب المواقف وبوابات سالك', notifOffT: 'الإشعارات متوقفة', notifOffB: 'لن تصلك تذكيرات المواقف وسالك وتخفيضات المخالفات حتى تسمح بالإشعارات.', battT: 'استمرار العمل في الخلفية', battB: 'بعض الهواتف توقف التطبيقات لتوفير البطارية. اختر "عدم التحسين" أو "غير مقيد" لتطبيق رسوم الطريق.',
   appearanceH: 'المظهر', look_auto: 'تلقائي', look_light: 'فاتح', look_dark: 'داكن',
   finesTitle: 'تخفيضات المخالفات', campH: 'حملات التخفيض', campTitle: 'خصم {p}% على مخالفات {issuer}',
   campUntil: 'حتى {date} · متبقي {n} يوم', campLastDay: 'ينتهي اليوم', campStarts: 'يبدأ {date}',
@@ -29,6 +31,7 @@ ar: {
   privacyShort: 'موقعك ومركباتك ومخالفاتك تبقى على هذا الهاتف. لا يملك التطبيق خوادم، وكل ما يفعله هو تنزيل قائمة عامة بحملات تخفيض المخالفات، ولا يرسل أي بيانات عنك.',
 },
 hi: {
+  bgAndroidT: 'एक और कदम', bgAndroidB: 'अगली स्क्रीन पर "हर समय अनुमति दें" चुनें, फिर Road Dues पर लौटें। इसके बिना ऐप बंद होने पर पार्किंग और Salik की पहचान रुक जाती है।', trackBody: 'पार्किंग और Salik गेट पर नज़र', notifOffT: 'सूचनाएँ बंद हैं', notifOffB: 'सूचनाओं की अनुमति देने तक आपको पार्किंग, Salik या जुर्माना छूट के रिमाइंडर नहीं मिलेंगे।', battT: 'बैकग्राउंड में चलते रहें', battB: 'कुछ फ़ोन बैटरी बचाने के लिए ऐप बंद कर देते हैं। Road Dues के लिए "ऑप्टिमाइज़ न करें" या "अप्रतिबंधित" चुनें।',
   appearanceH: 'दिखावट', look_auto: 'स्वचालित', look_light: 'लाइट', look_dark: 'डार्क',
   finesTitle: 'जुर्माने पर छूट', campH: 'छूट अभियान', campTitle: '{issuer} के जुर्मानों पर {p}% छूट',
   campUntil: '{date} तक · {n} दिन बाकी', campLastDay: 'आज खत्म', campStarts: '{date} से शुरू',
@@ -43,6 +46,7 @@ hi: {
   privacyShort: 'आपकी लोकेशन, वाहन और जुर्माने इसी फ़ोन पर रहते हैं। Road Dues का कोई सर्वर नहीं है। यह सिर्फ़ जुर्माना छूट अभियानों की एक सार्वजनिक सूची डाउनलोड करता है और आपके बारे में कुछ नहीं भेजता।',
 },
 zh: {
+  bgAndroidT: '还差一步', bgAndroidB: '在下一个页面选择“始终允许”，然后返回 Road Dues。否则应用关闭后将无法检测停车和 Salik。', trackBody: '正在关注停车和 Salik 收费站', notifOffT: '通知已关闭', notifOffB: '在允许通知之前，您不会收到停车、Salik 或罚单折扣提醒。', battT: '保持后台运行', battB: '有些手机会为省电而停止应用。请为 Road Dues 选择“不优化”或“无限制”。',
   appearanceH: '外观', look_auto: '自动', look_light: '浅色', look_dark: '深色',
   finesTitle: '罚单折扣', campH: '折扣活动', campTitle: '{issuer}罚单 {p}% 折扣',
   campUntil: '截至 {date} · 剩余 {n} 天', campLastDay: '今天结束', campStarts: '{date} 开始',
@@ -57,6 +61,7 @@ zh: {
   privacyShort: '您的位置、车辆和罚单仅保存在本手机上。Road Dues 没有服务器，只会下载一份公开的罚单折扣活动列表，不会发送任何关于您的信息。',
 },
 ru: {
+  bgAndroidT: 'Ещё один шаг', bgAndroidB: 'На следующем экране выберите «Разрешить в любом режиме», затем вернитесь в Road Dues. Без этого парковка и Salik не отслеживаются, когда приложение закрыто.', trackBody: 'Отслеживание парковки и ворот Salik', notifOffT: 'Уведомления выключены', notifOffB: 'Пока вы не разрешите уведомления, напоминаний о парковке, Salik и скидках на штрафы не будет.', battT: 'Работа в фоне', battB: 'Некоторые телефоны останавливают приложения ради экономии батареи. Выберите для Road Dues «Не оптимизировать» или «Без ограничений».',
   appearanceH: 'Оформление', look_auto: 'Автоматически', look_light: 'Светлое', look_dark: 'Тёмное',
   finesTitle: 'Скидки на штрафы', campH: 'Акции со скидками', campTitle: 'Скидка {p}% на штрафы: {issuer}',
   campUntil: 'До {date} · осталось дней: {n}', campLastDay: 'Заканчивается сегодня', campStarts: 'Начало {date}',
