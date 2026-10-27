@@ -49,10 +49,12 @@ To get static files you can host anywhere (Netlify Drop, GitHub Pages): `npm run
 ```
 npm install -g eas-cli
 eas login
-eas build:configure
+eas init
 eas build --platform android --profile preview
 ```
-You get a link to an `.apk` file. Open it on an Android phone to install.
+`eas init` links the folder to your Expo account (it adds `extra.eas.projectId` to `app.json`; commit that). `eas.json` is already set up, so you don't need `eas build:configure`. The first Android build asks to create a signing keystore: answer Yes and let Expo keep it.
+
+You get a link to an `.apk` file. Open it on an Android phone to install. After installing, allow notifications, and for location choose "Allow all the time" (Android shows it on a separate settings page).
 
 For iPhone:
 ```
