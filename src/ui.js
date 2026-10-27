@@ -151,7 +151,7 @@ export function List({ children }) {
 export function ListRow({ icon, iconTone, title, sub, right, onPress, chevron }) {
   const c = useTheme();
   const body = (
-    <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12, minHeight: 56, paddingVertical: 10, paddingStart: icon ? 12 : 0, paddingEnd: 16 }}>
+    <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12, minHeight: 56, paddingVertical: 10, paddingStart: icon ? 12 : 16, paddingEnd: 16 }}>
       {icon ? <View importantForAccessibility="no-hide-descendants" accessibilityElementsHidden style={{ width: 36, height: 36, borderRadius: 10, backgroundColor: tone(c, iconTone).bg, alignItems: 'center', justifyContent: 'center' }}>
         <Icon name={icon} size={19} color={tone(c, iconTone).fg} /></View> : null}
       <View style={{ flex: 1, minWidth: 0, gap: 2 }}>
