@@ -1,4 +1,4 @@
-# Road Dues: project notes for Claude Code
+# Darbak: project notes for Claude Code
 
 Owner: Saif (UAE, Kalba). Works on a **Windows PC, no Mac**. Prefers concise, direct answers.
 This project was designed in a claude.ai chat. The chat could not install packages or build, so **nothing here has been run in a real Expo project yet**. That is the first job.
@@ -24,6 +24,7 @@ A free iPhone + Android app (Expo / React Native, JavaScript) for UAE drivers:
 | Disclaimer | Own wording (not copied from another app). Pinned card on home (hideable), ⓘ button on every screen, shown before fine/Salik payments and after parking SMS, with "Don't show this again"; Settings toggles bring it back. Red line = disc3 |
 | Fine campaigns | No fines API exists (UAE PASS is login only). Saif publishes police discount campaigns in `campaigns.json` (repo, served from raw.githubusercontent.com); the app downloads it on open / every ≤3 h from the GPS task and reminds on start day, 3 days before end, last day at 09:00. Only network request; sends no user data. Manual fine tracking kept as optional |
 | Real-device setup | iOS: `pausesUpdatesAutomatically: false` (paused updates never resume in background); `TRACKING_VERSION` in location.js restarts tracking when options change. Android: explain "Allow all the time" before the settings page (11+), create the channel before asking for notifications (13+), Settings/onboarding row opens battery-optimisation settings. No exact alarms (Play restricts SCHEDULE_EXACT_ALARM), so reminders can be a few minutes late in Doze |
+| Name | App is called **Darbak** (Arabic دربك), renamed from Road Dues before release. Bundle ID / package `ae.darbak.app`. Internal names stay `road-dues` (repo, Expo slug linked to EAS project, AsyncStorage key, location task name) so saved data and the EAS project keep working |
 | Location off | Notice on Today/Parking/Salik/Settings listing what won't work; "While Using" gets a softer notice asking for "Always" |
 | Validation | Plate code 1–3 A–Z/0–9 required; plate number 1–5 digits; Arabic-Indic digits converted; zone code `^\d{2,4}[A-Z]?$`; balance 0–5000 |
 
@@ -61,4 +62,4 @@ A free iPhone + Android app (Expo / React Native, JavaScript) for UAE drivers:
 - Not legal advice: free app needs no government permission; earning money (ads/subscriptions) usually needs a UAE freelance/trade license; never use Salik/RTA/police logos.
 
 ## Related
-A clickable web demo of the same app exists as a claude.ai artifact ("Road Dues Demo"). It mirrors these features and was used for testing with 100 simulated users and 5 persona testers.
+A clickable web demo of the same app exists as a claude.ai artifact ("Darbak Demo"). It mirrors these features and was used for testing with 100 simulated users and 5 persona testers.

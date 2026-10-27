@@ -1,5 +1,5 @@
 // Android only: phones like Samsung and Xiaomi stop background apps to save battery, which stops
-// parking and Salik detection. This opens the system page where the user can exempt Road Dues.
+// parking and Salik detection. This opens the system page where the user can exempt Darbak.
 // (Asking directly needs REQUEST_IGNORE_BATTERY_OPTIMIZATIONS, which Google Play restricts.)
 import { Linking } from 'react-native';
 import * as IntentLauncher from 'expo-intent-launcher';
