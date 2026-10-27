@@ -65,19 +65,19 @@ TaskManager.defineTask(TASK, async ({ data, error }) => {
 
 // Background ("Always") permission throws where it isn't available, e.g. Expo Go on iPhone.
 // Treat that as "not granted" so the app keeps working with foreground location only.
-const NO_BACKGROUND = { granted: false, canAskAgain: true };
+const NO_BACKGROUND = { granted: false, canAskAgain: true, unavailable: true };
 
 export async function locationStatus() {
   const fg = await Location.getForegroundPermissionsAsync();
   const bg = await Location.getBackgroundPermissionsAsync().catch(() => NO_BACKGROUND);
-  return { foreground: fg.granted, background: bg.granted, canAsk: fg.canAskAgain !== false && bg.canAskAgain !== false };
+  return { foreground: fg.granted, background: bg.granted, noBackground: !!bg.unavailable, canAsk: fg.canAskAgain !== false && bg.canAskAgain !== false };
 }
 
 export async function requestLocation() {
   const fg = await Location.requestForegroundPermissionsAsync();
   if (!fg.granted) return { foreground: false, background: false };
   const bg = await Location.requestBackgroundPermissionsAsync().catch(() => NO_BACKGROUND);
-  return { foreground: true, background: bg.granted };
+  return { foreground: true, background: bg.granted, noBackground: !!bg.unavailable };
 }
 
 export async function startTracking() {
