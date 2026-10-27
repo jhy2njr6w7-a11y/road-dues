@@ -10,6 +10,7 @@ import { setupCategories, ACT, onNotificationResponse } from './src/notify';
 import { startTracking } from './src/location';
 import * as A from './src/actions';
 import { useTheme, applyAppearance, Icon } from './src/ui';
+import { haptic } from './src/haptics';
 import { emirateAt } from './src/data';
 import { refreshCampaigns, syncCampaignReminders } from './src/campaigns';
 import { TodayScreen, FinesScreen, SalikScreen, ParkingScreen, VehiclesScreen, SettingsScreen, Onboarding, DisclaimerSheet } from './src/screens';
@@ -121,12 +122,12 @@ export default function App() {
             <SafeAreaView edges={['bottom']} style={{ flexDirection: 'row', borderTopWidth: 0.5, borderColor: c.line, backgroundColor: c.card, paddingTop: 6 }} accessibilityRole="tablist">
               {TABS.map(([k, icon]) => { const on = tab === k;
                 return (
-                  <Pressable key={k} accessibilityRole="tab" accessibilityState={{ selected: on }} onPress={() => go(k)}
+                  <Pressable key={k} accessibilityRole="tab" accessibilityState={{ selected: on }} onPress={() => { if (!on) haptic('select'); go(k); }}
                     style={{ flex: 1, alignItems: 'center', gap: 2, paddingBottom: 6, minHeight: 50 }}>
                     <View style={{ paddingHorizontal: 16, paddingVertical: 3, borderRadius: 14, backgroundColor: on ? c.chip : 'transparent' }}>
                       <Icon name={on ? icon : icon + '-outline'} size={22} color={on ? c.fg : c.muted} />
                     </View>
-                    <Text numberOfLines={1} style={{ fontSize: 11, fontWeight: on ? '700' : '500', color: on ? c.fg : c.muted }}>{t('tab_' + k)}</Text>
+                    <Text numberOfLines={1} maxFontSizeMultiplier={1.3} style={{ fontSize: 11, fontWeight: on ? '700' : '500', color: on ? c.fg : c.muted }}>{t('tab_' + k)}</Text>
                   </Pressable>); })}
             </SafeAreaView>
             <DisclaimerSheet visible={!!disc} afterPay={!!disc?.afterPay} onClose={() => { const next = disc?.onContinue; setDisc(null); if (next) setTimeout(next, 350); }} />

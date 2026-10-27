@@ -4,7 +4,7 @@ import React, { useState } from 'react';
 import { View, Text, Pressable, Platform } from 'react-native';
 import DateTimePicker, { DateTimePickerAndroid } from '@react-native-community/datetimepicker';
 import { useTheme, Icon } from './ui';
-import { getLang, LOCALE } from './i18n';
+import { getLang, LOCALE, t } from './i18n';
 import { parseDate } from './data';
 
 const pad = (n) => String(n).padStart(2, '0');
@@ -30,7 +30,7 @@ export function DateField({ label, value, onChange, minDate, maxDate, placeholde
           <Icon name="calendar-outline" size={18} color={c.muted} />
           <Text style={{ fontSize: 17, color: date ? c.fg : c.muted, flex: 1 }}>{shown}</Text>
         </Pressable>
-        {clearable && date ? <Pressable accessibilityRole="button" accessibilityLabel="Clear" hitSlop={8} onPress={() => { onChange(''); setOpen(false); }}>
+        {clearable && date ? <Pressable accessibilityRole="button" accessibilityLabel={t('remove')} hitSlop={8} onPress={() => { onChange(''); setOpen(false); }}>
           <Icon name="close-circle" size={22} color={c.muted} /></Pressable> : null}
       </View>
       {open ? <DateTimePicker value={date || maxDate || new Date()} mode="date" display="inline" minimumDate={minDate} maximumDate={maxDate}

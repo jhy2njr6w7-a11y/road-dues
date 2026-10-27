@@ -6,7 +6,7 @@
     "orientation": "portrait",
     "userInterfaceStyle": "automatic",
     "icon": "./assets/icon.png",
-    "splash": { "image": "./assets/splash-icon.png", "resizeMode": "contain", "backgroundColor": "#0b6b56" },
+    "splash": { "image": "./assets/splash-icon.png", "resizeMode": "contain", "backgroundColor": "#0e1116" },
     "ios": {
       "bundleIdentifier": "ae.roaddues.app",
       "supportsTablet": false,
@@ -14,15 +14,17 @@
         "UIBackgroundModes": ["location"],
         "NSLocationWhenInUseUsageDescription": "Road Dues uses your location to find which emirate you parked in and to notice Salik gates.",
         "NSLocationAlwaysAndWhenInUseUsageDescription": "Allow Always so Road Dues can remind you to pay for parking and warn you about Salik balance even when the app is closed. Your location never leaves your phone.",
-        "ITSAppUsesNonExemptEncryption": false
+        "ITSAppUsesNonExemptEncryption": false,
+        "CFBundleAllowMixedLocalizations": true
       },
       "entitlements": { "com.apple.developer.usernotifications.time-sensitive": true }
     },
     "android": {
       "package": "ae.roaddues.app",
-      "adaptiveIcon": { "foregroundImage": "./assets/adaptive-icon.png", "backgroundColor": "#0b6b56" },
+      "adaptiveIcon": { "foregroundImage": "./assets/adaptive-icon.png", "backgroundColor": "#0e1116" },
       "permissions": ["ACCESS_COARSE_LOCATION", "ACCESS_FINE_LOCATION", "ACCESS_BACKGROUND_LOCATION", "FOREGROUND_SERVICE", "FOREGROUND_SERVICE_LOCATION", "POST_NOTIFICATIONS"]
     },
+    "locales": { "ar": "./locales/ar.json" },
     "web": { "bundler": "metro", "output": "single", "favicon": "./assets/icon.png" },
     "plugins": [
       ["expo-location", {
@@ -31,7 +33,7 @@
         "isAndroidBackgroundLocationEnabled": true,
         "isAndroidForegroundServiceEnabled": true
       }],
-      ["expo-notifications", { "color": "#0b6b56" }],
+      ["expo-notifications", { "color": "#1a56b8" }],
       "expo-localization",
       "@react-native-community/datetimepicker"
     ]
