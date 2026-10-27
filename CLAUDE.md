@@ -40,7 +40,9 @@ A free iPhone + Android app (Expo / React Native, JavaScript) for UAE drivers:
 | `src/campaigns.js`, `src/campaign-source.js`, `campaigns.json` | Fine discount campaigns: download, reminders, the published list (web preview uses demo campaigns from `campaign-source.web.js`) |
 | `src/store.js` | AsyncStorage state shared by UI and background task |
 | `tests/logic.test.mjs` | `node tests/logic.test.mjs`: 900+ checks of rules and translations. Run after any rule or string change |
-| `privacy.html`, `STORE-LISTING.md`, `README.md` | Privacy policy, store text + App Review notes, Windows build guide |
+| `docs/privacy.html`, `docs/index.html` | Privacy policy and support page, served by GitHub Pages (main ▸ /docs) at https://jhy2njr6w7-a11y.github.io/road-dues/ |
+| `STORE-LISTING.md`, `README.md`, `store/screenshots/` | Store text + App Review notes, Windows build guide, store screenshots (`scripts/store-screenshots.js`) |
+| `translations/review-*.csv` | Sheets for native-speaker review (`node scripts/export-translations.mjs`) |
 
 ## First tasks (what the chat could not do)
 1. Create the Expo project per `README.md` steps 1–2 (`npx create-expo-app@latest`, then `npx expo install expo-location expo-task-manager expo-notifications expo-sms expo-localization @react-native-async-storage/async-storage react-native-safe-area-context`) and move these files in. Or convert this folder into that project directly.
@@ -54,7 +56,7 @@ A free iPhone + Android app (Expo / React Native, JavaScript) for UAE drivers:
 - Drive-test and correct Salik gate coordinates (Settings ▸ "I'm here"), then copy into `GATES` in `src/data.js`.
 - Confirm SMS formats with real payments, especially RAK.
 - Native-speaker review of Hindi, Chinese, Russian.
-- Host `privacy.html`, add his email, put the URL in `PRIVACY_URL` in `src/screens.js`.
+- Turn on GitHub Pages (Settings ▸ Pages ▸ main, /docs) and put his email in `docs/privacy.html` and `docs/index.html` (`PRIVACY_URL` already points there).
 - Not legal advice: free app needs no government permission; earning money (ads/subscriptions) usually needs a UAE freelance/trade license; never use Salik/RTA/police logos.
 
 ## Related
