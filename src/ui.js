@@ -183,13 +183,54 @@ export function Notice({ tone: tn = 'warn', icon = 'alert-circle', title, childr
 }
 export const Warn = ({ children }) => <Notice>{children}</Notice>;
 
-/** UAE-style plate: emirate code, then plate code and number. */
-export function Plate({ v, big }) {
-  const fs = big ? 18 : 14;
+// UAE number plate, long format: code on the left, emirate in the middle, number on the right.
+// The middle shows the emirate's name (Arabic and English), not its official emblem (trademark).
+const PLATE_NAMES = {
+  AUH: ['أبوظبي', 'ABU DHABI'], DXB: ['دبي', 'DUBAI'], SHJ: ['الشارقة', 'SHARJAH'], AJM: ['عجمان', 'AJMAN'],
+  RAK: ['رأس الخيمة', 'RAS AL KHAIMAH'], FUJ: ['الفجيرة', 'FUJAIRAH'], UAQ: ['أم القيوين', 'UMM AL QUWAIN'],
+};
+const PLATE_INK = '#111111';
+function PlateFrame({ em, scale, left, right }) {
+  const [ar, en] = PLATE_NAMES[em] || ['', em];
+  const k = scale;
   return (
-    <View style={{ flexDirection: 'row', alignSelf: 'flex-start', borderWidth: 1.5, borderColor: '#111', borderRadius: 6, overflow: 'hidden', direction: 'ltr', backgroundColor: '#fff' }}>
-      <Text style={{ backgroundColor: '#e3e7e6', color: '#111', paddingHorizontal: 7, paddingVertical: 2, fontWeight: '800', fontSize: fs, borderRightWidth: 1.5, borderColor: '#111' }}>{v.em}</Text>
-      <Text style={{ color: '#111', paddingHorizontal: 8, paddingVertical: 2, fontWeight: '800', fontSize: fs, fontVariant: ['tabular-nums'], letterSpacing: 1 }}>{v.code} {v.num}</Text>
+    <View accessible style={{ direction: 'ltr', flexDirection: 'row', alignItems: 'center', alignSelf: 'flex-start',
+      backgroundColor: '#ffffff', borderWidth: Math.max(1.5, 3 * k), borderColor: PLATE_INK, borderRadius: 12 * k,
+      paddingHorizontal: 12 * k, height: 64 * k, gap: 10 * k }}>
+      {left}
+      <View style={{ alignItems: 'center', justifyContent: 'center', minWidth: 54 * k }}>
+        <Text maxFontSizeMultiplier={1} style={{ color: em === 'AUH' ? '#8b3a1f' : PLATE_INK, fontSize: 17 * k, fontWeight: '800', lineHeight: 21 * k }}>{ar}</Text>
+        <Text maxFontSizeMultiplier={1} numberOfLines={1} style={{ color: em === 'AUH' ? '#8b3a1f' : PLATE_INK, fontSize: 7.5 * k, fontWeight: '800', letterSpacing: 0.6 * k }}>{en}</Text>
+      </View>
+      {right}
+    </View>
+  );
+}
+const plateDigits = (k) => ({ color: PLATE_INK, fontSize: 34 * k, fontWeight: '800', fontVariant: ['tabular-nums'], letterSpacing: 1 * k });
+
+/** Read-only plate. size: 'small' (lists), 'big' (vehicle cards). */
+export function Plate({ v, big }) {
+  const k = big ? 0.72 : 0.5;
+  return (
+    <View accessible accessibilityLabel={`${v.em} ${v.code} ${v.num}`}>
+      <PlateFrame em={v.em} scale={k}
+        left={<Text maxFontSizeMultiplier={1} style={plateDigits(k)}>{v.code}</Text>}
+        right={<Text maxFontSizeMultiplier={1} style={plateDigits(k)}>{v.num}</Text>} />
+    </View>
+  );
+}
+/** Plate you type into: code on the left, number on the right, like the real plate. */
+export function PlateInput({ em, code, num, onCode, onNum, codeLabel, numLabel, error }) {
+  const c = useTheme();
+  const box = { ...plateDigits(1), borderBottomWidth: 1.5, borderColor: '#9aa1ab', paddingVertical: 0, paddingHorizontal: 2, textAlign: 'center', minHeight: 44, outlineWidth: 0, outlineStyle: 'none' };
+  return (
+    <View style={{ gap: 6, alignItems: 'center' }}>
+      <PlateFrame em={em} scale={1}
+        left={<TextInput accessibilityLabel={codeLabel} value={code} onChangeText={onCode} placeholder="A" placeholderTextColor="#b8bdc4"
+          autoCapitalize="characters" autoCorrect={false} maxLength={3} maxFontSizeMultiplier={1} style={[box, { width: 66 }]} />}
+        right={<TextInput accessibilityLabel={numLabel} value={num} onChangeText={onNum} placeholder="12345" placeholderTextColor="#b8bdc4"
+          keyboardType="number-pad" maxLength={5} maxFontSizeMultiplier={1} style={[box, { width: 118 }]} />} />
+      {error ? <Text style={{ color: c.red, fontSize: 13 }}>{error}</Text> : null}
     </View>
   );
 }
