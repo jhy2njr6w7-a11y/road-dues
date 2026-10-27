@@ -10,6 +10,8 @@ import * as A from './actions';
 import { currentPosition, requestLocation, locationStatus, startTracking } from './location';
 import { requestNotifPermission, setupCategories, notifStatus } from './notify';
 import { openBatterySettings } from './battery';
+import { DateField } from './datefield';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { openDisclaimer } from './disclaimer';
 import { refreshCampaigns, syncCampaignReminders } from './campaigns';
 
@@ -29,7 +31,7 @@ function Title({ k, onSettings, onBack }) {
   const c = useTheme();
   return (
     <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10, marginBottom: 4 }}>
-      {onBack ? <RoundBtn icon="chevron-back" label="Back" onPress={onBack} /> : null}
+      {onBack ? <RoundBtn icon="chevron-back" label={t('back')} onPress={onBack} /> : null}
       <Text accessibilityRole="header" numberOfLines={1} style={[styles.title, { color: c.fg, flex: 1 }]}>{t(k)}</Text>
       <RoundBtn icon="information-circle-outline" label={t('viewDisclaimer')} onPress={() => openDisclaimer()} />
       {onSettings ? <RoundBtn icon="settings-outline" label={t('settings')} onPress={onSettings} /> : null}
@@ -37,27 +39,24 @@ function Title({ k, onSettings, onBack }) {
   );
 }
 
-// Pinned on the home screen until hidden (Settings brings it back)
+// Pinned on the home screen until hidden (Settings brings it back). Slim: the red line, tap for the full text.
 function DisclaimerCard() {
   const c = useTheme();
+  const hide = () => Alert.alert(t('hideDisc') + '?', t('discHiddenNote'), [
+    { text: t('cancel'), style: 'cancel' },
+    { text: t('hideDisc'), onPress: () => update((x) => { x.settings.discHome = false; }) },
+  ]);
   return (
-    <Card>
-      <View style={{ flexDirection: 'row', gap: 10 }}>
-        <Icon name="shield-checkmark-outline" size={20} color={c.red} style={{ marginTop: 2 }} />
-        <View style={{ flex: 1, minWidth: 0, gap: 6 }}>
-          <Txt bold>{t('discTitle')}</Txt>
-          <Txt size={14} color={c.red} bold>{t('disc3')}</Txt>
-          <Txt size={14} muted>{t('disc4')}</Txt>
-        </View>
-      </View>
-      <Wrap>
-        <Btn ghost small title={t('viewDisclaimer')} onPress={() => openDisclaimer()} />
-        <Btn plain small title={t('hideDisc')} onPress={() => Alert.alert(t('hideDisc') + '?', t('discHiddenNote'), [
-          { text: t('cancel'), style: 'cancel' },
-          { text: t('hideDisc'), onPress: () => update((x) => { x.settings.discHome = false; }) },
-        ])} />
-      </Wrap>
-    </Card>
+    <View style={{ backgroundColor: c.redBg, borderRadius: 16, flexDirection: 'row', alignItems: 'center' }}>
+      <Pressable accessibilityRole="button" accessibilityLabel={t('viewDisclaimer')} onPress={() => openDisclaimer()}
+        style={({ pressed }) => ({ flex: 1, paddingVertical: 10, paddingStart: 12, flexDirection: 'row', alignItems: 'center', gap: 10, opacity: pressed ? 0.7 : 1 })}>
+        <Icon name="shield-checkmark-outline" size={20} color={c.red} />
+        <Txt size={13} bold color={c.red} numberOfLines={3} style={{ flex: 1 }}>{t('disc3')}</Txt>
+      </Pressable>
+      <Pressable accessibilityRole="button" accessibilityLabel={t('hideDisc')} onPress={hide} hitSlop={8} style={{ padding: 12 }}>
+        <Icon name="close" size={18} color={c.red} />
+      </Pressable>
+    </View>
   );
 }
 const Screen = ({ children }) => { const c = useTheme(); return <ScrollView style={{ backgroundColor: c.bg }} contentContainerStyle={styles.screen} keyboardShouldPersistTaps="handled" automaticallyAdjustKeyboardInsets keyboardDismissMode="interactive">{children}</ScrollView>; };
@@ -176,7 +175,8 @@ export function TodayScreen({ go }) {
       <View style={{ flexDirection: 'row', gap: 12 }}>
         <Card onPress={() => go('salik')} style={{ flex: 1, minWidth: 0 }} tone={balTone}>
           <Txt muted size={13}>{t('estBalance')}</Txt>
-          <Figure size={24} color={balTone === 'danger' ? c.red : balTone === 'warn' ? c.amber : c.fg}>{bal == null ? '—' : aed(bal)}</Figure>
+          {bal == null ? <Txt bold size={17}>{t('addBalance')} ›</Txt>
+            : <Figure size={24} color={balTone === 'danger' ? c.red : balTone === 'warn' ? c.amber : c.fg}>{aed(bal)}</Figure>}
           <Txt muted size={13}>{t('salik')}</Txt>
         </Card>
         <Card onPress={() => go('fines')} style={{ flex: 1, minWidth: 0 }}>
@@ -353,7 +353,7 @@ function CampaignHero({ c: camp, onMore }) {
       <Progress value={campaignProgress(camp)} color={urgent ? c.red : c.ok} />
       {!onMore && campaignNote(camp) ? <Txt muted>{campaignNote(camp)}</Txt> : null}
       <Btn icon="card-outline" title={t('payNow')} onPress={() => A.payCampaign(camp)} />
-      {onMore ? <Btn plain small title={t('finesTitle')} icon="chevron-forward" onPress={onMore} />
+      {onMore ? <Btn plain small title={t('finesTitle')} iconEnd="chevron-forward" onPress={onMore} />
         : <Btn plain small icon="open-outline" title={t('campSource')} onPress={() => Linking.openURL(camp.url)} />}
     </Card>
   );
@@ -448,11 +448,11 @@ function FineForm({ initial, onClose }) {
         <Txt muted size={13}>{t('issuer')}</Txt>
         <Wrap>{ISSUERS.map((k) => <Chip key={k} title={t('iss_' + k)} on={f.iss === k} onPress={() => set('iss')(k)} />)}</Wrap>
         <Field label={t('amount')} value={String(f.amount)} onChangeText={set('amount')} keyboardType="decimal-pad" />
-        <Field label={t('violDate')} value={f.date} onChangeText={set('date')} placeholder="2026-10-27" />
+        <DateField label={t('violDate')} value={f.date} onChange={set('date')} maxDate={new Date()} />
         <Field label={t('note')} value={f.note} onChangeText={set('note')} maxLength={80} />
         <List><ListRow title={t('severe')} right={<Toggle label={t('severe')} value={f.severe} onValueChange={set('severe')} />} /></List>
         <Field label={t('manualPct')} value={String(f.manualPct ?? '')} onChangeText={set('manualPct')} keyboardType="number-pad" />
-        <Field label={t('manualUntil')} value={f.manualUntil ?? ''} onChangeText={set('manualUntil')} placeholder="2026-12-31" />
+        <DateField label={t('manualUntil')} value={f.manualUntil ?? ''} onChange={set('manualUntil')} minDate={new Date()} placeholder="—" clearable />
         {err ? <Txt color={c.red}>{t(err)}</Txt> : null}
         <Btn title={t('saveFine')} onPress={save} />
         <Btn ghost title={t('cancel')} onPress={onClose} />
@@ -464,14 +464,14 @@ function FineForm({ initial, onClose }) {
 // ---------- Salik
 export function SalikScreen({ go }) {
   const s = useStore(); const c = useTheme();
-  const [val, setVal] = useState(''); const [err, setErr] = useState(false); const [adding, setAdding] = useState(false);
+  const [val, setVal] = useState(''); const [err, setErr] = useState(false); const [adding, setAdding] = useState(false); const [fixing, setFixing] = useState(false);
   const bal = s.balance;
   const list = s.crossings.slice().sort((a, b) => new Date(b.date) - new Date(a.date)).slice(0, 100);
   const balTone = bal == null ? null : bal < 0 ? 'danger' : bal < s.settings.low ? 'warn' : null;
   async function saveBal() {
     const v = Number(latinDigits(val.trim()));
     if (val.trim() === '' || !isFinite(v) || v < 0 || v > 5000) return setErr(true);
-    setErr(false); setVal(''); await update((x) => { x.balance = Math.round(v * 100) / 100; });
+    setErr(false); setVal(''); setFixing(false); await update((x) => { x.balance = Math.round(v * 100) / 100; });
   }
   async function addCrossing(g) {
     setAdding(false);
@@ -483,16 +483,29 @@ export function SalikScreen({ go }) {
     <Screen>
       <Title k="tab_salik" onSettings={() => go('settings')} />
       <LocationNotice extra="locSalikNote" />
-      <Card tone={balTone}>
-        <Txt muted size={13}>{t('estBalance')}</Txt>
-        <Figure size={42} color={balTone === 'danger' ? c.red : balTone === 'warn' ? c.amber : c.fg}>{bal == null ? '—' : aed(bal)}</Figure>
-        {balTone ? <Txt color={balTone === 'danger' ? c.red : c.amber}>{t(balTone === 'danger' ? 'balNeg' : 'balLow')}</Txt> : null}
-        <Btn icon="card-outline" title={t('topUp')} onPress={A.topUpSalik} />
-      </Card>
-      <Card>
-        <Field label={t('correctBal')} value={val} onChangeText={setVal} keyboardType="decimal-pad" placeholder="50.00" error={err ? t('balErr') : null} />
-        <Btn ghost title={t('save')} onPress={saveBal} />
-      </Card>
+      {bal == null ? (
+        <Card>
+          <Icon name="wallet-outline" size={28} />
+          <Txt bold size={20}>{t('salikAskT')}</Txt>
+          <Txt muted>{t('salikAskB')}</Txt>
+          <Field value={val} onChangeText={setVal} keyboardType="decimal-pad" placeholder="AED 50.00" error={err ? t('balErr') : null} onSubmitEditing={saveBal} />
+          <Btn title={t('save')} onPress={saveBal} />
+        </Card>
+      ) : (
+        <Card tone={balTone}>
+          <Txt muted size={13}>{t('estBalance')}</Txt>
+          <Figure size={42} color={balTone === 'danger' ? c.red : balTone === 'warn' ? c.amber : c.fg}>{aed(bal)}</Figure>
+          {balTone ? <Txt color={balTone === 'danger' ? c.red : c.amber}>{t(balTone === 'danger' ? 'balNeg' : 'balLow')}</Txt> : null}
+          <Btn icon="card-outline" title={t('topUp')} onPress={A.topUpSalik} />
+          {fixing ? <>
+            <Field label={t('correctBal')} value={val} onChangeText={setVal} keyboardType="decimal-pad" placeholder="50.00" error={err ? t('balErr') : null} autoFocus onSubmitEditing={saveBal} />
+            <View style={{ flexDirection: 'row', gap: 10 }}>
+              <Btn ghost title={t('cancel')} onPress={() => { setFixing(false); setErr(false); }} style={{ flex: 1 }} />
+              <Btn title={t('save')} onPress={saveBal} style={{ flex: 1 }} />
+            </View>
+          </> : <Btn plain small icon="create-outline" title={t('fixBal')} onPress={() => setFixing(true)} />}
+        </Card>
+      )}
       <Sec action={<Btn plain small icon={adding ? 'close' : 'add'} title={t('addCrossing')} onPress={() => setAdding(!adding)} />}>{t('crossings')}</Sec>
       {adding ? <Card><Wrap>{GATES.map((g) => <Chip key={g.id} title={g.name} onPress={() => addCrossing(g)} />)}</Wrap></Card> : null}
       {list.length === 0 ? <Card><Txt muted>{t('noCrossings')}</Txt></Card> : (
@@ -615,33 +628,67 @@ export function SettingsScreen({ go, onLang }) {
   );
 }
 
-// ---------- First run
+// ---------- First run: one thing per step (language, notifications, location, battery on Android, disclaimer)
 export function Onboarding({ onDone, onLang }) {
   const s = useStore(); const c = useTheme();
-  const [notif, setNotif] = useState(false); const [loc, setLoc] = useState({ foreground: false, background: false }); const [asked, setAsked] = useState(false);
-  const locDone = loc.background || (loc.foreground && loc.noBackground);
+  const steps = ['lang', 'notif', 'loc', ...(Platform.OS === 'android' ? ['batt'] : []), 'disc'];
+  const [i, setI] = useState(0);
+  const [loc, setLoc] = useState(null);
+  const step = steps[i];
+  const next = () => setI((n) => Math.min(n + 1, steps.length - 1));
+  const locDone = loc && (loc.background || (loc.foreground && loc.noBackground));
+  async function allowNotif() { await requestNotifPermission(); await setupCategories(); next(); }
+  async function allowLoc() {
+    const r = await requestLocation(); setLoc(r);
+    if (r.background) startTracking();
+    if (r.background || (r.foreground && r.noBackground)) next();
+  }
+  const Hero = ({ icon, tone, title, body }) => (
+    <View style={{ gap: 14, marginTop: 24 }}>
+      <View style={{ width: 64, height: 64, borderRadius: 20, backgroundColor: tone ? c[tone + 'Bg'] : c.chip, alignItems: 'center', justifyContent: 'center' }}>
+        <Icon name={icon} size={32} color={tone ? c[tone] : c.fg} /></View>
+      <Txt bold size={28} style={{ letterSpacing: -0.5 }}>{title}</Txt>
+      <Txt size={17} muted>{body}</Txt>
+    </View>
+  );
   return (
-    <Screen>
-      <Wrap>{LANGS.map(([k, n]) => <Chip key={k} title={n} on={(s.settings.lang || 'en') === k} onPress={() => onLang(k)} />)}</Wrap>
-      <View style={{ gap: 10, marginVertical: 12 }}>
-        <ParkingMark size={56} />
-        <Txt bold size={30} style={{ letterSpacing: -0.5 }}>{t('welcomeT')}</Txt>
-        <Txt size={17} muted>{t('welcomeB')}</Txt>
+    <View style={{ flex: 1, backgroundColor: c.bg }}>
+      <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6, paddingHorizontal: 16, paddingTop: 8 }}>
+        {i > 0 ? <Btn plain small icon="chevron-back" title={t('back')} onPress={() => setI(i - 1)} /> : null}
+        <View style={{ flex: 1, flexDirection: 'row', justifyContent: 'flex-end', gap: 6 }} accessibilityLabel={t('stepOf', { n: i + 1, total: steps.length })}>
+          {steps.map((k, n) => <View key={k} style={{ width: n === i ? 20 : 8, height: 8, borderRadius: 4, backgroundColor: n <= i ? c.fg : c.line }} />)}
+        </View>
       </View>
-      <List>
-        <ListRow icon="notifications-outline" iconTone="info" title={t('permNotifT')} sub={t('permNotifB')}
-          right={<Btn small ghost={notif} title={notif ? '✓' : t('allow')} disabled={notif} onPress={async () => { setNotif(await requestNotifPermission()); await setupCategories(); }} />} />
-        <ListRow icon="location-outline" iconTone="info" title={t('permLocT')} sub={t('permLocB')}
-          right={<Btn small ghost={locDone} title={locDone ? '✓' : t('allow')} disabled={locDone} onPress={async () => { const r = await requestLocation(); setLoc(r); setAsked(true); if (r.background) startTracking(); }} />} />
-        {Platform.OS === 'android' ? <ListRow icon="battery-half-outline" iconTone="info" title={t('battT')} sub={t('battB')}
-          right={<Btn small ghost title={t('openSettings')} onPress={openBatterySettings} />} /> : null}
-      </List>
-      {asked && !loc.foreground ? <Warn>{t('locOffB')}</Warn> : loc.foreground && !locDone ? <Warn>{t('locLimitedB')}</Warn> : null}
-      <Card>
-        <Txt bold>{t('discTitle')}</Txt>
-        <Txt size={14}>{t('disc1')}</Txt><Txt size={14}>{t('disc2')}</Txt><Txt size={14} bold color={c.red}>{t('disc3')}</Txt><Txt size={14}>{t('disc4')}</Txt>
-      </Card>
-      <Btn title={t('agreeStart')} onPress={onDone} />
-    </Screen>
+      <ScrollView contentContainerStyle={{ padding: 16, gap: 16, flexGrow: 1 }}>
+        {step === 'lang' ? <>
+          <View style={{ gap: 14, marginTop: 24 }}>
+            <ParkingMark size={64} />
+            <Txt bold size={30} style={{ letterSpacing: -0.5 }}>{t('welcomeT')}</Txt>
+            <Txt size={17} muted>{t('welcomeB')}</Txt>
+          </View>
+          <Txt muted size={13}>{t('language')}</Txt>
+          <Wrap>{LANGS.map(([k, n]) => <Chip key={k} title={n} on={(s.settings.lang || 'en') === k} onPress={() => onLang(k)} />)}</Wrap>
+        </> : null}
+        {step === 'notif' ? <Hero icon="notifications-outline" tone="info" title={t('permNotifT')} body={t('permNotifB')} /> : null}
+        {step === 'loc' ? <>
+          <Hero icon="location-outline" tone="info" title={t('permLocT')} body={t('permLocB')} />
+          {loc && !loc.foreground ? <Warn>{t('locOffB')}</Warn> : loc && !locDone ? <Warn>{t('locLimitedB')}</Warn> : null}
+        </> : null}
+        {step === 'batt' ? <Hero icon="battery-half-outline" tone="amber" title={t('battT')} body={t('battB')} /> : null}
+        {step === 'disc' ? <>
+          <Hero icon="shield-checkmark-outline" tone="red" title={t('discTitle')} body={t('disc1')} />
+          <Txt size={16}>{t('disc2')}</Txt>
+          <Card tone="danger"><Txt bold color={c.red}>{t('disc3')}</Txt></Card>
+          <Txt size={16}>{t('disc4')}</Txt>
+        </> : null}
+      </ScrollView>
+      <SafeAreaView edges={['bottom']} style={{ padding: 16, gap: 8 }}>
+        {step === 'lang' ? <Btn title={t('next')} onPress={next} /> : null}
+        {step === 'notif' ? <><Btn title={t('allow')} onPress={allowNotif} /><Btn plain title={t('notNow')} onPress={next} /></> : null}
+        {step === 'loc' ? <><Btn title={loc ? t('next') : t('allow')} onPress={loc ? next : allowLoc} />{loc ? null : <Btn plain title={t('notNow')} onPress={next} />}</> : null}
+        {step === 'batt' ? <><Btn title={t('openSettings')} onPress={async () => { await openBatterySettings(); next(); }} /><Btn plain title={t('notNow')} onPress={next} /></> : null}
+        {step === 'disc' ? <Btn title={t('agreeStart')} onPress={onDone} /> : null}
+      </SafeAreaView>
+    </View>
   );
 }

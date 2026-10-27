@@ -7,7 +7,7 @@ import { brandColor, brandMark } from './data';
 import { useStore } from './store';
 
 const LIGHT = {
-  dark: false, bg: '#f2f3f5', card: '#ffffff', field: '#f2f3f5', fg: '#0e1116', muted: '#646b76', line: '#e3e6ea',
+  dark: false, bg: '#f2f3f5', card: '#ffffff', field: '#e8eaee', fg: '#0e1116', muted: '#646b76', line: '#e3e6ea',
   primary: '#0e1116', onPrimary: '#ffffff', chip: '#e9ebee',
   ok: '#15803d', okBg: '#e6f4ea', amber: '#a15c07', amberBg: '#fcf1de', red: '#c62828', redBg: '#fdeaea', info: '#1d4ed8', infoBg: '#e8eefc',
   bubble: '#1a66cc',
@@ -70,7 +70,7 @@ export function Figure({ children, size = 34, color, style }) {
 }
 
 /** primary (filled), ghost (soft grey), plain (text only), danger. */
-export function Btn({ title, onPress, ghost, plain, danger, disabled, icon, small, style }) {
+export function Btn({ title, onPress, ghost, plain, danger, disabled, icon, iconEnd, small, style }) {
   const c = useTheme();
   const bg = danger ? c.red : plain ? 'transparent' : ghost ? c.chip : c.primary;
   const fg = danger ? '#ffffff' : plain || ghost ? c.fg : c.onPrimary;
@@ -81,6 +81,7 @@ export function Btn({ title, onPress, ghost, plain, danger, disabled, icon, smal
         transform: [{ scale: pressed && !disabled ? 0.98 : 1 }] }, style]}>
       {icon ? <Icon name={icon} size={small ? 16 : 18} color={fg} /> : null}
       <Text style={{ color: fg, fontWeight: '700', fontSize: small ? 14 : 16, textAlign: 'center' }}>{title}</Text>
+      {iconEnd ? <Icon name={iconEnd} size={small ? 16 : 18} color={fg} /> : null}
     </Pressable>
   );
 }
