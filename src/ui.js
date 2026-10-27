@@ -69,7 +69,7 @@ export function Sec({ children, action }) {
 export function Txt({ children, muted, color, bold, size = 15, style, ...rest }) {
   const af = useArabicFont();
   const c = useTheme();
-  return <Text {...rest} style={[{ color: color || (muted ? c.muted : c.fg), fontSize: muted ? Math.min(size, 14) : size, fontWeight: bold ? '700' : '400', lineHeight: Math.round(size * 1.4) }, af, style]}>{children}</Text>;
+  return <Text {...rest} style={[{ color: color || (muted ? c.muted : c.fg), fontSize: muted ? Math.min(size, 14) : size, fontWeight: bold ? '700' : '400', lineHeight: Math.round(size * (af ? 1.65 : 1.4)) }, af, style]}>{children}</Text>;
 }
 /** Big figures (balance, percent). Digits line up. */
 export function Figure({ children, size = 34, color, style }) {
