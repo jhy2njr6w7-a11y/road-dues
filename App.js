@@ -9,7 +9,7 @@ import { t, setLangCode, T } from './src/i18n';
 import { setupCategories, ACT, onNotificationResponse } from './src/notify';
 import { startTracking } from './src/location';
 import * as A from './src/actions';
-import { useTheme } from './src/ui';
+import { useTheme, applyAppearance } from './src/ui';
 import { emirateAt } from './src/data';
 import { refreshCampaigns, syncCampaignReminders } from './src/campaigns';
 import { TodayScreen, FinesScreen, SalikScreen, ParkingScreen, VehiclesScreen, SettingsScreen, Onboarding, DisclaimerSheet } from './src/screens';
@@ -41,6 +41,7 @@ export default function App() {
   // First load: state, language, background tracking
   useEffect(() => { (async () => {
     const st = await loadState();
+    applyAppearance(st.settings.appearance);
     const device = getLocales()?.[0]?.languageCode;
     const lang = st.settings.lang || (T[device] ? device : 'en');
     setLangCode(lang);
@@ -103,7 +104,7 @@ export default function App() {
 
   return (
     <SafeAreaProvider>
-      <StatusBar barStyle={c.bg === '#101817' ? 'light-content' : 'dark-content'} />
+      <StatusBar barStyle={c.dark ? 'light-content' : 'dark-content'} />
       <SafeAreaView edges={['top']} style={{ flex: 1, backgroundColor: c.bg, direction: rtl ? 'rtl' : 'ltr' }}>
         {!s.settings.onboarded ? (
           <Onboarding onLang={setLang} onDone={async () => { await update((x) => { x.settings.onboarded = true; }); startTracking(); }} />

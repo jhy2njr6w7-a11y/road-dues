@@ -4,7 +4,7 @@ import { useStore, update, newId } from './store';
 import { t, emName, hrsOf, fmtDate, fmtTime, LANGS, getLang } from './i18n';
 import { EMIRATES, EM_ORDER, ISSUERS, GATES, BRANDS, aed, buildSms, cleanCode, ZONE_RE, fineOffer, discounted, daysLeft,
   validateVehicle, parseDate, emirateAt, distanceM, crossingCharge, latinDigits, visibleCampaigns, campaignStatus, campaignEnd, PAY_URLS } from './data';
-import { Card, Sec, Txt, Btn, Chip, Field, Row, Wrap, Warn, Plate, BrandBadge, Bubble, useTheme, styles } from './ui';
+import { Card, Sec, Txt, Btn, Chip, Field, Row, Wrap, Warn, Plate, BrandBadge, Bubble, useTheme, styles, ACCENTS, applyAppearance } from './ui';
 import * as A from './actions';
 import { currentPosition, requestLocation, locationStatus, startTracking } from './location';
 import { requestNotifPermission, setupCategories } from './notify';
@@ -336,7 +336,7 @@ function FineForm({ initial, onClose }) {
         <Field label={t('amount')} value={String(f.amount)} onChangeText={set('amount')} keyboardType="decimal-pad" />
         <Field label={t('violDate')} value={f.date} onChangeText={set('date')} placeholder="2026-10-27" />
         <Field label={t('note')} value={f.note} onChangeText={set('note')} maxLength={80} />
-        <Row><Txt style={{ flex: 1 }}>{t('severe')}</Txt><Switch value={f.severe} onValueChange={set('severe')} /></Row>
+        <Row><Txt style={{ flex: 1 }}>{t('severe')}</Txt><Switch trackColor={{ true: c.sign }} value={f.severe} onValueChange={set('severe')} /></Row>
         <Field label={t('manualPct')} value={String(f.manualPct ?? '')} onChangeText={set('manualPct')} keyboardType="number-pad" />
         <Field label={t('manualUntil')} value={f.manualUntil ?? ''} onChangeText={set('manualUntil')} placeholder="2026-12-31" />
         {err ? <Txt color={c.red}>{t(err)}</Txt> : null}
@@ -438,12 +438,27 @@ export function SettingsScreen({ go, onLang }) {
       <Btn ghost title="←" onPress={() => go('today')} style={{ alignSelf: 'flex-start' }} />
       <Sec>{t('language')}</Sec>
       <Wrap>{LANGS.map(([k, n]) => <Chip key={k} title={n} on={(s.settings.lang || 'en') === k} onPress={() => onLang(k)} />)}</Wrap>
+      <Sec>{t('appearanceH')}</Sec>
+      <Wrap>{['auto', 'light', 'dark'].map((k) => <Chip key={k} title={t('look_' + k)} on={s.settings.appearance === k}
+        onPress={() => { applyAppearance(k); setSetting('appearance')(k); }} />)}</Wrap>
+      <Sec>{t('accentH')}</Sec>
+      <Card>
+        <Txt muted>{t('accentNote')}</Txt>
+        <Wrap>{ACCENTS.map((a) => { const on = s.settings.accent === a.key; const [fill] = c.dark ? a.dark : a.light;
+          return (
+            <Pressable key={a.key} accessibilityRole="button" accessibilityLabel={a.name} accessibilityState={{ selected: on }} onPress={() => setSetting('accent')(a.key)}
+              style={{ width: 92, alignItems: 'center', gap: 6, paddingVertical: 8, borderRadius: 12, borderWidth: 2, borderColor: on ? fill : 'transparent' }}>
+              <View style={{ width: 40, height: 40, borderRadius: 20, backgroundColor: fill, alignItems: 'center', justifyContent: 'center' }}>
+                {on ? <Text style={{ color: '#fff', fontWeight: '800', fontSize: 18 }}>✓</Text> : null}</View>
+              <Txt size={12} style={{ textAlign: 'center' }}>{a.name}</Txt>
+            </Pressable>); })}</Wrap>
+      </Card>
       <LocationNotice />
       <Sec>{t('remindersH')}</Sec>
       <Card>
-        <Row><Txt style={{ flex: 1 }}>{t('remParking')}</Txt><Switch value={s.settings.remParking} onValueChange={setSetting('remParking')} /></Row>
-        <Row><Txt style={{ flex: 1 }}>{t('remSalik')}</Txt><Switch value={s.settings.remSalik} onValueChange={setSetting('remSalik')} /></Row>
-        <Row><Txt style={{ flex: 1 }}>{t('remFines')}</Txt><Switch value={s.settings.remFines} onValueChange={setSetting('remFines')} /></Row>
+        <Row><Txt style={{ flex: 1 }}>{t('remParking')}</Txt><Switch trackColor={{ true: c.sign }} value={s.settings.remParking} onValueChange={setSetting('remParking')} /></Row>
+        <Row><Txt style={{ flex: 1 }}>{t('remSalik')}</Txt><Switch trackColor={{ true: c.sign }} value={s.settings.remSalik} onValueChange={setSetting('remSalik')} /></Row>
+        <Row><Txt style={{ flex: 1 }}>{t('remFines')}</Txt><Switch trackColor={{ true: c.sign }} value={s.settings.remFines} onValueChange={setSetting('remFines')} /></Row>
         <Row><Txt style={{ flex: 1 }}>{t('lowWarn', { n: s.settings.low })}</Txt>
           <Wrap><Chip title="−" onPress={() => setSetting('low')(Math.max(0, s.settings.low - 5))} /><Chip title="+" onPress={() => setSetting('low')(Math.min(200, s.settings.low + 5))} /></Wrap></Row>
       </Card>
@@ -461,8 +476,8 @@ export function SettingsScreen({ go, onLang }) {
       </Card>
       <Sec>{t('discH')}</Sec>
       <Card>
-        <Row><Txt style={{ flex: 1 }}>{t('setDiscHome')}</Txt><Switch value={s.settings.discHome} onValueChange={setSetting('discHome')} /></Row>
-        <Row><Txt style={{ flex: 1 }}>{t('setDiscAfterPay')}</Txt><Switch value={s.settings.discAfterPay} onValueChange={setSetting('discAfterPay')} /></Row>
+        <Row><Txt style={{ flex: 1 }}>{t('setDiscHome')}</Txt><Switch trackColor={{ true: c.sign }} value={s.settings.discHome} onValueChange={setSetting('discHome')} /></Row>
+        <Row><Txt style={{ flex: 1 }}>{t('setDiscAfterPay')}</Txt><Switch trackColor={{ true: c.sign }} value={s.settings.discAfterPay} onValueChange={setSetting('discAfterPay')} /></Row>
         <Txt muted>{t('discHiddenNote')}</Txt>
       </Card>
       <Sec>{t('aboutH')}</Sec>

@@ -1,6 +1,7 @@
-// Strings for fine discount campaigns and the reworked Fines tab.
+// Strings for fine discount campaigns, the reworked Fines tab and the appearance settings.
 export const CAMPAIGN_STRINGS = {
 en: {
+  appearanceH: 'Appearance', look_auto: 'Automatic', look_light: 'Light', look_dark: 'Dark', accentH: 'App colour (testing)', accentNote: 'Temporary: try the colours and pick one. This setting will be removed before release.',
   finesTitle: 'Fine discounts', campH: 'Discount campaigns', campTitle: '{p}% off {issuer} fines',
   campUntil: 'Until {date} · {n} days left', campLastDay: 'Ends today', campStarts: 'Starts {date}',
   campNone: "No discount campaigns right now. We'll notify you when one starts.",
@@ -14,6 +15,7 @@ en: {
   privacyShort: 'Your location, vehicles and fines stay on this phone. Road Dues has no servers. It only downloads a public list of fine discount campaigns, and sends nothing about you.',
 },
 ar: {
+  appearanceH: 'المظهر', look_auto: 'تلقائي', look_light: 'فاتح', look_dark: 'داكن', accentH: 'لون التطبيق (تجريبي)', accentNote: 'مؤقت: جرّب الألوان واختر واحدًا. سيُحذف هذا الإعداد قبل الإصدار.',
   finesTitle: 'تخفيضات المخالفات', campH: 'حملات التخفيض', campTitle: 'خصم {p}% على مخالفات {issuer}',
   campUntil: 'حتى {date} · متبقي {n} يوم', campLastDay: 'ينتهي اليوم', campStarts: 'يبدأ {date}',
   campNone: 'لا توجد حملات تخفيض حاليًا. سننبهك عند بدء أي حملة.',
@@ -27,6 +29,7 @@ ar: {
   privacyShort: 'موقعك ومركباتك ومخالفاتك تبقى على هذا الهاتف. لا يملك التطبيق خوادم، وكل ما يفعله هو تنزيل قائمة عامة بحملات تخفيض المخالفات، ولا يرسل أي بيانات عنك.',
 },
 hi: {
+  appearanceH: 'दिखावट', look_auto: 'स्वचालित', look_light: 'लाइट', look_dark: 'डार्क', accentH: 'ऐप का रंग (परीक्षण)', accentNote: 'अस्थायी: रंग आज़माएँ और एक चुनें। रिलीज़ से पहले यह सेटिंग हटा दी जाएगी।',
   finesTitle: 'जुर्माने पर छूट', campH: 'छूट अभियान', campTitle: '{issuer} के जुर्मानों पर {p}% छूट',
   campUntil: '{date} तक · {n} दिन बाकी', campLastDay: 'आज खत्म', campStarts: '{date} से शुरू',
   campNone: 'अभी कोई छूट अभियान नहीं है। कोई अभियान शुरू होने पर हम आपको बताएँगे।',
@@ -40,6 +43,7 @@ hi: {
   privacyShort: 'आपकी लोकेशन, वाहन और जुर्माने इसी फ़ोन पर रहते हैं। Road Dues का कोई सर्वर नहीं है। यह सिर्फ़ जुर्माना छूट अभियानों की एक सार्वजनिक सूची डाउनलोड करता है और आपके बारे में कुछ नहीं भेजता।',
 },
 zh: {
+  appearanceH: '外观', look_auto: '自动', look_light: '浅色', look_dark: '深色', accentH: '应用颜色（测试）', accentNote: '临时设置：试试这些颜色并选一个。正式发布前会删除此设置。',
   finesTitle: '罚单折扣', campH: '折扣活动', campTitle: '{issuer}罚单 {p}% 折扣',
   campUntil: '截至 {date} · 剩余 {n} 天', campLastDay: '今天结束', campStarts: '{date} 开始',
   campNone: '目前没有折扣活动。活动开始时我们会通知您。',
@@ -53,6 +57,7 @@ zh: {
   privacyShort: '您的位置、车辆和罚单仅保存在本手机上。Road Dues 没有服务器，只会下载一份公开的罚单折扣活动列表，不会发送任何关于您的信息。',
 },
 ru: {
+  appearanceH: 'Оформление', look_auto: 'Автоматически', look_light: 'Светлое', look_dark: 'Тёмное', accentH: 'Цвет приложения (тест)', accentNote: 'Временно: попробуйте цвета и выберите один. Перед выпуском эта настройка будет удалена.',
   finesTitle: 'Скидки на штрафы', campH: 'Акции со скидками', campTitle: 'Скидка {p}% на штрафы: {issuer}',
   campUntil: 'До {date} · осталось дней: {n}', campLastDay: 'Заканчивается сегодня', campStarts: 'Начало {date}',
   campNone: 'Сейчас акций со скидками нет. Мы сообщим, когда начнётся новая.',
