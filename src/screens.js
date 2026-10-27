@@ -4,13 +4,14 @@ import { useStore, update, newId } from './store';
 import { t, emName, hrsOf, fmtDate, fmtTime, LANGS, getLang, gateName } from './i18n';
 import { EMIRATES, EM_ORDER, ISSUERS, GATES, BRANDS, aed, buildSms, cleanCode, ZONE_RE, fineOffer, discounted, daysLeft,
   validateVehicle, parseDate, emirateAt, distanceM, crossingCharge, latinDigits, visibleCampaigns, campaignStatus, campaignEnd, PAY_URLS } from './data';
-import { Card, Sec, Txt, Figure, Btn, Chip, Segmented, Toggle, Pill, List, ListRow, Field, Wrap, Notice, Warn, Plate, PlateInput, BrandBadge, Bubble, Progress, Icon,
+import { Card, Sec, Txt, Figure, Btn, Chip, Segmented, Toggle, Pill, List, ListRow, Field, Wrap, Notice, Warn, BrandBadge, Bubble, Progress, Icon,
   useTheme, styles, applyAppearance } from './ui';
 import * as A from './actions';
 import { currentPosition, requestLocation, locationStatus, startTracking } from './location';
 import { requestNotifPermission, setupCategories, notifStatus } from './notify';
 import { openBatterySettings } from './battery';
 import { DateField } from './datefield';
+import { Plate, PlateInput } from './plates';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { openDisclaimer } from './disclaimer';
 import { refreshCampaigns, syncCampaignReminders } from './campaigns';
@@ -537,7 +538,7 @@ export function VehiclesScreen({ go }) {
             <BrandBadge brand={v.brand} size={52} />
             <View style={{ flex: 1, minWidth: 0, gap: 6 }}>
               <Txt bold size={17} numberOfLines={1}>{v.brand} {v.model}</Txt>
-              <Plate v={v} big />
+              <Plate v={v} width={240} />
               {v.color ? <Txt muted>{v.color}</Txt> : null}
             </View>
           </View>
@@ -558,7 +559,7 @@ export function VehiclesScreen({ go }) {
           <Txt muted size={13}>{t('plateCode')} · {t('plateNum')}</Txt>
           <PlateInput em={form.em} code={form.code} num={form.num} codeLabel={t('plateCode')} numLabel={t('plateNum')}
             onCode={(v) => setForm({ ...form, code: v })} onNum={(v) => setForm({ ...form, num: v })}
-            error={err === 'errCode' || err === 'errNum' ? t(err) : null} />
+            error={err === 'errCode' || err === 'errNum' ? t(err) : null} errorColor={c.red} />
           <Field label={t('colour')} value={form.color} onChangeText={(v) => setForm({ ...form, color: v })} maxLength={16} />
           {err && err !== 'errCode' && err !== 'errNum' ? <Txt color={c.red}>{t(err)}</Txt> : null}
           <Btn title={t('saveVeh')} onPress={save} />

@@ -35,7 +35,8 @@
       }],
       ["expo-notifications", { "color": "#1a56b8" }],
       "expo-localization",
-      "@react-native-community/datetimepicker"
+      "@react-native-community/datetimepicker",
+      "expo-font"
     ]
   }
 }

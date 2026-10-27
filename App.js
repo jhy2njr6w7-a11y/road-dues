@@ -11,6 +11,8 @@ import { startTracking } from './src/location';
 import * as A from './src/actions';
 import { useTheme, applyAppearance, Icon } from './src/ui';
 import { haptic } from './src/haptics';
+import { useFonts } from 'expo-font';
+import { PLATE_FONTS } from './src/plates';
 import { emirateAt } from './src/data';
 import { refreshCampaigns, syncCampaignReminders } from './src/campaigns';
 import { TodayScreen, FinesScreen, SalikScreen, ParkingScreen, VehiclesScreen, SettingsScreen, Onboarding, DisclaimerSheet } from './src/screens';
@@ -21,6 +23,7 @@ const TABS = [['today', 'home'], ['parking', 'car'], ['salik', 'swap-horizontal'
 export default function App() {
   const s = useStore();
   const c = useTheme();
+  useFonts(PLATE_FONTS); // number-plate fonts; plates use the system font until they load
   const [ready, setReady] = useState(isLoaded());
   const [tab, setTab] = useState('today');
   const [prefill, setPrefill] = useState(null);
