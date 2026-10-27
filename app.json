@@ -32,7 +32,8 @@
         "isAndroidForegroundServiceEnabled": true
       }],
       ["expo-notifications", { "color": "#0b6b56" }],
-      "expo-localization"
+      "expo-localization",
+      "@react-native-community/datetimepicker"
     ]
   }
 }
