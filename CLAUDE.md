@@ -22,6 +22,7 @@ A free iPhone + Android app (Expo / React Native, JavaScript) for UAE drivers:
 | Fine discounts | Abu Dhabi and Sharjah: 35% within 60 days, 25% within a year, not for serious violations. Dubai: no built-in rule; user enters the discount shown in the official app |
 | Parking detection | While moving (speed ≥ 6 m/s) every GPS update reschedules a notification 4 min ahead; when the car stops the updates stop and it fires. Skipped near saved free spots (150 m) and outside paid hours |
 | Disclaimer | Own wording (not copied from another app). Pinned card on home (hideable), ⓘ button on every screen, shown before fine/Salik payments and after parking SMS, with "Don't show this again"; Settings toggles bring it back. Red line = disc3 |
+| Fine campaigns | No fines API exists (UAE PASS is login only). Saif publishes police discount campaigns in `campaigns.json` (repo, served from raw.githubusercontent.com); the app downloads it on open / every ≤3 h from the GPS task and reminds on start day, 3 days before end, last day at 09:00. Only network request; sends no user data. Manual fine tracking kept as optional |
 | Location off | Notice on Today/Parking/Salik/Settings listing what won't work; "While Using" gets a softer notice asking for "Always" |
 | Validation | Plate code 1–3 A–Z/0–9 required; plate number 1–5 digits; Arabic-Indic digits converted; zone code `^\d{2,4}[A-Z]?$`; balance 0–5000 |
 
@@ -35,6 +36,7 @@ A free iPhone + Android app (Expo / React Native, JavaScript) for UAE drivers:
 | `src/actions.js` | Pay fine, top up, send SMS, mark paid, free spot (wraps payments in the disclaimer) |
 | `src/screens.js` | All screens, disclaimer sheet/card, location notice, onboarding |
 | `src/i18n.js`, `src/i18n-extra.js` | Translations; every key must exist in all 5 languages with the same `{placeholders}` |
+| `src/campaigns.js`, `src/campaign-source.js`, `campaigns.json` | Fine discount campaigns: download, reminders, the published list (web preview uses demo campaigns from `campaign-source.web.js`) |
 | `src/store.js` | AsyncStorage state shared by UI and background task |
 | `tests/logic.test.mjs` | `node tests/logic.test.mjs`: 900+ checks of rules and translations. Run after any rule or string change |
 | `privacy.html`, `STORE-LISTING.md`, `README.md` | Privacy policy, store text + App Review notes, Windows build guide |

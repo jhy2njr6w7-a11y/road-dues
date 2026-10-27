@@ -9,12 +9,13 @@ import { t, setLangCode, T } from './src/i18n';
 import { setupCategories, ACT, onNotificationResponse } from './src/notify';
 import { startTracking } from './src/location';
 import * as A from './src/actions';
-import { useTheme } from './src/ui';
+import { useTheme, applyAppearance, Icon } from './src/ui';
 import { emirateAt } from './src/data';
+import { refreshCampaigns, syncCampaignReminders } from './src/campaigns';
 import { TodayScreen, FinesScreen, SalikScreen, ParkingScreen, VehiclesScreen, SettingsScreen, Onboarding, DisclaimerSheet } from './src/screens';
 import { setDisclaimerOpener } from './src/disclaimer';
 
-const TABS = [['today', '◔'], ['fines', '⚠︎'], ['salik', '⇅'], ['parking', 'Ⓟ'], ['vehicles', '🚗']];
+const TABS = [['today', 'home'], ['parking', 'car'], ['salik', 'swap-horizontal'], ['fines', 'pricetags'], ['vehicles', 'car-sport']];
 
 export default function App() {
   const s = useStore();
@@ -33,12 +34,14 @@ export default function App() {
     await update((x) => { x.settings.lang = k; });
     await setupCategories();            // notification buttons in the new language
     A.syncFineReminders();
+    syncCampaignReminders();
     force((n) => n + 1);
   }, []);
 
   // First load: state, language, background tracking
   useEffect(() => { (async () => {
     const st = await loadState();
+    applyAppearance(st.settings.appearance);
     const device = getLocales()?.[0]?.languageCode;
     const lang = st.settings.lang || (T[device] ? device : 'en');
     setLangCode(lang);
@@ -46,6 +49,7 @@ export default function App() {
     await setupCategories();
     if (st.settings.onboarded) startTracking();
     setReady(true);
+    refreshCampaigns();
   })(); }, []);
 
   // When the app comes back to the foreground: pick up changes made by the background task,
@@ -54,6 +58,7 @@ export default function App() {
     const sub = AppState.addEventListener('change', async (st) => {
       if (st !== 'active') return;
       const x = await loadState();
+      refreshCampaigns();
       const d = x.drive;
       if (!x.parking && d.lastMoving && Date.now() - new Date(d.lastMoving).getTime() > 4 * 60e3 && Date.now() - new Date(d.lastMoving).getTime() < 3 * 3600e3 && d.handled !== d.lastMoving) {
         const em = emirateAt({ lat: d.lastLat, lng: d.lastLng });
@@ -79,6 +84,11 @@ export default function App() {
         else go('parking', { em: data.em, lat: data.lat, lng: data.lng, autoSend: action === ACT.open });
       } else if (data.kind === 'expiry') go('parking', { em: getState().parking?.em });
       else if (data.kind === 'salik') { if (action === ACT.topup) A.topUpSalik(); go('salik'); }
+      else if (data.kind === 'campaign') {
+        const camp = getState().campaigns.find((y) => y.id === data.campaignId);
+        if (camp && action === ACT.payCampaign) A.payCampaign(camp);
+        go('fines');
+      }
       else if (data.kind === 'fine') {
         const f = getState().fines.find((y) => y.id === data.fineId);
         if (f && !f.paid && action === ACT.payFine) A.payFine(f);
@@ -94,7 +104,7 @@ export default function App() {
 
   return (
     <SafeAreaProvider>
-      <StatusBar barStyle={c.bg === '#101817' ? 'light-content' : 'dark-content'} />
+      <StatusBar barStyle={c.dark ? 'light-content' : 'dark-content'} />
       <SafeAreaView edges={['top']} style={{ flex: 1, backgroundColor: c.bg, direction: rtl ? 'rtl' : 'ltr' }}>
         {!s.settings.onboarded ? (
           <Onboarding onLang={setLang} onDone={async () => { await update((x) => { x.settings.onboarded = true; }); startTracking(); }} />
@@ -108,14 +118,16 @@ export default function App() {
               {tab === 'vehicles' && <VehiclesScreen {...screenProps} />}
               {tab === 'settings' && <SettingsScreen {...screenProps} />}
             </View>
-            <SafeAreaView edges={['bottom']} style={{ flexDirection: 'row', borderTopWidth: 1, borderColor: c.line, backgroundColor: c.card }} accessibilityRole="tablist">
-              {TABS.map(([k, icon]) => (
-                <Pressable key={k} accessibilityRole="tab" accessibilityState={{ selected: tab === k }} onPress={() => go(k)}
-                  style={{ flex: 1, alignItems: 'center', paddingVertical: 8, minHeight: 52 }}>
-                  <Text style={{ fontSize: 18, color: tab === k ? c.signText : c.muted }}>{icon}</Text>
-                  <Text numberOfLines={1} style={{ fontSize: 12, fontWeight: '600', color: tab === k ? c.signText : c.muted }}>{t('tab_' + k)}</Text>
-                </Pressable>
-              ))}
+            <SafeAreaView edges={['bottom']} style={{ flexDirection: 'row', borderTopWidth: 0.5, borderColor: c.line, backgroundColor: c.card, paddingTop: 6 }} accessibilityRole="tablist">
+              {TABS.map(([k, icon]) => { const on = tab === k;
+                return (
+                  <Pressable key={k} accessibilityRole="tab" accessibilityState={{ selected: on }} onPress={() => go(k)}
+                    style={{ flex: 1, alignItems: 'center', gap: 2, paddingBottom: 6, minHeight: 50 }}>
+                    <View style={{ paddingHorizontal: 16, paddingVertical: 3, borderRadius: 14, backgroundColor: on ? c.chip : 'transparent' }}>
+                      <Icon name={on ? icon : icon + '-outline'} size={22} color={on ? c.fg : c.muted} />
+                    </View>
+                    <Text numberOfLines={1} style={{ fontSize: 11, fontWeight: on ? '700' : '500', color: on ? c.fg : c.muted }}>{t('tab_' + k)}</Text>
+                  </Pressable>); })}
             </SafeAreaView>
             <DisclaimerSheet visible={!!disc} afterPay={!!disc?.afterPay} onClose={() => { const next = disc?.onContinue; setDisc(null); if (next) setTimeout(next, 350); }} />
           </View>

@@ -112,6 +112,51 @@ export function daysLeft(end, now = new Date()) {
   return Math.max(0, Math.round((b - a) / 864e5));
 }
 
+// ---------- Fine discount campaigns (e.g. "50% off Sharjah fines until 31 Dec").
+// Published by hand in campaigns.json; the app downloads that list and reminds users.
+export const CAMPAIGN_ISSUERS = ['dxb', 'adp', 'shj', 'ajm', 'rak', 'fuj', 'uaq', 'moi', 'rta', 'parkin'];
+const httpsUrl = (u) => typeof u === 'string' && /^https:\/\/[^\s]+$/.test(u) && u.length <= 300;
+const dayStart = (s) => { const d = parseDate(s); d.setHours(0, 0, 0, 0); return d; };
+const dayEnd = (s) => { const d = parseDate(s); d.setHours(23, 59, 59, 999); return d; };
+const at9 = (d) => { const x = new Date(d); x.setHours(9, 0, 0, 0); return x; };
+
+/** Keeps only well-formed campaigns from the downloaded JSON; anything odd is dropped, never shown. */
+export function parseCampaigns(json) {
+  const list = Array.isArray(json?.campaigns) ? json.campaigns : [];
+  const out = [];
+  for (const c of list.slice(0, 50)) {
+    if (!c || typeof c.id !== 'string' || !/^[\w-]{1,40}$/.test(c.id)) continue;
+    if (!CAMPAIGN_ISSUERS.includes(c.iss)) continue;
+    if (!Number.isInteger(c.pct) || c.pct < 1 || c.pct > 100) continue;
+    if (!parseDate(c.start) || !parseDate(c.end) || dayEnd(c.end) < dayStart(c.start)) continue;
+    if (!httpsUrl(c.url) || (c.payUrl != null && !httpsUrl(c.payUrl))) continue;
+    const note = {};
+    if (c.note && typeof c.note === 'object') for (const [k, v] of Object.entries(c.note)) if (/^[a-z]{2}$/.test(k) && typeof v === 'string') note[k] = v.slice(0, 200);
+    out.push({ id: c.id, iss: c.iss, pct: c.pct, start: c.start, end: c.end, url: c.url, payUrl: c.payUrl || null, note });
+  }
+  return out;
+}
+export function campaignStatus(c, now = new Date()) {
+  if (now < dayStart(c.start)) return 'upcoming';
+  return now <= dayEnd(c.end) ? 'active' : 'ended';
+}
+export const campaignEnd = (c) => dayEnd(c.end);
+/** Active first (ending soonest first), then upcoming; ended ones are dropped. */
+export function visibleCampaigns(list, now = new Date()) {
+  const rank = { active: 0, upcoming: 1 };
+  return list.filter((c) => campaignStatus(c, now) !== 'ended')
+    .sort((a, b) => rank[campaignStatus(a, now)] - rank[campaignStatus(b, now)] || dayEnd(a.end) - dayEnd(b.end));
+}
+/** Reminder times at 09:00: the start day, 3 days before the end, and the last day. Only future ones. */
+export function campaignReminders(c, now = new Date()) {
+  const start = at9(dayStart(c.start)), last = at9(dayStart(c.end));
+  const three = new Date(last); three.setDate(three.getDate() - 3);
+  const out = [{ kind: 'start', at: start }];
+  if (three > start) out.push({ kind: '3d', at: three });
+  if (last > start) out.push({ kind: 'last', at: last });
+  return out.filter((r) => r.at > now);
+}
+
 // ---------- Input cleaning and validation
 export const latinDigits = (s) => String(s)
   .replace(/[٠-٩]/g, (d) => '٠١٢٣٤٥٦٧٨٩'.indexOf(d))
@@ -150,6 +195,6 @@ export const brandMark = (b) => (b === 'Other' ? '•' : b.split(/[\s-]/).map((w
 // Official channels (the app never handles card details)
 export const PAY_URLS = {
   dxb: 'https://www.dubaipolice.gov.ae', rta: 'https://www.rta.ae', parkin: 'https://www.parkin.ae',
-  adp: 'https://www.tamm.abudhabi', shj: 'https://www.shjpolice.gov.ae', other: 'https://u.ae', salik: 'https://www.salik.ae',
+  adp: 'https://www.tamm.abudhabi', shj: 'https://www.shjpolice.gov.ae', moi: 'https://www.moi.gov.ae', other: 'https://u.ae', salik: 'https://www.salik.ae',
 };
 export const aed = (n) => 'AED ' + (Math.round(n * 100) / 100).toFixed(2);

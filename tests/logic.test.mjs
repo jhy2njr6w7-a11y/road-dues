@@ -2,7 +2,7 @@
 import fs from 'node:fs'; import path from 'node:path'; import os from 'node:os'; import assert from 'node:assert/strict';
 const tmp = fs.mkdtempSync(path.join(os.tmpdir(), 'rd-'));
 fs.writeFileSync(path.join(tmp, 'package.json'), '{"type":"module"}');
-for (const f of ['data.js', 'i18n.js', 'i18n-extra.js']) fs.writeFileSync(path.join(tmp, f), fs.readFileSync(new URL('../src/' + f, import.meta.url), 'utf8').replace("from './i18n-extra'", "from './i18n-extra.js'"));
+for (const f of ['data.js', 'i18n.js', 'i18n-extra.js', 'i18n-campaigns.js']) fs.writeFileSync(path.join(tmp, f), fs.readFileSync(new URL('../src/' + f, import.meta.url), 'utf8').replace(/from '\.\/(i18n-\w+)'/g, "from './$1.js'"));
 const D = await import(path.join(tmp, 'data.js')); const I = await import(path.join(tmp, 'i18n.js'));
 let n = 0; const ok = (name, fn) => { fn(); n++; };
 
@@ -59,6 +59,28 @@ ok('Vehicle injection', () => assert.equal(D.validateVehicle({ em: 'DXB', code: 
 ok('Vehicle duplicate', () => assert.equal(D.validateVehicle({ em: 'DXB', code: 'A', num: '1' }, [{ em: 'DXB', code: 'A', num: '1' }]).error, 'errDup'));
 ok('Date parse', () => assert.equal(D.parseDate('2026-02-30'), null));
 ok('Date parse ok', () => assert.ok(D.parseDate('2026-10-27')));
+
+// Fine discount campaigns
+const camp = { id: 'shj-50', iss: 'shj', pct: 50, start: '2026-11-01', end: '2026-11-30', url: 'https://www.shjpolice.gov.ae/x' };
+ok('Campaign parse ok', () => assert.equal(D.parseCampaigns({ campaigns: [camp] }).length, 1));
+ok('Campaign parse junk', () => assert.deepEqual(D.parseCampaigns(null), []));
+ok('Campaign bad issuer', () => assert.equal(D.parseCampaigns({ campaigns: [{ ...camp, iss: 'xx' }] }).length, 0));
+ok('Campaign bad pct', () => assert.equal(D.parseCampaigns({ campaigns: [{ ...camp, pct: 150 }] }).length, 0));
+ok('Campaign http url', () => assert.equal(D.parseCampaigns({ campaigns: [{ ...camp, url: 'http://x.ae' }] }).length, 0));
+ok('Campaign js url', () => assert.equal(D.parseCampaigns({ campaigns: [{ ...camp, payUrl: 'javascript:alert(1)' }] }).length, 0));
+ok('Campaign end before start', () => assert.equal(D.parseCampaigns({ campaigns: [{ ...camp, end: '2026-10-01' }] }).length, 0));
+ok('Campaign bad date', () => assert.equal(D.parseCampaigns({ campaigns: [{ ...camp, start: '1 Nov' }] }).length, 0));
+ok('Campaign note kept', () => assert.equal(D.parseCampaigns({ campaigns: [{ ...camp, note: { en: 'Not for serious violations', ar: 1 } }] })[0].note.ar, undefined));
+ok('Campaign upcoming', () => assert.equal(D.campaignStatus(camp, new Date(2026, 9, 31, 23)), 'upcoming'));
+ok('Campaign active first day', () => assert.equal(D.campaignStatus(camp, new Date(2026, 10, 1, 0, 1)), 'active'));
+ok('Campaign active last evening', () => assert.equal(D.campaignStatus(camp, new Date(2026, 10, 30, 23, 30)), 'active'));
+ok('Campaign ended', () => assert.equal(D.campaignStatus(camp, new Date(2026, 11, 1, 0, 1)), 'ended'));
+ok('Campaign reminders', () => assert.deepEqual(D.campaignReminders(camp, new Date(2026, 9, 1)).map((r) => r.kind + r.at.getDate()), ['start1', '3d27', 'last30']));
+ok('Campaign reminders mid-way', () => assert.deepEqual(D.campaignReminders(camp, new Date(2026, 10, 28)).map((r) => r.kind), ['last']));
+ok('Campaign one day', () => assert.deepEqual(D.campaignReminders({ ...camp, end: '2026-11-01' }, new Date(2026, 9, 1)).map((r) => r.kind), ['start']));
+ok('Campaign order', () => assert.deepEqual(D.visibleCampaigns([camp, { ...camp, id: 'b', end: '2026-11-10' }, { ...camp, id: 'old', end: '2026-10-02', start: '2026-10-01' }, { ...camp, id: 'up', start: '2026-12-01', end: '2026-12-05' }], new Date(2026, 10, 5)).map((c) => c.id), ['b', 'shj-50', 'up']));
+const shipped = JSON.parse(fs.readFileSync(new URL('../campaigns.json', import.meta.url), 'utf8'));
+ok('campaigns.json is valid', () => assert.equal(D.parseCampaigns(shipped).length, shipped.campaigns.length));
 
 // Translations: every language has every key, with the same {placeholders}
 const keys = Object.keys(I.T.en);

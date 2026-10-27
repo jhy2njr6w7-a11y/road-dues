@@ -2,10 +2,10 @@
 import * as Notifications from 'expo-notifications';
 import { Platform } from 'react-native';
 import { t, emName, fmtDate } from './i18n';
-import { aed, discounted, fineOffer } from './data';
+import { aed, discounted, fineOffer, campaignReminders } from './data';
 
-export const CAT = { parking: 'parking', parkingZone: 'parking-zone', salik: 'salik', fine: 'fine', expiry: 'expiry' };
-export const ACT = { open: 'open', zone: 'zone', paid: 'paid', free: 'free', topup: 'topup', payFine: 'payfine', extend: 'extend' };
+export const CAT = { parking: 'parking', parkingZone: 'parking-zone', salik: 'salik', fine: 'fine', expiry: 'expiry', campaign: 'campaign' };
+export const ACT = { open: 'open', zone: 'zone', paid: 'paid', free: 'free', topup: 'topup', payFine: 'payfine', extend: 'extend', payCampaign: 'paycampaign' };
 
 Notifications.setNotificationHandler({
   handleNotification: async () => ({ shouldShowBanner: true, shouldShowList: true, shouldPlaySound: true, shouldSetBadge: false }),
@@ -26,6 +26,7 @@ export async function setupCategories() {
   ]);
   await Notifications.setNotificationCategoryAsync(CAT.salik, [{ identifier: ACT.topup, buttonTitle: t('topUpSalik'), options: fg }]);
   await Notifications.setNotificationCategoryAsync(CAT.fine, [{ identifier: ACT.payFine, buttonTitle: t('payNow'), options: fg }]);
+  await Notifications.setNotificationCategoryAsync(CAT.campaign, [{ identifier: ACT.payCampaign, buttonTitle: t('payNow'), options: fg }]);
   await Notifications.setNotificationCategoryAsync(CAT.expiry, [{ identifier: ACT.extend, buttonTitle: t('extend'), options: fg }]);
   if (Platform.OS === 'android') {
     await Notifications.setNotificationChannelAsync('reminders', { name: 'Reminders', importance: Notifications.AndroidImportance.HIGH });
@@ -96,6 +97,26 @@ export async function rescheduleFineReminders(fines, enabled) {
       await Notifications.scheduleNotificationAsync({ identifier: `fine-${f.id}-${before}`, content: content(title, body, CAT.fine, { kind: 'fine', fineId: f.id }), trigger: at(d) });
     }
   }
+}
+
+// ---------- Fine discount campaigns: on the start day, 3 days before the end and on the last day, at 09:00
+function campaignContent(c, kind) {
+  const v = { p: c.pct, issuer: t('iss_' + c.iss), date: fmtDate(c.end) };
+  const [title, body] = kind === '3d' ? [t('campNotif3T', v), t('campNotif3B', v)]
+    : kind === 'last' ? [t('campNotifLastT', v), t('campNotifLastB', v)] : [t('campTitle', v), t('campNotifB', v)];
+  return content(title, body, CAT.campaign, { kind: 'campaign', campaignId: c.id });
+}
+export async function rescheduleCampaignReminders(campaigns, enabled) {
+  const all = await Notifications.getAllScheduledNotificationsAsync();
+  await Promise.all(all.filter((n) => n.identifier.startsWith('camp-')).map((n) => Notifications.cancelScheduledNotificationAsync(n.identifier)));
+  if (!enabled) return;
+  for (const c of campaigns) for (const r of campaignReminders(c)) {
+    await Notifications.scheduleNotificationAsync({ identifier: `camp-${c.id}-${r.kind}`, content: campaignContent(c, r.kind), trigger: at(r.at) });
+  }
+}
+/** A campaign that is already running when the app first hears about it. */
+export async function notifyCampaignNow(c) {
+  await Notifications.scheduleNotificationAsync({ identifier: `camp-${c.id}-new`, content: campaignContent(c, 'start'), trigger: { channelId: 'reminders' } });
 }
 
 /** Calls handle for the tap that launched the app (once) and for every later tap. Returns an unsubscribe function. */
