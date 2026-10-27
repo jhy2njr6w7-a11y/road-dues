@@ -8,7 +8,7 @@ export const CAT = { parking: 'parking', parkingZone: 'parking-zone', salik: 'sa
 export const ACT = { open: 'open', zone: 'zone', paid: 'paid', free: 'free', topup: 'topup', payFine: 'payfine', extend: 'extend' };
 
 Notifications.setNotificationHandler({
-  handleNotification: async () => ({ shouldShowBanner: true, shouldShowList: true, shouldPlaySound: true, shouldSetBadge: false, shouldShowAlert: true }),
+  handleNotification: async () => ({ shouldShowBanner: true, shouldShowList: true, shouldPlaySound: true, shouldSetBadge: false }),
 });
 
 /** Categories hold the action buttons. Re-register after a language change so button labels are translated. */
@@ -40,7 +40,7 @@ export async function requestNotifPermission() {
 }
 
 function content(title, body, categoryIdentifier, data = {}) {
-  return { title, body, categoryIdentifier, data, sound: true, interruptionLevel: 'timeSensitive', ...(Platform.OS === 'android' ? { channelId: 'reminders' } : {}) };
+  return { title, body, categoryIdentifier, data, sound: true, interruptionLevel: 'timeSensitive' };
 }
 const at = (date) => ({ type: Notifications.SchedulableTriggerInputTypes.DATE, date: new Date(date), channelId: 'reminders' });
 
@@ -77,7 +77,7 @@ export async function notifySalik({ gate, charge, balance, low }) {
   if (balance < 0) { title = t('salikNegT'); body = t('salikNegB', v); }
   else if (balance < low) { title = t('salikLowT'); body = t('salikLowB', v); }
   else { title = t('salikGateT', v); body = t('salikGateB', v); }
-  await Notifications.scheduleNotificationAsync({ identifier: 'salik-balance', content: content(title, body, balance < low ? CAT.salik : undefined, { kind: 'salik' }), trigger: null });
+  await Notifications.scheduleNotificationAsync({ identifier: 'salik-balance', content: content(title, body, balance < low ? CAT.salik : undefined, { kind: 'salik' }), trigger: { channelId: 'reminders' } });
 }
 
 // ---------- Fine discounts: 7 days and 1 day before the discount ends, at 09:00
@@ -96,4 +96,13 @@ export async function rescheduleFineReminders(fines, enabled) {
       await Notifications.scheduleNotificationAsync({ identifier: `fine-${f.id}-${before}`, content: content(title, body, CAT.fine, { kind: 'fine', fineId: f.id }), trigger: at(d) });
     }
   }
+}
+
+/** Calls handle for the tap that launched the app (once) and for every later tap. Returns an unsubscribe function. */
+export function onNotificationResponse(handle) {
+  // The launch response survives until cleared; clear it so a restart doesn't repeat the action.
+  const last = Notifications.getLastNotificationResponse();
+  if (last) { Notifications.clearLastNotificationResponse(); handle(last); }
+  const sub = Notifications.addNotificationResponseReceivedListener(handle);
+  return () => sub.remove();
 }

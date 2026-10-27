@@ -36,14 +36,25 @@ Install **Expo Go** on an Android phone and scan the QR code. Screens, vehicles,
 
 On iPhone, Expo Go is limited for background location. Use step 4 instead.
 
+## 3b. Click through it in a browser (web preview)
+```
+npm install
+npx expo start --web
+```
+Opens the app at http://localhost:8081. Screens, vehicles, fines, Salik balance, languages and the disclaimer all work. The phone-only parts are switched off on web: no notifications, no background GPS, and "Send SMS" just says the device can't send SMS (the message text is still shown). Location permission shows as allowed; the Parking screen uses the browser's location if you allow it.
+
+To get static files you can host anywhere (Netlify Drop, GitHub Pages): `npm run build:web`, then upload the `dist` folder.
+
 ## 4. Real builds in Expo's cloud
 ```
 npm install -g eas-cli
 eas login
-eas build:configure
+eas init
 eas build --platform android --profile preview
 ```
-You get a link to an `.apk` file. Open it on an Android phone to install.
+`eas init` links the folder to your Expo account (it adds `extra.eas.projectId` to `app.json`; commit that). `eas.json` is already set up, so you don't need `eas build:configure`. The first Android build asks to create a signing keystore: answer Yes and let Expo keep it.
+
+You get a link to an `.apk` file. Open it on an Android phone to install. After installing, allow notifications, and for location choose "Allow all the time" (Android shows it on a separate settings page).
 
 For iPhone:
 ```

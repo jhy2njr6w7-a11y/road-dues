@@ -77,21 +77,23 @@ export async function requestLocation() {
 }
 
 export async function startTracking() {
-  const { background } = await locationStatus();
-  if (!background) return false;
-  const running = await Location.hasStartedLocationUpdatesAsync(TASK).catch(() => false);
-  if (running) return true;
-  await Location.startLocationUpdatesAsync(TASK, {
-    accuracy: Location.Accuracy.High,
-    activityType: Location.ActivityType.AutomotiveNavigation,
-    distanceInterval: 30,
-    pausesUpdatesAutomatically: true,     // iOS pauses GPS when the phone is still: saves battery
-    showsBackgroundLocationIndicator: false,
-    foregroundService: {                  // Android requires a visible notification while tracking
-      notificationTitle: 'Road Dues',
-      notificationBody: 'Watching for parking and Salik gates',
-    },
-  });
+  try {
+    const { background } = await locationStatus();
+    if (!background) return false;
+    const running = await Location.hasStartedLocationUpdatesAsync(TASK).catch(() => false);
+    if (running) return true;
+    await Location.startLocationUpdatesAsync(TASK, {
+      accuracy: Location.Accuracy.High,
+      activityType: Location.ActivityType.AutomotiveNavigation,
+      distanceInterval: 30,
+      pausesUpdatesAutomatically: true,     // iOS pauses GPS when the phone is still: saves battery
+      showsBackgroundLocationIndicator: false,
+      foregroundService: {                  // Android requires a visible notification while tracking
+        notificationTitle: 'Road Dues',
+        notificationBody: 'Watching for parking and Salik gates',
+      },
+    });
+  } catch (e) { return false; } // e.g. Expo Go, or Android refusing to start the foreground service
   return true;
 }
 

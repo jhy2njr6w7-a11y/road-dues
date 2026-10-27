@@ -23,6 +23,7 @@
       "adaptiveIcon": { "foregroundImage": "./assets/adaptive-icon.png", "backgroundColor": "#0b6b56" },
       "permissions": ["ACCESS_COARSE_LOCATION", "ACCESS_FINE_LOCATION", "ACCESS_BACKGROUND_LOCATION", "FOREGROUND_SERVICE", "FOREGROUND_SERVICE_LOCATION", "POST_NOTIFICATIONS"]
     },
+    "web": { "bundler": "metro", "output": "single", "favicon": "./assets/icon.png" },
     "plugins": [
       ["expo-location", {
         "locationAlwaysAndWhenInUsePermission": "Allow Always so Road Dues can remind you to pay for parking and warn you about Salik balance even when the app is closed. Your location never leaves your phone.",
