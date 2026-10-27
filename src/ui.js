@@ -1,86 +1,161 @@
-// Shared look: UAE road-sign green, light and dark themes, components used by every screen.
+// Shared look. Neutral ink-and-paper surfaces; colour is kept for meaning (paid, due, overdue, info),
+// so whatever needs attention stands out. Light and dark themes; RTL-aware building blocks.
 import React from 'react';
 import { View, Text, Pressable, TextInput, StyleSheet, useColorScheme, Appearance } from 'react-native';
+import Ionicons from '@expo/vector-icons/Ionicons';
 import { brandColor, brandMark } from './data';
 import { useStore } from './store';
 
-const LIGHT = { dark: false, bg: '#f4f7f6', card: '#ffffff', fg: '#13201e', muted: '#5d6d69', line: '#dbe3e0', sign: '#0b6b56', signText: '#0b6b56', signFg: '#ffffff', amber: '#8f5300', red: '#b3261e', ok: '#1d7a4b', chip: '#e6eeeb', bubble: '#1a66cc' };
-const DARK = { dark: true, bg: '#101817', card: '#18221f', fg: '#e3ebe9', muted: '#93a39f', line: '#26332f', sign: '#0f6e5a', signText: '#3fb896', signFg: '#ffffff', amber: '#e6a33c', red: '#f07167', ok: '#4cc38a', chip: '#1f2b28', bubble: '#1a66cc' };
-
-// Accent colours to try out (temporary: Settings ▸ App colour). sign = button fill (white text on it),
-// signText = accent text on the page. Once one is chosen, put it in LIGHT/DARK and remove this list.
-export const ACCENTS = [
-  { key: 'green', name: 'Road-sign green', light: ['#0b6b56', '#0b6b56'], dark: ['#0f6e5a', '#3fb896'] },
-  { key: 'teal', name: 'Gulf teal', light: ['#0e6f7d', '#0e6f7d'], dark: ['#127a89', '#5cc7d6'] },
-  { key: 'blue', name: 'Blue', light: ['#1f5fbf', '#1f5fbf'], dark: ['#2a6fd6', '#7fb0ff'] },
-  { key: 'navy', name: 'Navy', light: ['#1d3557', '#1d3557'], dark: ['#2c4f80', '#9db8e0'] },
-  { key: 'purple', name: 'Purple', light: ['#5b3fb5', '#5b3fb5'], dark: ['#6a4fc8', '#b4a2ff'] },
-  { key: 'maroon', name: 'Maroon', light: ['#8c1d2c', '#8c1d2c'], dark: ['#a32638', '#ff8a99'] },
-  { key: 'orange', name: 'Burnt orange', light: ['#b04a12', '#b04a12'], dark: ['#c0561a', '#ff9e66'] },
-  { key: 'gold', name: 'Desert gold', light: ['#8a5a00', '#8a5a00'], dark: ['#9a6a10', '#e6b34d'] },
-  { key: 'graphite', name: 'Graphite', light: ['#2f3a40', '#2f3a40'], dark: ['#46545b', '#b9c6cc'] },
-];
-
-const cache = {};
-function themeFor(dark, accentKey) {
-  const id = (dark ? 'd-' : 'l-') + accentKey;
-  if (!cache[id]) {
-    const a = ACCENTS.find((x) => x.key === accentKey) || ACCENTS[0];
-    const [sign, signText] = dark ? a.dark : a.light;
-    cache[id] = { ...(dark ? DARK : LIGHT), sign, signText };
-  }
-  return cache[id];
-}
+const LIGHT = {
+  dark: false, bg: '#f2f3f5', card: '#ffffff', field: '#f2f3f5', fg: '#0e1116', muted: '#646b76', line: '#e3e6ea',
+  primary: '#0e1116', onPrimary: '#ffffff', chip: '#e9ebee',
+  ok: '#15803d', okBg: '#e6f4ea', amber: '#a15c07', amberBg: '#fcf1de', red: '#c62828', redBg: '#fdeaea', info: '#1d4ed8', infoBg: '#e8eefc',
+  bubble: '#1a66cc',
+};
+const DARK = {
+  dark: true, bg: '#0b0d10', card: '#16191d', field: '#1f2328', fg: '#f2f4f7', muted: '#9aa1ab', line: '#272c32',
+  primary: '#f2f4f7', onPrimary: '#0b0d10', chip: '#22262c',
+  ok: '#4ade80', okBg: '#11261a', amber: '#fbbf24', amberBg: '#2a2110', red: '#f87171', redBg: '#2c1616', info: '#93b4ff', infoBg: '#152038',
+  bubble: '#1a66cc',
+};
+// Older screens refer to the accent as sign/signText; keep those names pointing at the ink colour.
+LIGHT.sign = LIGHT.primary; LIGHT.signText = LIGHT.fg; DARK.sign = DARK.primary; DARK.signText = DARK.fg;
 
 /** Settings ▸ Appearance: 'auto' follows the phone, or force 'light' / 'dark'. */
 export function useTheme() {
   const system = useColorScheme();
-  const { appearance = 'auto', accent = 'green' } = useStore().settings;
-  return themeFor((appearance === 'auto' ? system : appearance) === 'dark', accent);
+  const { appearance = 'auto' } = useStore().settings;
+  return (appearance === 'auto' ? system : appearance) === 'dark' ? DARK : LIGHT;
 }
-/** Also switches native parts (alerts, keyboard, date pickers) to the chosen appearance. */
+/** Also switches native parts (alerts, keyboard) to the chosen appearance. */
 export function applyAppearance(mode) {
   if (typeof Appearance.setColorScheme === 'function') Appearance.setColorScheme(mode === 'light' || mode === 'dark' ? mode : 'unspecified');
 }
+export const useRtl = () => useStore().settings.lang === 'ar';
 
-export function Card({ children, style }) {
-  const c = useTheme();
-  return <View style={[{ backgroundColor: c.card, borderRadius: 14, padding: 14, gap: 10 }, style]}>{children}</View>;
+const TONES = { ok: ['ok', 'okBg'], warn: ['amber', 'amberBg'], danger: ['red', 'redBg'], info: ['info', 'infoBg'] };
+const tone = (c, k) => (TONES[k] ? { fg: c[TONES[k][0]], bg: c[TONES[k][1]] } : { fg: c.fg, bg: c.chip });
+
+/** Ionicons; arrows and chevrons mirror in Arabic. */
+export function Icon({ name, size = 20, color, style }) {
+  const c = useTheme(); const rtl = useRtl();
+  const flip = rtl && /chevron|arrow|open-outline/.test(name);
+  return <Ionicons name={name} size={size} color={color || c.fg} style={[flip ? { transform: [{ scaleX: -1 }] } : null, style]} />;
 }
-export function Sec({ children }) {
+
+export function Card({ children, style, tone: tn, onPress }) {
   const c = useTheme();
-  return <Text style={{ fontSize: 13, fontWeight: '600', color: c.muted, marginTop: 6, marginHorizontal: 4, textTransform: 'uppercase' }}>{children}</Text>;
+  const box = [{ backgroundColor: tn ? tone(c, tn).bg : c.card, borderRadius: 20, padding: 16, gap: 12 }, style];
+  if (!onPress) return <View style={box}>{children}</View>;
+  return <Pressable accessibilityRole="button" onPress={onPress} style={({ pressed }) => [box, pressed && { opacity: 0.85 }]}>{children}</Pressable>;
+}
+/** Section heading between cards. `action` is an optional plain button on the other side. */
+export function Sec({ children, action }) {
+  const c = useTheme();
+  return (
+    <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginTop: 10, paddingHorizontal: 4 }}>
+      <Text accessibilityRole="header" style={{ fontSize: 17, fontWeight: '700', color: c.fg, flexShrink: 1 }}>{children}</Text>
+      {action || null}
+    </View>
+  );
 }
 export function Txt({ children, muted, color, bold, size = 15, style, ...rest }) {
   const c = useTheme();
-  return <Text {...rest} style={[{ color: color || (muted ? c.muted : c.fg), fontSize: muted ? Math.min(size, 14) : size, fontWeight: bold ? '700' : '400' }, style]}>{children}</Text>;
+  return <Text {...rest} style={[{ color: color || (muted ? c.muted : c.fg), fontSize: muted ? Math.min(size, 14) : size, fontWeight: bold ? '700' : '400', lineHeight: Math.round(size * 1.4) }, style]}>{children}</Text>;
 }
-export function Btn({ title, onPress, ghost, danger, disabled, style }) {
+/** Big figures (balance, percent). Digits line up. */
+export function Figure({ children, size = 34, color, style }) {
   const c = useTheme();
-  const bg = danger ? c.red : ghost ? c.chip : c.sign;
+  return <Text style={[{ color: color || c.fg, fontSize: size, fontWeight: '800', letterSpacing: -0.5, fontVariant: ['tabular-nums'] }, style]}>{children}</Text>;
+}
+
+/** primary (filled), ghost (soft grey), plain (text only), danger. */
+export function Btn({ title, onPress, ghost, plain, danger, disabled, icon, small, style }) {
+  const c = useTheme();
+  const bg = danger ? c.red : plain ? 'transparent' : ghost ? c.chip : c.primary;
+  const fg = danger ? '#ffffff' : plain || ghost ? c.fg : c.onPrimary;
   return (
-    <Pressable accessibilityRole="button" disabled={disabled} onPress={onPress}
-      style={({ pressed }) => [{ minHeight: 46, paddingHorizontal: 16, borderRadius: 12, backgroundColor: bg, justifyContent: 'center', alignItems: 'center', opacity: disabled ? 0.45 : pressed ? 0.8 : 1 }, style]}>
-      <Text style={{ color: ghost ? c.fg : '#fff', fontWeight: '700', fontSize: 15, textAlign: 'center' }}>{title}</Text>
+    <Pressable accessibilityRole="button" accessibilityState={{ disabled: !!disabled }} disabled={disabled} onPress={onPress} hitSlop={plain ? 8 : 0}
+      style={({ pressed }) => [{ minHeight: small ? 40 : 50, paddingHorizontal: plain ? 4 : small ? 14 : 18, borderRadius: 14, backgroundColor: bg,
+        flexDirection: 'row', gap: 8, justifyContent: 'center', alignItems: 'center', opacity: disabled ? 0.4 : pressed ? 0.75 : 1,
+        transform: [{ scale: pressed && !disabled ? 0.98 : 1 }] }, style]}>
+      {icon ? <Icon name={icon} size={small ? 16 : 18} color={fg} /> : null}
+      <Text style={{ color: fg, fontWeight: '700', fontSize: small ? 14 : 16, textAlign: 'center' }}>{title}</Text>
     </Pressable>
   );
 }
 export function Chip({ title, on, onPress }) {
   const c = useTheme();
   return (
-    <Pressable accessibilityRole="button" accessibilityState={{ selected: on }} onPress={onPress}
-      style={{ minHeight: 44, paddingHorizontal: 14, borderRadius: 22, justifyContent: 'center', borderWidth: 1, borderColor: on ? c.sign : c.line, backgroundColor: on ? c.sign : c.card }}>
-      <Text style={{ color: on ? '#fff' : c.fg, fontWeight: '600' }}>{title}</Text>
+    <Pressable accessibilityRole="button" accessibilityState={{ selected: !!on }} onPress={onPress}
+      style={({ pressed }) => ({ minHeight: 40, paddingHorizontal: 14, borderRadius: 20, justifyContent: 'center', backgroundColor: on ? c.primary : c.chip, opacity: pressed ? 0.75 : 1 })}>
+      <Text style={{ color: on ? c.onPrimary : c.fg, fontWeight: '600', fontSize: 14 }}>{title}</Text>
     </Pressable>
   );
+}
+/** One choice out of a few, side by side (appearance, duration, parking type). */
+export function Segmented({ options, value, onChange }) {
+  const c = useTheme();
+  return (
+    <View accessibilityRole="radiogroup" style={{ flexDirection: 'row', backgroundColor: c.chip, borderRadius: 14, padding: 3 }}>
+      {options.map(([k, label]) => { const on = k === value;
+        return (
+          <Pressable key={k} accessibilityRole="radio" accessibilityState={{ selected: on }} onPress={() => onChange(k)}
+            style={{ flex: 1, minHeight: 40, borderRadius: 11, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 6, backgroundColor: on ? c.card : 'transparent' }}>
+            <Text numberOfLines={1} style={{ color: on ? c.fg : c.muted, fontWeight: on ? '700' : '600', fontSize: 14 }}>{label}</Text>
+          </Pressable>); })}
+    </View>
+  );
+}
+/** On/off switch drawn by the app, so it lines up the same way in English and Arabic on every platform. */
+export function Toggle({ value, onValueChange, label }) {
+  const c = useTheme();
+  return (
+    <Pressable accessibilityRole="switch" accessibilityLabel={label} accessibilityState={{ checked: !!value }} onPress={() => onValueChange(!value)} hitSlop={8}
+      style={{ width: 50, height: 30, borderRadius: 15, padding: 3, backgroundColor: value ? c.ok : c.line, alignItems: value ? 'flex-end' : 'flex-start', justifyContent: 'center' }}>
+      <View style={{ width: 24, height: 24, borderRadius: 12, backgroundColor: '#ffffff', shadowColor: '#000', shadowOpacity: 0.15, shadowRadius: 2, shadowOffset: { width: 0, height: 1 }, elevation: 2 }} />
+    </Pressable>
+  );
+}
+/** A small coloured label: Paid, Not paid, 2 days left. */
+export function Pill({ text, tone: tn }) {
+  const c = useTheme(); const { fg, bg } = tone(c, tn);
+  return <View style={{ alignSelf: 'flex-start', backgroundColor: bg, borderRadius: 8, paddingHorizontal: 8, paddingVertical: 3 }}><Text style={{ color: fg, fontWeight: '700', fontSize: 12 }}>{text}</Text></View>;
+}
+/** Rows inside one card, separated by hairlines (settings, lists). */
+export function List({ children }) {
+  const c = useTheme();
+  const rows = React.Children.toArray(children).filter(Boolean);
+  return (
+    <View style={{ backgroundColor: c.card, borderRadius: 20, overflow: 'hidden' }}>
+      {rows.map((r, i) => <React.Fragment key={i}>{i ? <View style={{ height: StyleSheet.hairlineWidth, backgroundColor: c.line, marginStart: 16 }} /> : null}{r}</React.Fragment>)}
+    </View>
+  );
+}
+export function ListRow({ icon, iconTone, title, sub, right, onPress, chevron }) {
+  const c = useTheme();
+  const body = (
+    <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12, minHeight: 56, paddingVertical: 10, paddingStart: icon ? 12 : 0, paddingEnd: 16 }}>
+      {icon ? <View style={{ width: 36, height: 36, borderRadius: 10, backgroundColor: tone(c, iconTone).bg, alignItems: 'center', justifyContent: 'center' }}>
+        <Icon name={icon} size={19} color={tone(c, iconTone).fg} /></View> : null}
+      <View style={{ flex: 1, minWidth: 0, gap: 2 }}>
+        <Txt>{title}</Txt>
+        {sub ? <Txt muted size={13}>{sub}</Txt> : null}
+      </View>
+      {right || null}
+      {chevron ? <Icon name="chevron-forward" size={18} color={c.muted} /> : null}
+    </View>
+  );
+  if (!onPress) return body;
+  return <Pressable accessibilityRole="button" onPress={onPress} style={({ pressed }) => ({ backgroundColor: pressed ? c.chip : 'transparent' })}>{body}</Pressable>;
 }
 export function Field({ label, error, ...props }) {
   const c = useTheme();
   return (
-    <View style={{ gap: 4 }}>
-      {label ? <Text style={{ color: c.muted, fontSize: 13, fontWeight: '500' }}>{label}</Text> : null}
+    <View style={{ gap: 6 }}>
+      {label ? <Text style={{ color: c.muted, fontSize: 13, fontWeight: '600' }}>{label}</Text> : null}
       <TextInput placeholderTextColor={c.muted} {...props}
-        style={[{ borderWidth: 1, borderColor: error ? c.red : c.line, borderRadius: 10, paddingHorizontal: 12, minHeight: 46, color: c.fg, backgroundColor: c.bg, fontSize: 16 }, props.style]} />
+        style={[{ borderWidth: 1.5, borderColor: error ? c.red : 'transparent', borderRadius: 12, paddingHorizontal: 14, minHeight: 50, color: c.fg, backgroundColor: c.field, fontSize: 17 }, props.style]} />
       {error ? <Text style={{ color: c.red, fontSize: 13 }}>{error}</Text> : null}
     </View>
   );
@@ -91,34 +166,56 @@ export function Row({ children, style }) {
 export function Wrap({ children, style }) {
   return <View style={[{ flexDirection: 'row', flexWrap: 'wrap', gap: 8 }, style]}>{children}</View>;
 }
-export function Warn({ children }) {
-  const c = useTheme();
-  return <View style={{ backgroundColor: c.amber + '22', borderRadius: 10, padding: 10 }}><Txt size={14}>{children}</Txt></View>;
-}
-export function Plate({ v }) {
+/** Coloured notice with an icon. Plain text children, or anything. */
+export function Notice({ tone: tn = 'warn', icon = 'alert-circle', title, children }) {
+  const c = useTheme(); const { fg, bg } = tone(c, tn);
   return (
-    <View style={{ flexDirection: 'row', alignSelf: 'flex-start', borderWidth: 1.5, borderColor: '#111', borderRadius: 5, overflow: 'hidden', direction: 'ltr' }}>
-      <Text style={{ backgroundColor: '#e3e7e6', color: '#111', paddingHorizontal: 6, fontWeight: '700', borderRightWidth: 1.5, borderColor: '#111' }}>{v.em}</Text>
-      <Text style={{ backgroundColor: '#fff', color: '#111', paddingHorizontal: 6, fontWeight: '700', fontVariant: ['tabular-nums'] }}>{v.code} {v.num}</Text>
+    <View accessibilityRole="alert" style={{ backgroundColor: bg, borderRadius: 16, padding: 14, flexDirection: 'row', gap: 10 }}>
+      <Icon name={icon} size={20} color={fg} style={{ marginTop: 1 }} />
+      <View style={{ flex: 1, minWidth: 0, gap: 6 }}>
+        {title ? <Txt bold>{title}</Txt> : null}
+        {typeof children === 'string' ? <Txt size={14}>{children}</Txt> : children}
+      </View>
+    </View>
+  );
+}
+export const Warn = ({ children }) => <Notice>{children}</Notice>;
+
+/** UAE-style plate: emirate code, then plate code and number. */
+export function Plate({ v, big }) {
+  const fs = big ? 18 : 14;
+  return (
+    <View style={{ flexDirection: 'row', alignSelf: 'flex-start', borderWidth: 1.5, borderColor: '#111', borderRadius: 6, overflow: 'hidden', direction: 'ltr', backgroundColor: '#fff' }}>
+      <Text style={{ backgroundColor: '#e3e7e6', color: '#111', paddingHorizontal: 7, paddingVertical: 2, fontWeight: '800', fontSize: fs, borderRightWidth: 1.5, borderColor: '#111' }}>{v.em}</Text>
+      <Text style={{ color: '#111', paddingHorizontal: 8, paddingVertical: 2, fontWeight: '800', fontSize: fs, fontVariant: ['tabular-nums'], letterSpacing: 1 }}>{v.code} {v.num}</Text>
     </View>
   );
 }
 export function BrandBadge({ brand, size = 44 }) {
   return (
-    <View accessibilityElementsHidden importantForAccessibility="no" style={{ width: size, height: size, borderRadius: 12, backgroundColor: brandColor(brand), alignItems: 'center', justifyContent: 'center' }}>
-      <Text style={{ color: '#fff', fontWeight: '800', fontSize: 16 }}>{brandMark(brand)}</Text>
+    <View accessibilityElementsHidden importantForAccessibility="no" style={{ width: size, height: size, borderRadius: size * 0.3, backgroundColor: brandColor(brand), alignItems: 'center', justifyContent: 'center' }}>
+      <Text style={{ color: '#fff', fontWeight: '800', fontSize: size * 0.36 }}>{brandMark(brand)}</Text>
     </View>
   );
 }
 export function Bubble({ text }) {
   const c = useTheme();
   return (
-    <View style={{ alignSelf: 'flex-end', backgroundColor: c.bubble, borderRadius: 16, paddingHorizontal: 12, paddingVertical: 8, direction: 'ltr' }}>
-      <Text selectable style={{ color: '#fff', fontFamily: 'Courier', fontSize: 15, fontWeight: '600' }}>{text}</Text>
+    <View style={{ alignSelf: 'flex-end', backgroundColor: c.bubble, borderRadius: 18, borderBottomRightRadius: 6, paddingHorizontal: 14, paddingVertical: 10, direction: 'ltr' }}>
+      <Text selectable style={{ color: '#fff', fontFamily: 'Courier', fontSize: 16, fontWeight: '700' }}>{text}</Text>
+    </View>
+  );
+}
+/** Thin bar for time passed in a campaign. */
+export function Progress({ value, color }) {
+  const c = useTheme();
+  return (
+    <View style={{ height: 6, borderRadius: 3, backgroundColor: c.line, overflow: 'hidden' }}>
+      <View style={{ width: `${Math.round(Math.min(1, Math.max(0, value)) * 100)}%`, height: 6, borderRadius: 3, backgroundColor: color || c.fg }} />
     </View>
   );
 }
 export const styles = StyleSheet.create({
-  screen: { padding: 16, gap: 12, paddingBottom: 40 },
-  title: { fontSize: 30, fontWeight: '800' },
+  screen: { paddingHorizontal: 16, paddingTop: 8, gap: 12, paddingBottom: 40 },
+  title: { fontSize: 32, fontWeight: '800', letterSpacing: -0.5 },
 });

@@ -9,13 +9,13 @@ import { t, setLangCode, T } from './src/i18n';
 import { setupCategories, ACT, onNotificationResponse } from './src/notify';
 import { startTracking } from './src/location';
 import * as A from './src/actions';
-import { useTheme, applyAppearance } from './src/ui';
+import { useTheme, applyAppearance, Icon } from './src/ui';
 import { emirateAt } from './src/data';
 import { refreshCampaigns, syncCampaignReminders } from './src/campaigns';
 import { TodayScreen, FinesScreen, SalikScreen, ParkingScreen, VehiclesScreen, SettingsScreen, Onboarding, DisclaimerSheet } from './src/screens';
 import { setDisclaimerOpener } from './src/disclaimer';
 
-const TABS = [['today', '◔'], ['fines', '⚠︎'], ['salik', '⇅'], ['parking', 'Ⓟ'], ['vehicles', '🚗']];
+const TABS = [['today', 'home'], ['parking', 'car'], ['salik', 'swap-horizontal'], ['fines', 'pricetags'], ['vehicles', 'car-sport']];
 
 export default function App() {
   const s = useStore();
@@ -118,14 +118,16 @@ export default function App() {
               {tab === 'vehicles' && <VehiclesScreen {...screenProps} />}
               {tab === 'settings' && <SettingsScreen {...screenProps} />}
             </View>
-            <SafeAreaView edges={['bottom']} style={{ flexDirection: 'row', borderTopWidth: 1, borderColor: c.line, backgroundColor: c.card }} accessibilityRole="tablist">
-              {TABS.map(([k, icon]) => (
-                <Pressable key={k} accessibilityRole="tab" accessibilityState={{ selected: tab === k }} onPress={() => go(k)}
-                  style={{ flex: 1, alignItems: 'center', paddingVertical: 8, minHeight: 52 }}>
-                  <Text style={{ fontSize: 18, color: tab === k ? c.signText : c.muted }}>{icon}</Text>
-                  <Text numberOfLines={1} style={{ fontSize: 12, fontWeight: '600', color: tab === k ? c.signText : c.muted }}>{t('tab_' + k)}</Text>
-                </Pressable>
-              ))}
+            <SafeAreaView edges={['bottom']} style={{ flexDirection: 'row', borderTopWidth: 0.5, borderColor: c.line, backgroundColor: c.card, paddingTop: 6 }} accessibilityRole="tablist">
+              {TABS.map(([k, icon]) => { const on = tab === k;
+                return (
+                  <Pressable key={k} accessibilityRole="tab" accessibilityState={{ selected: on }} onPress={() => go(k)}
+                    style={{ flex: 1, alignItems: 'center', gap: 2, paddingBottom: 6, minHeight: 50 }}>
+                    <View style={{ paddingHorizontal: 16, paddingVertical: 3, borderRadius: 14, backgroundColor: on ? c.chip : 'transparent' }}>
+                      <Icon name={on ? icon : icon + '-outline'} size={22} color={on ? c.fg : c.muted} />
+                    </View>
+                    <Text numberOfLines={1} style={{ fontSize: 11, fontWeight: on ? '700' : '500', color: on ? c.fg : c.muted }}>{t('tab_' + k)}</Text>
+                  </Pressable>); })}
             </SafeAreaView>
             <DisclaimerSheet visible={!!disc} afterPay={!!disc?.afterPay} onClose={() => { const next = disc?.onContinue; setDisc(null); if (next) setTimeout(next, 350); }} />
           </View>
