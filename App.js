@@ -9,7 +9,7 @@ import { t, setLangCode, T } from './src/i18n';
 import { setupCategories, ACT, onNotificationResponse } from './src/notify';
 import { startTracking } from './src/location';
 import * as A from './src/actions';
-import { useTheme, applyAppearance, Icon } from './src/ui';
+import { useTheme, useArabicFont, applyAppearance, Icon } from './src/ui';
 import { haptic } from './src/haptics';
 import { useFonts } from 'expo-font';
 import { PLATE_FONTS } from './src/plates';
@@ -23,7 +23,9 @@ const TABS = [['today', 'home'], ['parking', 'car'], ['salik', 'swap-horizontal'
 export default function App() {
   const s = useStore();
   const c = useTheme();
-  useFonts(PLATE_FONTS); // number-plate fonts; plates use the system font until they load
+  const af = useArabicFont();
+  // Number-plate fonts and the Arabic UI font (licensed, not in git: see README). System font until loaded.
+  useFonts({ ...PLATE_FONTS, JannaLT: require('./assets/fonts/JannaLT-Bold.ttf') });
   const [ready, setReady] = useState(isLoaded());
   const [tab, setTab] = useState('today');
   const [prefill, setPrefill] = useState(null);
@@ -130,7 +132,7 @@ export default function App() {
                     <View style={{ paddingHorizontal: 16, paddingVertical: 3, borderRadius: 14, backgroundColor: on ? c.chip : 'transparent' }}>
                       <Icon name={on ? icon : icon + '-outline'} size={22} color={on ? c.fg : c.muted} />
                     </View>
-                    <Text numberOfLines={1} maxFontSizeMultiplier={1.3} style={{ fontSize: 11, fontWeight: on ? '700' : '500', color: on ? c.fg : c.muted }}>{t('tab_' + k)}</Text>
+                    <Text numberOfLines={1} maxFontSizeMultiplier={1.3} style={[{ fontSize: 11, fontWeight: on ? '700' : '500', color: on ? c.fg : c.muted }, af]}>{t('tab_' + k)}</Text>
                   </Pressable>); })}
             </SafeAreaView>
             <DisclaimerSheet visible={!!disc} afterPay={!!disc?.afterPay} onClose={() => { const next = disc?.onContinue; setDisc(null); if (next) setTimeout(next, 350); }} />

@@ -28,6 +28,13 @@ From this zip, copy into the `RoadDuesApp` folder and replace when asked:
 - the whole `src` folder
 - the `assets` folder
 
+## 2b. Add the Arabic font (once)
+Arabic text uses **Janna LT Bold**, a licensed font. It is not in GitHub (the repo is public), so copy your `Janna_LT_Bold.ttf` into the project as:
+```
+assets\fonts\JannaLT-Bold.ttf
+```
+Without it the app won't start. `eas build` includes it automatically (see `.easignore`). Make sure your Janna licence covers mobile apps.
+
 ## 3. Try it on your phone (Android, free)
 ```
 npx expo start

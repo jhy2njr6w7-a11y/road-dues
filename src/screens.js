@@ -5,7 +5,7 @@ import { t, emName, hrsOf, fmtDate, fmtTime, LANGS, getLang, gateName } from './
 import { EMIRATES, EM_ORDER, ISSUERS, GATES, BRANDS, aed, buildSms, cleanCode, ZONE_RE, fineOffer, discounted, daysLeft,
   validateVehicle, parseDate, emirateAt, distanceM, crossingCharge, latinDigits, visibleCampaigns, campaignStatus, campaignEnd, PAY_URLS } from './data';
 import { Card, Sec, Txt, Figure, Btn, Chip, Segmented, Toggle, Pill, List, ListRow, Field, Wrap, Notice, Warn, BrandBadge, Bubble, Progress, Icon,
-  useTheme, styles, applyAppearance } from './ui';
+  useTheme, useArabicFont, styles, applyAppearance } from './ui';
 import * as A from './actions';
 import { currentPosition, requestLocation, locationStatus, startTracking } from './location';
 import { requestNotifPermission, setupCategories, notifStatus } from './notify';
@@ -29,11 +29,11 @@ function RoundBtn({ icon, label, onPress }) {
   );
 }
 function Title({ k, onSettings, onBack }) {
-  const c = useTheme();
+  const c = useTheme(); const af = useArabicFont();
   return (
     <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10, marginBottom: 4 }}>
       {onBack ? <RoundBtn icon="chevron-back" label={t('back')} onPress={onBack} /> : null}
-      <Text accessibilityRole="header" numberOfLines={1} adjustsFontSizeToFit maxFontSizeMultiplier={1.3} style={[styles.title, { color: c.fg, flex: 1 }]}>{t(k)}</Text>
+      <Text accessibilityRole="header" numberOfLines={1} adjustsFontSizeToFit maxFontSizeMultiplier={1.3} style={[styles.title, { color: c.fg, flex: 1 }, af]}>{t(k)}</Text>
       <RoundBtn icon="information-circle-outline" label={t('viewDisclaimer')} onPress={() => openDisclaimer()} />
       {onSettings ? <RoundBtn icon="settings-outline" label={t('settings')} onPress={onSettings} /> : null}
     </View>
@@ -580,7 +580,7 @@ export function SettingsScreen({ go, onLang }) {
     <Screen>
       <Title k="settings" onBack={() => go('today')} />
       <Sec>{t('language')}</Sec>
-      <Wrap>{LANGS.map(([k, n]) => <Chip key={k} title={n} on={(s.settings.lang || 'en') === k} onPress={() => onLang(k)} />)}</Wrap>
+      <Wrap>{LANGS.map(([k, n]) => <Chip key={k} lang={k} title={n} on={(s.settings.lang || 'en') === k} onPress={() => onLang(k)} />)}</Wrap>
       <Sec>{t('appearanceH')}</Sec>
       <Segmented value={s.settings.appearance} onChange={(k) => { applyAppearance(k); setSetting('appearance')(k); }}
         options={['auto', 'light', 'dark'].map((k) => [k, t('look_' + k)])} />
@@ -668,7 +668,7 @@ export function Onboarding({ onDone, onLang }) {
             <Txt size={17} muted>{t('welcomeB')}</Txt>
           </View>
           <Txt muted size={13}>{t('language')}</Txt>
-          <Wrap>{LANGS.map(([k, n]) => <Chip key={k} title={n} on={(s.settings.lang || 'en') === k} onPress={() => onLang(k)} />)}</Wrap>
+          <Wrap>{LANGS.map(([k, n]) => <Chip key={k} lang={k} title={n} on={(s.settings.lang || 'en') === k} onPress={() => onLang(k)} />)}</Wrap>
         </> : null}
         {step === 'notif' ? <Hero icon="notifications-outline" tone="info" title={t('permNotifT')} body={t('permNotifB')} /> : null}
         {step === 'loc' ? <>
