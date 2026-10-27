@@ -6,6 +6,7 @@ import { loadState, update, newId } from './store';
 import { setLangCode } from './i18n';
 import { GATES, gatePos, distanceM, crossingCharge, emirateAt, isPaidTime, buildSms, EMIRATES } from './data';
 import { scheduleParkCheck, cancelParkCheck, notifySalik, cancelExpiry } from './notify';
+import { refreshCampaigns } from './campaigns';
 
 export const TASK = 'road-dues-location';
 const DRIVING_SPEED = 6;    // m/s (~22 km/h): below this we never count a gate crossing
@@ -16,6 +17,7 @@ const FREE_RADIUS = 150;    // metres around a saved free spot
 export async function handleLocations(locations) {
   const s = await loadState();
   if (s.settings.lang) setLangCode(s.settings.lang);
+  await refreshCampaigns(); // piggyback: the GPS task wakes the app often while driving (at most every 3 h)
   for (const loc of locations) {
     const { latitude: lat, longitude: lng, speed, accuracy } = loc.coords;
     const when = new Date(loc.timestamp);

@@ -37,6 +37,9 @@ export async function markFinePaid(id, amount) {
   await syncFineReminders();
 }
 
+/** Opens the official page for a discount campaign (after the disclaimer). */
+export function payCampaign(c) { withDisclaimer(() => Linking.openURL(c.payUrl || PAY_URLS[c.iss] || c.url)); }
+
 export function topUpSalik() { withDisclaimer(() => Linking.openURL(PAY_URLS.salik)); }
 
 /** Opens the SMS composer pre-filled. The user taps Send. Returns true if it should count as paid. */

@@ -22,7 +22,7 @@ DISCLAIMER: Road Dues is an unofficial app and is not affiliated with Salik, RTA
 parking,salik,uae,dubai,sharjah,abu dhabi,fines,toll,sms parking,rta
 
 ## App Review notes (paste into "Notes for review")
-Road Dues uses background location for two features: detecting when the user parks (to remind them to pay for parking during paid hours) and detecting when they pass a Salik toll gate (to warn about low balance). Location is processed on the device only; the app has no server. To test without driving: open Parking, choose an emirate, add a vehicle in Vehicles, and tap Send SMS to see the pre-filled message. The app does not process payments; payment buttons open official government websites.
+Road Dues uses background location for two features: detecting when the user parks (to remind them to pay for parking during paid hours) and detecting when they pass a Salik toll gate (to warn about low balance). Location is processed on the device only; the app has no server. The only network request is downloading a public list of fine discount campaigns (campaigns.json on GitHub), which sends no user data. To test without driving: open Parking, choose an emirate, add a vehicle in Vehicles, and tap Send SMS to see the pre-filled message. The app does not process payments; payment buttons open official government websites.
 
 ## Privacy "nutrition label" answers
 - Data collected: None (all data stays on device).

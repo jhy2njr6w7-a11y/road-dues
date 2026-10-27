@@ -11,6 +11,7 @@ import { startTracking } from './src/location';
 import * as A from './src/actions';
 import { useTheme } from './src/ui';
 import { emirateAt } from './src/data';
+import { refreshCampaigns, syncCampaignReminders } from './src/campaigns';
 import { TodayScreen, FinesScreen, SalikScreen, ParkingScreen, VehiclesScreen, SettingsScreen, Onboarding, DisclaimerSheet } from './src/screens';
 import { setDisclaimerOpener } from './src/disclaimer';
 
@@ -33,6 +34,7 @@ export default function App() {
     await update((x) => { x.settings.lang = k; });
     await setupCategories();            // notification buttons in the new language
     A.syncFineReminders();
+    syncCampaignReminders();
     force((n) => n + 1);
   }, []);
 
@@ -46,6 +48,7 @@ export default function App() {
     await setupCategories();
     if (st.settings.onboarded) startTracking();
     setReady(true);
+    refreshCampaigns();
   })(); }, []);
 
   // When the app comes back to the foreground: pick up changes made by the background task,
@@ -54,6 +57,7 @@ export default function App() {
     const sub = AppState.addEventListener('change', async (st) => {
       if (st !== 'active') return;
       const x = await loadState();
+      refreshCampaigns();
       const d = x.drive;
       if (!x.parking && d.lastMoving && Date.now() - new Date(d.lastMoving).getTime() > 4 * 60e3 && Date.now() - new Date(d.lastMoving).getTime() < 3 * 3600e3 && d.handled !== d.lastMoving) {
         const em = emirateAt({ lat: d.lastLat, lng: d.lastLng });
@@ -79,6 +83,11 @@ export default function App() {
         else go('parking', { em: data.em, lat: data.lat, lng: data.lng, autoSend: action === ACT.open });
       } else if (data.kind === 'expiry') go('parking', { em: getState().parking?.em });
       else if (data.kind === 'salik') { if (action === ACT.topup) A.topUpSalik(); go('salik'); }
+      else if (data.kind === 'campaign') {
+        const camp = getState().campaigns.find((y) => y.id === data.campaignId);
+        if (camp && action === ACT.payCampaign) A.payCampaign(camp);
+        go('fines');
+      }
       else if (data.kind === 'fine') {
         const f = getState().fines.find((y) => y.id === data.fineId);
         if (f && !f.paid && action === ACT.payFine) A.payFine(f);

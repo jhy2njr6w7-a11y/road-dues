@@ -200,7 +200,8 @@ ru:{
  note_lane:"Перестроение без поворотника",note_yellow:"Парковка на жёлтой линии",note_speed:"Превышение скорости, ул. Шейха Мохаммеда бин Зайеда"}
 };
 import { EXTRA } from './i18n-extra';
-for (const k of Object.keys(T)) Object.assign(T[k], EXTRA[k]);
+import { CAMPAIGN_STRINGS } from './i18n-campaigns';
+for (const k of Object.keys(T)) Object.assign(T[k], EXTRA[k], CAMPAIGN_STRINGS[k]);
 
 let lang = 'en';
 export const getLang = () => lang;

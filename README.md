@@ -72,6 +72,31 @@ EAS asks for your Apple ID and creates the certificates for you. The build takes
    ```
 4. In App Store Connect and Play Console, paste the text from `STORE-LISTING.md`, add screenshots, and send for review.
 
+## Announcing a fine discount campaign
+When police announce a discount (for example "50% off Sharjah fines until 31 December"), add it to `campaigns.json` in the GitHub repo. You can do this from your phone: open the file on github.com, tap the pencil, edit, then **Commit changes**. Phones pick it up within a few hours (or straight away with **Check now** on the Fines tab) and remind people on the start day, 3 days before the end and on the last day.
+
+```json
+{
+  "campaigns": [
+    {
+      "id": "shj-2026-12",
+      "iss": "shj",
+      "pct": 50,
+      "start": "2026-12-01",
+      "end": "2026-12-31",
+      "url": "https://link-to-the-official-announcement",
+      "note": { "en": "Not for serious violations.", "ar": "لا يشمل المخالفات الجسيمة." }
+    }
+  ]
+}
+```
+- `id`: any short unique name (letters, numbers, `-`). Never reuse one.
+- `iss`: `dxb` Dubai Police, `adp` Abu Dhabi Police, `shj` Sharjah Police, `ajm` Ajman, `rak` RAK, `fuj` Fujairah, `uaq` UAQ, `moi` Ministry of Interior, `rta`, `parkin`.
+- `pct`: whole number 1–100. Dates are `YYYY-MM-DD`; both days are included.
+- `url` must start with `https://`. Optional `payUrl` if paying happens on a different page. `note` is optional, in any of `en`, `ar`, `hi`, `zh`, `ru`.
+- A mistake (missing comma, bad date) makes that campaign, or the whole file, be ignored, so check it after saving: `npm test` validates `campaigns.json`.
+- Remove campaigns after they end to keep the file short (ended ones are hidden anyway).
+
 ## Before you publish: check list
 - **Drive-test it.** Correct the Salik gate positions with "I'm here" in Settings (as a passenger), then copy the corrected numbers into `GATES` in `src/data.js`.
 - **Confirm the parking SMS formats** for each emirate with a real payment, especially Ras Al Khaimah, which is marked unverified.

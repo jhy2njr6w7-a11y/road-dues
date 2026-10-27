@@ -1,14 +1,15 @@
 import React, { useEffect, useState } from 'react';
 import { ScrollView, View, Text, Pressable, Modal, Switch, Linking, Alert, AppState } from 'react-native';
 import { useStore, update, newId } from './store';
-import { t, emName, hrsOf, fmtDate, fmtTime, LANGS } from './i18n';
+import { t, emName, hrsOf, fmtDate, fmtTime, LANGS, getLang } from './i18n';
 import { EMIRATES, EM_ORDER, ISSUERS, GATES, BRANDS, aed, buildSms, cleanCode, ZONE_RE, fineOffer, discounted, daysLeft,
-  validateVehicle, parseDate, emirateAt, distanceM, crossingCharge, latinDigits } from './data';
+  validateVehicle, parseDate, emirateAt, distanceM, crossingCharge, latinDigits, visibleCampaigns, campaignStatus, campaignEnd, PAY_URLS } from './data';
 import { Card, Sec, Txt, Btn, Chip, Field, Row, Wrap, Warn, Plate, BrandBadge, Bubble, useTheme, styles } from './ui';
 import * as A from './actions';
 import { currentPosition, requestLocation, locationStatus, startTracking } from './location';
 import { requestNotifPermission, setupCategories } from './notify';
 import { openDisclaimer } from './disclaimer';
+import { refreshCampaigns, syncCampaignReminders } from './campaigns';
 
 export const PRIVACY_URL = 'https://YOUR-SITE/privacy.html'; // replace after hosting privacy.html (see README)
 
@@ -111,6 +112,7 @@ export function TodayScreen({ go }) {
   const next = unpaid.map((f) => [f, fineOffer(f)]).filter((x) => x[1]).sort((a, b) => a[1].end - b[1].end)[0];
   const dv = s.vehicles.find((v) => v.id === s.defaultVeh) || s.vehicles[0];
   const bal = s.balance;
+  const topCamp = visibleCampaigns(s.campaigns).find((x) => campaignStatus(x) === 'active');
   const balColor = bal == null ? c.muted : bal < 0 ? c.red : bal < s.settings.low ? c.amber : c.fg;
   return (
     <Screen>
@@ -124,9 +126,14 @@ export function TodayScreen({ go }) {
         <Row><View><Txt muted>{t('estBalance')}</Txt><Txt bold size={26} color={balColor}>{bal == null ? '—' : aed(bal)}</Txt></View><Btn title={t('topUp')} onPress={A.topUpSalik} /></Row>
         {bal != null && bal < 0 ? <Txt color={c.red}>{t('balNeg')}</Txt> : bal != null && bal < s.settings.low ? <Txt color={c.amber}>{t('balLow')}</Txt> : null}
       </Card>
-      <Sec>{t('fines')}</Sec>
+      <Sec>{t('finesTitle')}</Sec>
       <Card>
-        <Row><Txt>{t('unpaid')}</Txt><Txt bold color={unpaid.length ? c.red : c.fg}>{aed(total)}</Txt></Row>
+        {unpaid.length ? <Row><Txt>{t('unpaid')}</Txt><Txt bold color={c.red}>{aed(total)}</Txt></Row> : null}
+        {!unpaid.length && !topCamp ? <Txt muted>{t('campNone')}</Txt> : null}
+        {topCamp ? <View style={{ gap: 6 }}>
+          <Txt bold>{t('campTitle', { p: topCamp.pct, issuer: t('iss_' + topCamp.iss) })}</Txt>
+          <Txt muted>{daysLeft(campaignEnd(topCamp)) === 0 ? t('campLastDay') : t('campUntil', { date: fmtDate(topCamp.end), n: daysLeft(campaignEnd(topCamp)) })}</Txt>
+          <Wrap><Btn title={t('payNow')} onPress={() => A.payCampaign(topCamp)} /><Btn ghost title={t('campH')} onPress={() => go('fines')} /></Wrap></View> : null}
         {next ? <View style={{ gap: 6 }}>
           <Txt bold>{t('offTitle', { p: next[1].pct, issuer: t('iss_' + next[0].iss) })}</Txt>
           <Txt muted>{t('offBody', { pay: aed(discounted(next[0].amount, next[1].pct)), date: fmtDate(next[1].end), save: aed(next[0].amount - discounted(next[0].amount, next[1].pct)) })}</Txt>
@@ -232,15 +239,56 @@ export function ParkingScreen({ go, prefill }) {
 }
 
 // ---------- Fines
+// ---------- Fine discounts: campaigns first, then the standing rules, official sites and optional tracking
+function CampaignCard({ c }) {
+  const col = useTheme();
+  const active = campaignStatus(c) === 'active';
+  const n = daysLeft(campaignEnd(c));
+  const note = c.note[getLang()] || c.note.en;
+  return (
+    <Card style={active ? { borderStartWidth: 4, borderStartColor: col.sign } : null}>
+      <Txt bold size={17}>{t('campTitle', { p: c.pct, issuer: t('iss_' + c.iss) })}</Txt>
+      <Txt bold color={active ? (n === 0 ? col.red : col.signText) : col.muted}>
+        {!active ? t('campStarts', { date: fmtDate(c.start) }) : n === 0 ? t('campLastDay') : t('campUntil', { date: fmtDate(c.end), n })}</Txt>
+      {note ? <Txt muted>{note}</Txt> : null}
+      <Wrap>
+        {active ? <Btn title={t('payNow')} onPress={() => A.payCampaign(c)} /> : null}
+        <Btn ghost title={t('campSource')} onPress={() => Linking.openURL(c.url)} />
+      </Wrap>
+    </Card>
+  );
+}
+
+const CHECK_SITES = ['dxb', 'adp', 'shj', 'moi', 'rta', 'parkin'];
+
 export function FinesScreen({ go }) {
   const s = useStore(); const c = useTheme();
   const [edit, setEdit] = useState(null);
+  const [busy, setBusy] = useState(false);
+  const camps = visibleCampaigns(s.campaigns);
   const list = s.fines.slice().sort((a, b) => a.paid - b.paid || new Date(b.date) - new Date(a.date));
+  const checkNow = async () => { setBusy(true); await refreshCampaigns({ force: true }); setBusy(false); };
   return (
     <Screen>
-      <Title k="fines" onSettings={() => go('settings')} />
-      <Btn title={t('addFine')} onPress={() => setEdit({ iss: 'dxb', amount: '', date: new Date().toISOString().slice(0, 10), note: '', severe: false, manualPct: '', manualUntil: '' })} />
-      {list.length === 0 ? <Card><Txt muted>{t('noFines')}</Txt></Card> : null}
+      <Title k="finesTitle" onSettings={() => go('settings')} />
+      <Sec>{t('campH')}</Sec>
+      {camps.length === 0 ? <Card><Txt>{t('campNone')}</Txt></Card> : camps.map((x) => <CampaignCard key={x.id} c={x} />)}
+      {camps.length ? <Txt muted size={13}>{t('campCheckNote')}</Txt> : null}
+      <Row>
+        <Txt muted size={13}>{s.campaignsAt ? t('campChecked', { time: fmtDate(s.campaignsAt) + ' ' + fmtTime(s.campaignsAt) }) : t('campNever')}</Txt>
+        <Btn ghost title={t('campRefresh')} disabled={busy} onPress={checkNow} />
+      </Row>
+
+      <Sec>{t('rulesH')}</Sec>
+      <Card><Txt>{t('rulesB')}</Txt></Card>
+
+      <Sec>{t('checkFinesH')}</Sec>
+      <Card>
+        <Txt muted>{t('checkFinesB')}</Txt>
+        <Wrap>{CHECK_SITES.map((k) => <Chip key={k} title={t('iss_' + k)} onPress={() => Linking.openURL(PAY_URLS[k])} />)}</Wrap>
+      </Card>
+
+      <Sec>{t('trackH')}</Sec>
       {list.map((f) => { const o = fineOffer(f);
         return (
           <Card key={f.id}>
@@ -258,11 +306,11 @@ export function FinesScreen({ go }) {
             </Wrap>
           </Card>);
       })}
-      {edit ? <FineForm initial={edit} onClose={() => setEdit(null)} /> : null}
+      {edit ? <FineForm initial={edit} onClose={() => setEdit(null)} />
+        : <Btn ghost title={t('addFine')} onPress={() => setEdit({ iss: 'dxb', amount: '', date: new Date().toISOString().slice(0, 10), note: '', severe: false, manualPct: '', manualUntil: '' })} />}
     </Screen>
   );
 }
-
 function FineForm({ initial, onClose }) {
   const c = useTheme();
   const [f, setF] = useState(initial);
@@ -383,7 +431,7 @@ export function VehiclesScreen({ go }) {
 export function SettingsScreen({ go, onLang }) {
   const s = useStore(); const c = useTheme();
   const [saved, setSaved] = useState(null);
-  const setSetting = (k) => async (v) => { await update((x) => { x.settings[k] = v; }); if (k === 'remFines') A.syncFineReminders(); };
+  const setSetting = (k) => async (v) => { await update((x) => { x.settings[k] = v; }); if (k === 'remFines') { A.syncFineReminders(); syncCampaignReminders(); } };
   return (
     <Screen>
       <Title k="settings" />

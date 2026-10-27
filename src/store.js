@@ -14,6 +14,9 @@ export const DEFAULT_STATE = {
   freeSpots: [],            // {id, name, lat, lng}
   zones: [],                // remembered zone codes {lat, lng, zone}
   drive: { lastMoving: null, lastLat: null, lastLng: null }, // used by the background task
+  campaigns: [],            // fine discount campaigns from campaigns.json (see src/campaigns.js)
+  campaignsAt: null,        // when the list was last downloaded
+  seenCampaigns: null,      // campaign ids already announced (null until the first download)
 };
 
 let state = DEFAULT_STATE;
