@@ -63,14 +63,16 @@ eas build --platform ios --profile production
 EAS asks for your Apple ID and creates the certificates for you. The build takes about 15–30 minutes.
 
 ## 5. Publish
-1. Host `privacy.html` online. GitHub Pages or Netlify Drop (drag and drop, free) both work. Put your email in it first.
-2. In `src/screens.js`, replace `https://YOUR-SITE/privacy.html` with your link, then build again.
+1. **Turn on the website (once):** on github.com open the repo ▸ **Settings** ▸ **Pages**. Under "Build and deployment" choose **Deploy from a branch**, branch **main**, folder **/docs**, then **Save**. After a minute the pages are live:
+   - Privacy policy: https://jhy2njr6w7-a11y.github.io/road-dues/privacy.html (already linked in the app)
+   - Support page: https://jhy2njr6w7-a11y.github.io/road-dues/
+2. Put your contact email in `docs/privacy.html` and `docs/index.html` (replace `YOUR-EMAIL@example.com`).
 3. Submit:
    ```
    eas submit --platform ios
    eas submit --platform android
    ```
-4. In App Store Connect and Play Console, paste the text from `STORE-LISTING.md`, add screenshots, and send for review.
+4. In App Store Connect and Play Console, paste the text from `STORE-LISTING.md` and upload the screenshots from `store/screenshots/`.
 
 ## Announcing a fine discount campaign
 When police announce a discount (for example "50% off Sharjah fines until 31 December"), add it to `campaigns.json` in the GitHub repo. You can do this from your phone: open the file on github.com, tap the pencil, edit, then **Commit changes**. Phones pick it up within a few hours (or straight away with **Check now** on the Fines tab) and remind people on the start day, 3 days before the end and on the last day.

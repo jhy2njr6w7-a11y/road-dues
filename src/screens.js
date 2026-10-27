@@ -15,7 +15,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { openDisclaimer } from './disclaimer';
 import { refreshCampaigns, syncCampaignReminders } from './campaigns';
 
-export const PRIVACY_URL = 'https://YOUR-SITE/privacy.html'; // replace after hosting privacy.html (see README)
+export const PRIVACY_URL = 'https://jhy2njr6w7-a11y.github.io/road-dues/privacy.html'; // docs/privacy.html, served by GitHub Pages
 
 // Screen header: big title, ⓘ (disclaimer) on every screen, settings gear or a back button.
 function RoundBtn({ icon, label, onPress }) {
