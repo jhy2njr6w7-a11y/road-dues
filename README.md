@@ -1,4 +1,4 @@
-# Darbak: build and publish from Windows
+# Parking+: build and publish from Windows
 
 You don't need a Mac. Expo's cloud builds the iPhone and Android apps for you.
 
@@ -20,7 +20,7 @@ npx expo install expo-location expo-task-manager expo-notifications expo-sms exp
 
 `npx expo install` picks the versions that match your Expo SDK, so don't use plain `npm install` for these.
 
-## 2. Copy in the Darbak files
+## 2. Copy in the Parking+ files
 From this zip, copy into the `RoadDuesApp` folder and replace when asked:
 - `App.js`
 - `app.json`
