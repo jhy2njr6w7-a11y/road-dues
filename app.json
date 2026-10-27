@@ -1,34 +1,36 @@
 {
   "expo": {
-    "name": "Road Dues",
+    "name": "Darbak",
     "slug": "road-dues",
+    "owner": "srqx7",
     "version": "1.0.0",
     "orientation": "portrait",
     "userInterfaceStyle": "automatic",
     "icon": "./assets/icon.png",
     "splash": { "image": "./assets/splash-icon.png", "resizeMode": "contain", "backgroundColor": "#0e1116" },
     "ios": {
-      "bundleIdentifier": "ae.roaddues.app",
+      "bundleIdentifier": "ae.darbak.app",
       "supportsTablet": false,
       "infoPlist": {
         "UIBackgroundModes": ["location"],
-        "NSLocationWhenInUseUsageDescription": "Road Dues uses your location to find which emirate you parked in and to notice Salik gates.",
-        "NSLocationAlwaysAndWhenInUseUsageDescription": "Allow Always so Road Dues can remind you to pay for parking and warn you about Salik balance even when the app is closed. Your location never leaves your phone.",
+        "NSLocationWhenInUseUsageDescription": "Darbak uses your location to find which emirate you parked in and to notice Salik gates.",
+        "NSLocationAlwaysAndWhenInUseUsageDescription": "Allow Always so Darbak can remind you to pay for parking and warn you about Salik balance even when the app is closed. Your location never leaves your phone.",
         "ITSAppUsesNonExemptEncryption": false,
         "CFBundleAllowMixedLocalizations": true
       },
       "entitlements": { "com.apple.developer.usernotifications.time-sensitive": true }
     },
     "android": {
-      "package": "ae.roaddues.app",
+      "package": "ae.darbak.app",
       "adaptiveIcon": { "foregroundImage": "./assets/adaptive-icon.png", "backgroundColor": "#0e1116" },
       "permissions": ["ACCESS_COARSE_LOCATION", "ACCESS_FINE_LOCATION", "ACCESS_BACKGROUND_LOCATION", "FOREGROUND_SERVICE", "FOREGROUND_SERVICE_LOCATION", "POST_NOTIFICATIONS"]
     },
     "locales": { "ar": "./locales/ar.json" },
     "web": { "bundler": "metro", "output": "single", "favicon": "./assets/icon.png" },
+    "extra": { "eas": { "projectId": "c4fda56d-97cb-4287-a19f-0a7f05441bbd" } },
     "plugins": [
       ["expo-location", {
-        "locationAlwaysAndWhenInUsePermission": "Allow Always so Road Dues can remind you to pay for parking and warn you about Salik balance even when the app is closed. Your location never leaves your phone.",
+        "locationAlwaysAndWhenInUsePermission": "Allow Always so Darbak can remind you to pay for parking and warn you about Salik balance even when the app is closed. Your location never leaves your phone.",
         "isIosBackgroundLocationEnabled": true,
         "isAndroidBackgroundLocationEnabled": true,
         "isAndroidForegroundServiceEnabled": true
