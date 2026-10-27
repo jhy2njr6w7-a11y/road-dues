@@ -82,6 +82,8 @@ ok('Campaign order', () => assert.deepEqual(D.visibleCampaigns([camp, { ...camp,
 const shipped = JSON.parse(fs.readFileSync(new URL('../campaigns.json', import.meta.url), 'utf8'));
 ok('campaigns.json is valid', () => assert.equal(D.parseCampaigns(shipped).length, shipped.campaigns.length));
 
+ok('Every Salik gate has a name', () => D.GATES.forEach((g) => assert.ok(I.T.en['gate_' + g.id], g.id)));
+
 // Translations: every language has every key, with the same {placeholders}
 const keys = Object.keys(I.T.en);
 for (const L of ['ar', 'hi', 'zh', 'ru']) for (const k of keys) {

@@ -6,6 +6,7 @@ import { t } from './i18n';
 import { EMIRATES, cleanCode, discounted, fineOffer, PAY_URLS } from './data';
 import { rescheduleFineReminders, scheduleExpiry, cancelExpiry, cancelParkCheck } from './notify';
 import { openDisclaimer } from './disclaimer';
+import { haptic } from './haptics';
 
 // Before any payment, show the disclaimer (unless the user chose "Don't show this again").
 function withDisclaimer(fn) {
@@ -33,6 +34,7 @@ async function openFinePayment(f) {
   ]), 600);
 }
 export async function markFinePaid(id, amount) {
+  haptic('success');
   await update((x) => { const f = x.fines.find((y) => y.id === id); if (f && !f.paid) { f.paid = true; f.paidAmount = amount ?? f.amount; f.paidAt = new Date().toISOString(); } });
   await syncFineReminders();
 }
@@ -56,6 +58,7 @@ export async function sendParkingSms({ em, text, hours, zone, lat, lng }) {
     ]));
   }
   if (!sent) return false;
+  haptic('success');
   const h = e.hours ? hours : 1;
   const until = new Date(Date.now() + h * 3600e3).toISOString();
   await update((x) => {

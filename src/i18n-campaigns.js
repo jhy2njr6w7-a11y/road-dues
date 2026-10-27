@@ -1,6 +1,7 @@
-// Strings for fine discount campaigns, the reworked Fines tab and the appearance settings.
+// Strings added after the first release candidate: fine campaigns, appearance, onboarding steps, Salik gate names.
 export const CAMPAIGN_STRINGS = {
 en: {
+  'gate_garhoud': "Al Garhoud Bridge", 'gate_maktoum': "Al Maktoum Bridge", 'gate_airport': "Airport Tunnel", 'gate_mamzar-s': "Al Mamzar South", 'gate_mamzar-n': "Al Mamzar North", 'gate_safa-n': "Al Safa North", 'gate_safa-s': "Al Safa South", 'gate_barsha': "Al Barsha", 'gate_jebelali': "Jebel Ali", 'gate_businessbay': "Business Bay Crossing",
   salikAskT: "What's your Salik balance?", salikAskB: 'Check it in the Salik app and type it here. Road Dues then takes off each crossing it detects.', addBalance: 'Add balance', fixBal: 'Correct balance', next: 'Next', back: 'Back', notNow: 'Not now', stepOf: 'Step {n} of {total}',
   bgAndroidT: 'One more step', bgAndroidB: 'On the next screen, choose "Allow all the time", then go back to Road Dues. Without it, parking and Salik detection stop when the app is closed.', trackBody: 'Watching for parking and Salik gates', notifOffT: 'Notifications are off', notifOffB: "You won't get parking, Salik or fine discount reminders until you allow notifications.", battT: 'Keep running in the background', battB: 'Some phones stop apps to save battery. Choose "Don\'t optimise" or "Unrestricted" for Road Dues.',
   appearanceH: 'Appearance', look_auto: 'Automatic', look_light: 'Light', look_dark: 'Dark',
@@ -17,6 +18,7 @@ en: {
   privacyShort: 'Your location, vehicles and fines stay on this phone. Road Dues has no servers. It only downloads a public list of fine discount campaigns, and sends nothing about you.',
 },
 ar: {
+  'gate_garhoud': "جسر القرهود", 'gate_maktoum': "جسر آل مكتوم", 'gate_airport': "نفق المطار", 'gate_mamzar-s': "الممزر الجنوبي", 'gate_mamzar-n': "الممزر الشمالي", 'gate_safa-n': "الصفا الشمالي", 'gate_safa-s': "الصفا الجنوبي", 'gate_barsha': "البرشاء", 'gate_jebelali': "جبل علي", 'gate_businessbay': "معبر الخليج التجاري",
   salikAskT: 'كم رصيدك في سالك؟', salikAskB: 'تحقق منه في تطبيق سالك واكتبه هنا. بعدها يخصم التطبيق كل عبور يرصده.', addBalance: 'أضف الرصيد', fixBal: 'تصحيح الرصيد', next: 'التالي', back: 'رجوع', notNow: 'ليس الآن', stepOf: 'الخطوة {n} من {total}',
   bgAndroidT: 'خطوة أخيرة', bgAndroidB: 'في الشاشة التالية اختر "السماح طوال الوقت" ثم عد إلى التطبيق. بدون ذلك يتوقف رصد المواقف وسالك عند إغلاق التطبيق.', trackBody: 'يراقب المواقف وبوابات سالك', notifOffT: 'الإشعارات متوقفة', notifOffB: 'لن تصلك تذكيرات المواقف وسالك وتخفيضات المخالفات حتى تسمح بالإشعارات.', battT: 'استمرار العمل في الخلفية', battB: 'بعض الهواتف توقف التطبيقات لتوفير البطارية. اختر "عدم التحسين" أو "غير مقيد" لتطبيق رسوم الطريق.',
   appearanceH: 'المظهر', look_auto: 'تلقائي', look_light: 'فاتح', look_dark: 'داكن',
@@ -33,6 +35,7 @@ ar: {
   privacyShort: 'موقعك ومركباتك ومخالفاتك تبقى على هذا الهاتف. لا يملك التطبيق خوادم، وكل ما يفعله هو تنزيل قائمة عامة بحملات تخفيض المخالفات، ولا يرسل أي بيانات عنك.',
 },
 hi: {
+  'gate_garhoud': "अल गढ़ूद ब्रिज", 'gate_maktoum': "अल मकतूम ब्रिज", 'gate_airport': "एयरपोर्ट टनल", 'gate_mamzar-s': "अल मम्ज़र दक्षिण", 'gate_mamzar-n': "अल मम्ज़र उत्तर", 'gate_safa-n': "अल सफ़ा उत्तर", 'gate_safa-s': "अल सफ़ा दक्षिण", 'gate_barsha': "अल बरशा", 'gate_jebelali': "जेबेल अली", 'gate_businessbay': "बिज़नेस बे क्रॉसिंग",
   salikAskT: 'आपका Salik बैलेंस कितना है?', salikAskB: 'इसे Salik ऐप में देखें और यहाँ लिखें। फिर Road Dues हर पहचाने गए क्रॉसिंग को घटा देगा।', addBalance: 'बैलेंस जोड़ें', fixBal: 'बैलेंस ठीक करें', next: 'आगे', back: 'वापस', notNow: 'अभी नहीं', stepOf: 'चरण {n} / {total}',
   bgAndroidT: 'एक और कदम', bgAndroidB: 'अगली स्क्रीन पर "हर समय अनुमति दें" चुनें, फिर Road Dues पर लौटें। इसके बिना ऐप बंद होने पर पार्किंग और Salik की पहचान रुक जाती है।', trackBody: 'पार्किंग और Salik गेट पर नज़र', notifOffT: 'सूचनाएँ बंद हैं', notifOffB: 'सूचनाओं की अनुमति देने तक आपको पार्किंग, Salik या जुर्माना छूट के रिमाइंडर नहीं मिलेंगे।', battT: 'बैकग्राउंड में चलते रहें', battB: 'कुछ फ़ोन बैटरी बचाने के लिए ऐप बंद कर देते हैं। Road Dues के लिए "ऑप्टिमाइज़ न करें" या "अप्रतिबंधित" चुनें।',
   appearanceH: 'दिखावट', look_auto: 'स्वचालित', look_light: 'लाइट', look_dark: 'डार्क',
@@ -49,6 +52,7 @@ hi: {
   privacyShort: 'आपकी लोकेशन, वाहन और जुर्माने इसी फ़ोन पर रहते हैं। Road Dues का कोई सर्वर नहीं है। यह सिर्फ़ जुर्माना छूट अभियानों की एक सार्वजनिक सूची डाउनलोड करता है और आपके बारे में कुछ नहीं भेजता।',
 },
 zh: {
+  'gate_garhoud': "加尔胡德桥", 'gate_maktoum': "马克图姆桥", 'gate_airport': "机场隧道", 'gate_mamzar-s': "马姆扎尔南", 'gate_mamzar-n': "马姆扎尔北", 'gate_safa-n': "萨法北", 'gate_safa-s': "萨法南", 'gate_barsha': "巴尔沙", 'gate_jebelali': "杰贝阿里", 'gate_businessbay': "商业湾跨河通道",
   salikAskT: '您的 Salik 余额是多少？', salikAskB: '请在 Salik 应用中查看并在此输入。之后 Road Dues 会扣除检测到的每次通行。', addBalance: '添加余额', fixBal: '更正余额', next: '下一步', back: '返回', notNow: '暂不', stepOf: '第 {n} 步，共 {total} 步',
   bgAndroidT: '还差一步', bgAndroidB: '在下一个页面选择“始终允许”，然后返回 Road Dues。否则应用关闭后将无法检测停车和 Salik。', trackBody: '正在关注停车和 Salik 收费站', notifOffT: '通知已关闭', notifOffB: '在允许通知之前，您不会收到停车、Salik 或罚单折扣提醒。', battT: '保持后台运行', battB: '有些手机会为省电而停止应用。请为 Road Dues 选择“不优化”或“无限制”。',
   appearanceH: '外观', look_auto: '自动', look_light: '浅色', look_dark: '深色',
@@ -65,6 +69,7 @@ zh: {
   privacyShort: '您的位置、车辆和罚单仅保存在本手机上。Road Dues 没有服务器，只会下载一份公开的罚单折扣活动列表，不会发送任何关于您的信息。',
 },
 ru: {
+  'gate_garhoud': "Мост Аль-Гаруд", 'gate_maktoum': "Мост Аль-Мактум", 'gate_airport': "Тоннель аэропорта", 'gate_mamzar-s': "Аль-Мамзар (юг)", 'gate_mamzar-n': "Аль-Мамзар (север)", 'gate_safa-n': "Аль-Сафа (север)", 'gate_safa-s': "Аль-Сафа (юг)", 'gate_barsha': "Аль-Барша", 'gate_jebelali': "Джебель-Али", 'gate_businessbay': "Переправа Бизнес-Бей",
   salikAskT: 'Какой у вас баланс Salik?', salikAskB: 'Посмотрите его в приложении Salik и введите здесь. Затем Road Dues будет вычитать каждый замеченный проезд.', addBalance: 'Добавить баланс', fixBal: 'Исправить баланс', next: 'Далее', back: 'Назад', notNow: 'Не сейчас', stepOf: 'Шаг {n} из {total}',
   bgAndroidT: 'Ещё один шаг', bgAndroidB: 'На следующем экране выберите «Разрешить в любом режиме», затем вернитесь в Road Dues. Без этого парковка и Salik не отслеживаются, когда приложение закрыто.', trackBody: 'Отслеживание парковки и ворот Salik', notifOffT: 'Уведомления выключены', notifOffB: 'Пока вы не разрешите уведомления, напоминаний о парковке, Salik и скидках на штрафы не будет.', battT: 'Работа в фоне', battB: 'Некоторые телефоны останавливают приложения ради экономии батареи. Выберите для Road Dues «Не оптимизировать» или «Без ограничений».',
   appearanceH: 'Оформление', look_auto: 'Автоматически', look_light: 'Светлое', look_dark: 'Тёмное',

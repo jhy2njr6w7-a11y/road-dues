@@ -5,6 +5,7 @@ import { View, Text, Pressable, TextInput, StyleSheet, useColorScheme, Appearanc
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { brandColor, brandMark } from './data';
 import { useStore } from './store';
+import { haptic } from './haptics';
 
 const LIGHT = {
   dark: false, bg: '#f2f3f5', card: '#ffffff', field: '#e8eaee', fg: '#0e1116', muted: '#646b76', line: '#e3e6ea',
@@ -66,7 +67,7 @@ export function Txt({ children, muted, color, bold, size = 15, style, ...rest })
 /** Big figures (balance, percent). Digits line up. */
 export function Figure({ children, size = 34, color, style }) {
   const c = useTheme();
-  return <Text style={[{ color: color || c.fg, fontSize: size, fontWeight: '800', letterSpacing: -0.5, fontVariant: ['tabular-nums'] }, style]}>{children}</Text>;
+  return <Text maxFontSizeMultiplier={1.3} style={[{ color: color || c.fg, fontSize: size, fontWeight: '800', letterSpacing: -0.5, fontVariant: ['tabular-nums'] }, style]}>{children}</Text>;
 }
 
 /** primary (filled), ghost (soft grey), plain (text only), danger. */
@@ -75,12 +76,12 @@ export function Btn({ title, onPress, ghost, plain, danger, disabled, icon, icon
   const bg = danger ? c.red : plain ? 'transparent' : ghost ? c.chip : c.primary;
   const fg = danger ? '#ffffff' : plain || ghost ? c.fg : c.onPrimary;
   return (
-    <Pressable accessibilityRole="button" accessibilityState={{ disabled: !!disabled }} disabled={disabled} onPress={onPress} hitSlop={plain ? 8 : 0}
+    <Pressable accessibilityRole="button" accessibilityState={{ disabled: !!disabled }} disabled={disabled} onPress={(e) => { haptic(); onPress?.(e); }} hitSlop={plain ? 8 : 0}
       style={({ pressed }) => [{ minHeight: small ? 40 : 50, paddingHorizontal: plain ? 4 : small ? 14 : 18, borderRadius: 14, backgroundColor: bg,
         flexDirection: 'row', gap: 8, justifyContent: 'center', alignItems: 'center', opacity: disabled ? 0.4 : pressed ? 0.75 : 1,
         transform: [{ scale: pressed && !disabled ? 0.98 : 1 }] }, style]}>
       {icon ? <Icon name={icon} size={small ? 16 : 18} color={fg} /> : null}
-      <Text style={{ color: fg, fontWeight: '700', fontSize: small ? 14 : 16, textAlign: 'center' }}>{title}</Text>
+      <Text maxFontSizeMultiplier={1.6} style={{ color: fg, fontWeight: '700', fontSize: small ? 14 : 16, textAlign: 'center', flexShrink: 1 }}>{title}</Text>
       {iconEnd ? <Icon name={iconEnd} size={small ? 16 : 18} color={fg} /> : null}
     </Pressable>
   );
@@ -88,9 +89,9 @@ export function Btn({ title, onPress, ghost, plain, danger, disabled, icon, icon
 export function Chip({ title, on, onPress }) {
   const c = useTheme();
   return (
-    <Pressable accessibilityRole="button" accessibilityState={{ selected: !!on }} onPress={onPress}
+    <Pressable accessibilityRole="button" accessibilityState={{ selected: !!on }} onPress={() => { haptic('select'); onPress?.(); }}
       style={({ pressed }) => ({ minHeight: 40, paddingHorizontal: 14, borderRadius: 20, justifyContent: 'center', backgroundColor: on ? c.primary : c.chip, opacity: pressed ? 0.75 : 1 })}>
-      <Text style={{ color: on ? c.onPrimary : c.fg, fontWeight: '600', fontSize: 14 }}>{title}</Text>
+      <Text maxFontSizeMultiplier={1.6} style={{ color: on ? c.onPrimary : c.fg, fontWeight: '600', fontSize: 14 }}>{title}</Text>
     </Pressable>
   );
 }
@@ -101,9 +102,9 @@ export function Segmented({ options, value, onChange }) {
     <View accessibilityRole="radiogroup" style={{ flexDirection: 'row', backgroundColor: c.chip, borderRadius: 14, padding: 3 }}>
       {options.map(([k, label]) => { const on = k === value;
         return (
-          <Pressable key={k} accessibilityRole="radio" accessibilityState={{ selected: on }} onPress={() => onChange(k)}
+          <Pressable key={k} accessibilityRole="radio" accessibilityState={{ selected: on }} onPress={() => { if (!on) haptic('select'); onChange(k); }}
             style={{ flex: 1, minHeight: 40, borderRadius: 11, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 6, backgroundColor: on ? c.card : 'transparent' }}>
-            <Text numberOfLines={1} style={{ color: on ? c.fg : c.muted, fontWeight: on ? '700' : '600', fontSize: 14 }}>{label}</Text>
+            <Text numberOfLines={1} maxFontSizeMultiplier={1.4} style={{ color: on ? c.fg : c.muted, fontWeight: on ? '700' : '600', fontSize: 14 }}>{label}</Text>
           </Pressable>); })}
     </View>
   );
@@ -112,7 +113,7 @@ export function Segmented({ options, value, onChange }) {
 export function Toggle({ value, onValueChange, label }) {
   const c = useTheme();
   return (
-    <Pressable accessibilityRole="switch" accessibilityLabel={label} accessibilityState={{ checked: !!value }} onPress={() => onValueChange(!value)} hitSlop={8}
+    <Pressable accessibilityRole="switch" accessibilityLabel={label} accessibilityState={{ checked: !!value }} onPress={() => { haptic('select'); onValueChange(!value); }} hitSlop={8}
       style={{ width: 50, height: 30, borderRadius: 15, padding: 3, backgroundColor: value ? c.ok : c.line, alignItems: value ? 'flex-end' : 'flex-start', justifyContent: 'center' }}>
       <View style={{ width: 24, height: 24, borderRadius: 12, backgroundColor: '#ffffff', shadowColor: '#000', shadowOpacity: 0.15, shadowRadius: 2, shadowOffset: { width: 0, height: 1 }, elevation: 2 }} />
     </Pressable>
@@ -121,7 +122,7 @@ export function Toggle({ value, onValueChange, label }) {
 /** A small coloured label: Paid, Not paid, 2 days left. */
 export function Pill({ text, tone: tn }) {
   const c = useTheme(); const { fg, bg } = tone(c, tn);
-  return <View style={{ alignSelf: 'flex-start', backgroundColor: bg, borderRadius: 8, paddingHorizontal: 8, paddingVertical: 3 }}><Text style={{ color: fg, fontWeight: '700', fontSize: 12 }}>{text}</Text></View>;
+  return <View style={{ alignSelf: 'flex-start', backgroundColor: bg, borderRadius: 8, paddingHorizontal: 8, paddingVertical: 3 }}><Text maxFontSizeMultiplier={1.5} style={{ color: fg, fontWeight: '700', fontSize: 12 }}>{text}</Text></View>;
 }
 /** Rows inside one card, separated by hairlines (settings, lists). */
 export function List({ children }) {
@@ -137,7 +138,7 @@ export function ListRow({ icon, iconTone, title, sub, right, onPress, chevron })
   const c = useTheme();
   const body = (
     <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12, minHeight: 56, paddingVertical: 10, paddingStart: icon ? 12 : 0, paddingEnd: 16 }}>
-      {icon ? <View style={{ width: 36, height: 36, borderRadius: 10, backgroundColor: tone(c, iconTone).bg, alignItems: 'center', justifyContent: 'center' }}>
+      {icon ? <View importantForAccessibility="no-hide-descendants" accessibilityElementsHidden style={{ width: 36, height: 36, borderRadius: 10, backgroundColor: tone(c, iconTone).bg, alignItems: 'center', justifyContent: 'center' }}>
         <Icon name={icon} size={19} color={tone(c, iconTone).fg} /></View> : null}
       <View style={{ flex: 1, minWidth: 0, gap: 2 }}>
         <Txt>{title}</Txt>

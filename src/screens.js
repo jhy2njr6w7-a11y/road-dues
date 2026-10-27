@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { ScrollView, View, Text, Pressable, Modal, Linking, Alert, AppState, Platform } from 'react-native';
 import { useStore, update, newId } from './store';
-import { t, emName, hrsOf, fmtDate, fmtTime, LANGS, getLang } from './i18n';
+import { t, emName, hrsOf, fmtDate, fmtTime, LANGS, getLang, gateName } from './i18n';
 import { EMIRATES, EM_ORDER, ISSUERS, GATES, BRANDS, aed, buildSms, cleanCode, ZONE_RE, fineOffer, discounted, daysLeft,
   validateVehicle, parseDate, emirateAt, distanceM, crossingCharge, latinDigits, visibleCampaigns, campaignStatus, campaignEnd, PAY_URLS } from './data';
 import { Card, Sec, Txt, Figure, Btn, Chip, Segmented, Toggle, Pill, List, ListRow, Field, Wrap, Notice, Warn, Plate, BrandBadge, Bubble, Progress, Icon,
@@ -32,7 +32,7 @@ function Title({ k, onSettings, onBack }) {
   return (
     <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10, marginBottom: 4 }}>
       {onBack ? <RoundBtn icon="chevron-back" label={t('back')} onPress={onBack} /> : null}
-      <Text accessibilityRole="header" numberOfLines={1} style={[styles.title, { color: c.fg, flex: 1 }]}>{t(k)}</Text>
+      <Text accessibilityRole="header" numberOfLines={1} adjustsFontSizeToFit maxFontSizeMultiplier={1.3} style={[styles.title, { color: c.fg, flex: 1 }]}>{t(k)}</Text>
       <RoundBtn icon="information-circle-outline" label={t('viewDisclaimer')} onPress={() => openDisclaimer()} />
       {onSettings ? <RoundBtn icon="settings-outline" label={t('settings')} onPress={onSettings} /> : null}
     </View>
@@ -507,10 +507,10 @@ export function SalikScreen({ go }) {
         </Card>
       )}
       <Sec action={<Btn plain small icon={adding ? 'close' : 'add'} title={t('addCrossing')} onPress={() => setAdding(!adding)} />}>{t('crossings')}</Sec>
-      {adding ? <Card><Wrap>{GATES.map((g) => <Chip key={g.id} title={g.name} onPress={() => addCrossing(g)} />)}</Wrap></Card> : null}
+      {adding ? <Card><Wrap>{GATES.map((g) => <Chip key={g.id} title={gateName(g.id)} onPress={() => addCrossing(g)} />)}</Wrap></Card> : null}
       {list.length === 0 ? <Card><Txt muted>{t('noCrossings')}</Txt></Card> : (
         <List>{list.map((x) => (
-          <ListRow key={x.id} icon="swap-horizontal" title={GATES.find((g) => g.id === x.gate)?.name || x.gate} sub={fmtDate(x.date) + ' · ' + fmtTime(x.date)}
+          <ListRow key={x.id} icon="swap-horizontal" title={gateName(x.gate)} sub={fmtDate(x.date) + ' · ' + fmtTime(x.date)}
             right={<Txt bold style={{ fontVariant: ['tabular-nums'] }}>{x.charge ? aed(x.charge) : t('free')}</Txt>} />))}
         </List>)}
     </Screen>
@@ -609,7 +609,7 @@ export function SettingsScreen({ go, onLang }) {
       <Txt muted size={13} style={{ paddingHorizontal: 4 }}>{t('gatesNote')}</Txt>
       <List>
         {GATES.map((g) => (
-          <ListRow key={g.id} title={g.name} sub={s.settings.gateOverrides[g.id] ? t('corrected') : t('approx')}
+          <ListRow key={g.id} title={gateName(g.id)} sub={s.settings.gateOverrides[g.id] ? t('corrected') : t('approx')}
             right={<Btn ghost small title={saved === g.id ? '✓' : t('imHere')} onPress={async () => { const p = await currentPosition(); if (p) { await update((x) => { x.settings.gateOverrides[g.id] = p; }); setSaved(g.id); } }} />} />))}
       </List>
       <Sec>{t('discH')}</Sec>

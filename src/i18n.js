@@ -211,6 +211,7 @@ export function t(k, v = {}) {
   return s.replace(/\{(\w+)\}/g, (_, x) => { const val = v[x]; return typeof val === 'function' ? val() : (val ?? ''); });
 }
 export const emName = (k) => t('em_' + k);
+export const gateName = (id) => (T[lang]['gate_' + id] ? t('gate_' + id) : id);
 export const hrsOf = (k) => t(['DXB', 'SHJ', 'AUH', 'AJM'].includes(k) ? 'hrs_' + k : 'hrs_other');
 export const fmtDate = (d) => new Date(d).toLocaleDateString(LOCALE[lang], { day: 'numeric', month: 'short' });
 export const fmtTime = (d) => new Date(d).toLocaleTimeString(LOCALE[lang], { hour: '2-digit', minute: '2-digit' });

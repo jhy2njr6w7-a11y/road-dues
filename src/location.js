@@ -4,7 +4,7 @@ import * as Location from 'expo-location';
 import * as TaskManager from 'expo-task-manager';
 import { Alert, Platform } from 'react-native';
 import { loadState, update, newId, getState } from './store';
-import { setLangCode, t } from './i18n';
+import { setLangCode, t, gateName } from './i18n';
 import { GATES, gatePos, distanceM, crossingCharge, emirateAt, isPaidTime, buildSms, EMIRATES } from './data';
 import { scheduleParkCheck, cancelParkCheck, notifySalik, cancelExpiry } from './notify';
 import { refreshCampaigns } from './campaigns';
@@ -43,7 +43,7 @@ export async function handleLocations(locations) {
           if (x.crossings.length > 500) x.crossings = x.crossings.slice(-500);
           if (x.balance != null) x.balance = Math.round((x.balance - charge) * 100) / 100;
         });
-        if (charge > 0) await notifySalik({ gate: g.name, charge, balance: after.balance, low: after.settings.low });
+        if (charge > 0) await notifySalik({ gate: gateName(g.id), charge, balance: after.balance, low: after.settings.low });
       }
     }
 
