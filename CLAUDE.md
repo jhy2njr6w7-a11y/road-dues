@@ -1,6 +1,6 @@
 # Parking+: project notes for Claude Code
 
-Owner: Saif (UAE, Kalba). Works on a **Mac** (was Windows; no Android phone). Tests on iPhone via TestFlight, built locally in Xcode (prebuild ▸ Archive ▸ Upload), not EAS. Prefers concise, direct answers.
+Owner: Saif (UAE, Kalba). Works on a **Windows PC** (his Mac is too old for current Xcode; no Android phone). Tests on iPhone via TestFlight: `eas build -p ios --profile production --auto-submit` (EAS builds in the cloud and uploads). Prefers concise, direct answers.
 This project was designed in a claude.ai chat. The chat could not install packages or build, so **nothing here has been run in a real Expo project yet**. That is the first job.
 
 ## What the app is
