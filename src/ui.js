@@ -1,7 +1,7 @@
 // Shared look. Neutral ink-and-paper surfaces; colour is kept for meaning (paid, due, overdue, info),
 // so whatever needs attention stands out. Light and dark themes; RTL-aware building blocks.
 import React from 'react';
-import { View, Text, Pressable, TextInput, StyleSheet, useColorScheme, Appearance } from 'react-native';
+import { View, Text, Pressable, TextInput, StyleSheet, useColorScheme, Appearance, Animated, Platform } from 'react-native';
 import Ionicons from '@expo/vector-icons/Ionicons';
 import Svg, { Path } from 'react-native-svg';
 import { GlassView, isLiquidGlassAvailable } from 'expo-glass-effect';
@@ -60,11 +60,35 @@ export function Icon({ name, size = 20, color, style }) {
   return <Ionicons name={name} size={size} color={color || c.fg} style={[flip ? { transform: [{ scaleX: -1 }] } : null, style]} />;
 }
 
+const APressable = Animated.createAnimatedComponent(Pressable);
+const NATIVE = Platform.OS !== 'web';
+/** Pressable with the Liquid Glass touch, without the glass look: while held it swells a little and lights up,
+ *  then springs back with a small bounce. Bigger things grow less, so a card and a chip feel the same. */
+export function Press({ style, children, onPressIn, onPressOut, onLayout, ...rest }) {
+  const c = useTheme();
+  const a = React.useRef(new Animated.Value(0)).current;
+  const [grow, setGrow] = React.useState(0.04);
+  const [pressed, setPressed] = React.useState(false);
+  const to = (v) => Animated.spring(a, { toValue: v, useNativeDriver: NATIVE, speed: v ? 40 : 16, bounciness: v ? 0 : 14 }).start();
+  const st = typeof style === 'function' ? style({ pressed }) : style;
+  const radius = StyleSheet.flatten(st)?.borderRadius;
+  return (
+    <APressable {...rest}
+      onLayout={(e) => { setGrow(Math.min(0.06, Math.max(0.015, 10 / (e.nativeEvent.layout.width || 1)))); onLayout?.(e); }}
+      onPressIn={(e) => { setPressed(true); to(1); onPressIn?.(e); }} onPressOut={(e) => { setPressed(false); to(0); onPressOut?.(e); }}
+      style={[st, { transform: [{ scale: a.interpolate({ inputRange: [0, 1], outputRange: [1, 1 + grow] }) }] }]}>
+      {children}
+      <Animated.View pointerEvents="none" style={[StyleSheet.absoluteFill, { borderRadius: radius, backgroundColor: c.dark ? '#ffffff' : '#000000',
+        opacity: a.interpolate({ inputRange: [0, 1], outputRange: [0, c.dark ? 0.1 : 0.05], extrapolate: 'clamp' }) }]} />
+    </APressable>
+  );
+}
+
 export function Card({ children, style, tone: tn, onPress }) {
   const c = useTheme();
   const box = [{ backgroundColor: tn ? tone(c, tn).bg : c.card, borderRadius: 20, padding: 16, gap: 12 }, style];
   if (!onPress) return <View style={box}>{children}</View>;
-  return <Pressable accessibilityRole="button" onPress={onPress} style={({ pressed }) => [box, pressed && { opacity: 0.85 }]}>{children}</Pressable>;
+  return <Press accessibilityRole="button" onPress={onPress} style={box}>{children}</Press>;
 }
 /** Section heading between cards. `action` is an optional plain button on the other side. */
 export function Sec({ children, action }) {
@@ -96,14 +120,13 @@ export function Btn({ title, onPress, ghost, plain, danger, disabled, icon, icon
   const bg = danger ? c.red : plain ? 'transparent' : ghost ? c.chip : c.primary;
   const fg = danger ? '#ffffff' : plain || ghost ? c.fg : c.onPrimary;
   return (
-    <Pressable accessibilityRole="button" accessibilityState={{ disabled: !!disabled }} disabled={disabled} onPress={(e) => { haptic(); onPress?.(e); }} hitSlop={plain ? 8 : 0}
-      style={({ pressed }) => [{ minHeight: small ? 40 : 50, paddingHorizontal: plain ? 4 : small ? 14 : 18, borderRadius: 14, backgroundColor: bg,
-        flexDirection: 'row', gap: 8, justifyContent: 'center', alignItems: 'center', opacity: disabled ? 0.4 : pressed ? 0.75 : 1,
-        transform: [{ scale: pressed && !disabled ? 0.98 : 1 }] }, style]}>
+    <Press accessibilityRole="button" accessibilityState={{ disabled: !!disabled }} disabled={disabled} onPress={(e) => { haptic(); onPress?.(e); }} hitSlop={plain ? 8 : 0}
+      style={[{ minHeight: small ? 40 : 50, paddingHorizontal: plain ? 4 : small ? 14 : 18, borderRadius: 14, backgroundColor: bg,
+        flexDirection: 'row', gap: 8, justifyContent: 'center', alignItems: 'center', opacity: disabled ? 0.4 : 1 }, style]}>
       {icon ? <Icon name={icon} size={small ? 16 : 18} color={fg} /> : null}
       <Text maxFontSizeMultiplier={1.6} style={[{ color: fg, fontWeight: '700', fontSize: small ? 14 : 16, textAlign: 'center', flexShrink: 1 }, af]}>{title}</Text>
       {iconEnd ? <Icon name={iconEnd} size={small ? 16 : 18} color={fg} /> : null}
-    </Pressable>
+    </Press>
   );
 }
 // lang: the chip's own language (language picker), so Russian/Hindi/Chinese names don't get the Arabic font
@@ -112,10 +135,10 @@ export function Chip({ title, on, onPress, lang }) {
   const font = lang && lang !== 'ar' ? null : af;
   const c = useTheme();
   return (
-    <Pressable accessibilityRole="button" accessibilityState={{ selected: !!on }} onPress={() => { haptic('select'); onPress?.(); }}
-      style={({ pressed }) => ({ minHeight: 40, paddingHorizontal: 14, borderRadius: 20, justifyContent: 'center', backgroundColor: on ? c.primary : c.chip, opacity: pressed ? 0.75 : 1 })}>
+    <Press accessibilityRole="button" accessibilityState={{ selected: !!on }} onPress={() => { haptic('select'); onPress?.(); }}
+      style={{ minHeight: 40, paddingHorizontal: 14, borderRadius: 20, justifyContent: 'center', backgroundColor: on ? c.primary : c.chip }}>
       <Text maxFontSizeMultiplier={1.6} style={[{ color: on ? c.onPrimary : c.fg, fontWeight: '600', fontSize: 14 }, font]}>{title}</Text>
-    </Pressable>
+    </Press>
   );
 }
 /** One choice out of a few, side by side (appearance, duration, parking type). */
@@ -126,10 +149,10 @@ export function Segmented({ options, value, onChange }) {
     <View accessibilityRole="radiogroup" style={{ flexDirection: 'row', backgroundColor: c.chip, borderRadius: 14, padding: 3 }}>
       {options.map(([k, label]) => { const on = k === value;
         return (
-          <Pressable key={k} accessibilityRole="radio" accessibilityState={{ selected: on }} onPress={() => { if (!on) haptic('select'); onChange(k); }}
+          <Press key={k} accessibilityRole="radio" accessibilityState={{ selected: on }} onPress={() => { if (!on) haptic('select'); onChange(k); }}
             style={{ flex: 1, minHeight: 40, borderRadius: 11, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 6, backgroundColor: on ? c.card : 'transparent' }}>
             <Text numberOfLines={1} maxFontSizeMultiplier={1.4} style={[{ color: on ? c.fg : c.muted, fontWeight: on ? '700' : '600', fontSize: 14 }, af]}>{label}</Text>
-          </Pressable>); })}
+          </Press>); })}
     </View>
   );
 }
@@ -174,7 +197,7 @@ export function ListRow({ icon, iconTone, title, sub, right, onPress, chevron })
     </View>
   );
   if (!onPress) return body;
-  return <Pressable accessibilityRole="button" onPress={onPress} style={({ pressed }) => ({ backgroundColor: pressed ? c.chip : 'transparent' })}>{body}</Pressable>;
+  return <Press accessibilityRole="button" onPress={onPress}>{body}</Press>;
 }
 export function Field({ label, error, ...props }) {
   const af = useArabicFont();

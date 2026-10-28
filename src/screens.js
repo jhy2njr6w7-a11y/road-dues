@@ -5,7 +5,7 @@ import { t, T, emName, hrsOf, fmtDate, fmtTime, LANGS, getLang, gateName } from 
 import { EMIRATES, EM_ORDER, ISSUERS, GATES, BRANDS, aed, buildSms, cleanCode, ZONE_RE, fineOffer, discounted, daysLeft,
   validateVehicle, parseDate, emirateAt, distanceM, crossingCharge, latinDigits, visibleCampaigns, campaignStatus, campaignEnd, PAY_URLS, PARKING_EMIRATES } from './data';
 import { Card, Sec, Txt, Figure, Btn, Chip, Segmented, Toggle, Pill, List, ListRow, Field, Wrap, Notice, Warn, BrandBadge, Bubble, Progress, Icon,
-  useTheme, useArabicFont, styles, applyAppearance, Glass } from './ui';
+  useTheme, useArabicFont, styles, applyAppearance, Glass, Press } from './ui';
 import * as A from './actions';
 import { currentPosition, requestLocation, locationStatus, startTracking } from './location';
 import { requestNotifPermission, setupCategories, notifStatus } from './notify';
@@ -21,11 +21,11 @@ export const PRIVACY_URL = 'https://jhy2njr6w7-a11y.github.io/road-dues/privacy.
 // Screen header: big title, ⓘ (disclaimer) on every screen, settings gear or a back button.
 function RoundBtn({ icon, label, onPress }) {
   return (
-    <Pressable accessibilityRole="button" accessibilityLabel={label} onPress={onPress} hitSlop={6} style={({ pressed }) => ({ opacity: pressed ? 0.7 : 1 })}>
+    <Press accessibilityRole="button" accessibilityLabel={label} onPress={onPress} hitSlop={6} style={{ borderRadius: 21 }}>
       <Glass interactive style={{ width: 42, height: 42, borderRadius: 21, alignItems: 'center', justifyContent: 'center' }}>
         <Icon name={icon} size={22} />
       </Glass>
-    </Pressable>
+    </Press>
   );
 }
 function Title({ k, onSettings, onBack }) {
@@ -49,11 +49,11 @@ function DisclaimerCard() {
   ]);
   return (
     <View style={{ backgroundColor: c.redBg, borderRadius: 16, flexDirection: 'row', alignItems: 'center' }}>
-      <Pressable accessibilityRole="button" accessibilityLabel={t('viewDisclaimer')} onPress={() => openDisclaimer()}
-        style={({ pressed }) => ({ flex: 1, paddingVertical: 10, paddingStart: 12, flexDirection: 'row', alignItems: 'center', gap: 10, opacity: pressed ? 0.7 : 1 })}>
+      <Press accessibilityRole="button" accessibilityLabel={t('viewDisclaimer')} onPress={() => openDisclaimer()}
+        style={{ flex: 1, paddingVertical: 10, paddingStart: 12, flexDirection: 'row', alignItems: 'center', gap: 10, borderRadius: 16 }}>
         <Icon name="shield-checkmark-outline" size={20} color={c.red} />
         <Txt size={13} bold color={c.red} numberOfLines={3} style={{ flex: 1 }}>{t('disc3')}</Txt>
-      </Pressable>
+      </Press>
       <Pressable accessibilityRole="button" accessibilityLabel={t('hideDisc')} onPress={hide} hitSlop={8} style={{ padding: 12 }}>
         <Icon name="close" size={18} color={c.red} />
       </Pressable>
@@ -284,15 +284,15 @@ function EmirateTiles({ value, onChange }) {
     <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 10 }}>
       {PARKING_EMIRATES.map((k) => { const on = k === value;
         return (
-          <Pressable key={k} accessibilityRole="radio" accessibilityState={{ selected: on }} onPress={() => onChange(k)}
-            style={({ pressed }) => ({ flexBasis: '47%', flexGrow: 1, flexDirection: 'row', alignItems: 'center', gap: 10, padding: 12, borderRadius: 18,
-              backgroundColor: on ? EM_COLORS[k] + '22' : c.card, borderWidth: 2, borderColor: on ? EM_COLORS[k] : 'transparent', opacity: pressed ? 0.8 : 1 })}>
+          <Press key={k} accessibilityRole="radio" accessibilityState={{ selected: on }} onPress={() => onChange(k)}
+            style={{ flexBasis: '47%', flexGrow: 1, flexDirection: 'row', alignItems: 'center', gap: 10, padding: 12, borderRadius: 18,
+              backgroundColor: on ? EM_COLORS[k] + '22' : c.card, borderWidth: 2, borderColor: on ? EM_COLORS[k] : 'transparent' }}>
             <TicketIcon em={k} size={30} />
             <View style={{ flex: 1, minWidth: 0 }}>
               <Txt bold numberOfLines={1}>{emName(k)}</Txt>
               <Txt muted size={12} numberOfLines={1}>{second(k)}</Txt>
             </View>
-          </Pressable>); })}
+          </Press>); })}
     </View>
   );
 }
