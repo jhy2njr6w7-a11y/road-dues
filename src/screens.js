@@ -5,7 +5,7 @@ import { t, T, emName, hrsOf, fmtDate, fmtTime, LANGS, getLang, gateName } from 
 import { EMIRATES, EM_ORDER, ISSUERS, GATES, BRANDS, aed, buildSms, cleanCode, ZONE_RE, fineOffer, discounted, daysLeft,
   validateVehicle, parseDate, emirateAt, distanceM, crossingCharge, latinDigits, visibleCampaigns, campaignStatus, campaignEnd, PAY_URLS, PARKING_EMIRATES } from './data';
 import { Card, Sec, Txt, Figure, Btn, Chip, Segmented, Toggle, Pill, List, ListRow, Field, Wrap, Notice, Warn, BrandBadge, Bubble, Progress, Icon,
-  useTheme, useArabicFont, styles, applyAppearance, Glass, Press } from './ui';
+  useTheme, useArabicFont, styles, applyAppearance, Glass, Press, ACCENTS } from './ui';
 import * as A from './actions';
 import { currentPosition, requestLocation, locationStatus, startTracking } from './location';
 import { requestNotifPermission, setupCategories, notifStatus } from './notify';
@@ -640,7 +640,7 @@ export function VehiclesScreen({ go }) {
 
 // ---------- Settings
 export function SettingsScreen({ go, onLang }) {
-  const s = useStore();
+  const s = useStore(); const c = useTheme();
   const [saved, setSaved] = useState(null);
   const setSetting = (k) => async (v) => { await update((x) => { x.settings[k] = v; }); if (k === 'remFines') { A.syncFineReminders(); syncCampaignReminders(); } };
   const toggleRow = (k, label) => <ListRow title={label} right={<Toggle label={label} value={s.settings[k]} onValueChange={setSetting(k)} />} />;
@@ -652,6 +652,15 @@ export function SettingsScreen({ go, onLang }) {
       <Sec>{t('appearanceH')}</Sec>
       <Segmented value={s.settings.appearance} onChange={(k) => { applyAppearance(k); setSetting('appearance')(k); }}
         options={['auto', 'light', 'dark'].map((k) => [k, t('look_' + k)])} />
+      <Sec>{t('accentH')}</Sec>
+      <Wrap style={{ gap: 6 }}>{Object.entries(ACCENTS).map(([k, a], i) => { const on = (s.settings.accent || 'ink') === k; const col = a ? a[c.dark ? 1 : 0] : c.fg;
+        return (
+          <Press key={k} accessibilityRole="radio" accessibilityLabel={`${t('accentH')} ${i + 1}`} accessibilityState={{ selected: on }} onPress={() => setSetting('accent')(k)}
+            style={{ width: 44, height: 44, borderRadius: 22, alignItems: 'center', justifyContent: 'center', borderWidth: 2, borderColor: on ? col : 'transparent' }}>
+            <View style={{ width: 32, height: 32, borderRadius: 16, backgroundColor: col, alignItems: 'center', justifyContent: 'center' }}>
+              {on ? <Icon name="checkmark" size={18} color={a ? (c.dark ? '#0b0d10' : '#ffffff') : c.bg} /> : null}
+            </View>
+          </Press>); })}</Wrap>
       <Sec>{t('startTabH')}</Sec>
       <Wrap>{['today', 'parking', 'salik', 'fines', 'vehicles'].map((k) => <Chip key={k} title={t('tab_' + k)} on={(s.settings.startTab || 'today') === k} onPress={() => setSetting('startTab')(k)} />)}</Wrap>
       <LocationNotice />

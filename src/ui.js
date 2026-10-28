@@ -25,11 +25,24 @@ const DARK = {
 // Older screens refer to the accent as sign/signText; keep those names pointing at the ink colour.
 LIGHT.sign = LIGHT.primary; LIGHT.signText = LIGHT.fg; DARK.sign = DARK.primary; DARK.signText = DARK.fg;
 
-/** Settings ▸ Appearance: 'auto' follows the phone, or force 'light' / 'dark'. */
+// Settings ▸ App colour: the accent used for main buttons, selected chips and the selected tab.
+// 'ink' is the original black/white look. Each colour has a light-mode and a dark-mode shade.
+export const ACCENTS = {
+  ink: null,
+  blue: ['#1d4ed8', '#5b8cff'], teal: ['#0f766e', '#2dd4bf'], green: ['#15803d', '#4ade80'],
+  purple: ['#6d28d9', '#a78bfa'], rose: ['#be185d', '#f472b6'], orange: ['#c2410c', '#fb923c'],
+};
+const themed = {};
+/** Settings ▸ Appearance: 'auto' follows the phone, or force 'light' / 'dark'; plus the chosen accent. */
 export function useTheme() {
   const system = useColorScheme();
-  const { appearance = 'auto' } = useStore().settings;
-  return (appearance === 'auto' ? system : appearance) === 'dark' ? DARK : LIGHT;
+  const { appearance = 'auto', accent = 'ink' } = useStore().settings;
+  const base = (appearance === 'auto' ? system : appearance) === 'dark' ? DARK : LIGHT;
+  const a = ACCENTS[accent];
+  if (!a) return base;
+  const key = accent + (base.dark ? 'D' : 'L');
+  // the dark-mode shades are light, so their text is dark
+  return themed[key] || (themed[key] = { ...base, primary: a[base.dark ? 1 : 0], onPrimary: base.dark ? '#0b0d10' : '#ffffff', accent: a[base.dark ? 1 : 0] });
 }
 /** Also switches native parts (alerts, keyboard) to the chosen appearance. */
 export function applyAppearance(mode) {

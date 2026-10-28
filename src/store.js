@@ -4,7 +4,7 @@ import { useSyncExternalStore } from 'react';
 
 const KEY = 'road-dues-state-v1';
 export const DEFAULT_STATE = {
-  settings: { lang: null, onboarded: false, low: 25, remParking: true, remSalik: true, remFines: true, gateOverrides: {}, discHome: true, discAfterPay: true, appearance: 'auto', startTab: 'today' },
+  settings: { lang: null, onboarded: false, low: 25, remParking: true, remSalik: true, remFines: true, gateOverrides: {}, discHome: true, discAfterPay: true, appearance: 'auto', accent: 'ink', startTab: 'today' },
   balance: null,            // Salik balance in AED (user-entered, then reduced by detected crossings)
   vehicles: [],             // {id, brand, model, color, em, code, num}
   defaultVeh: null,
