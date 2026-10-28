@@ -9,7 +9,7 @@ import { t, setLangCode, T } from './src/i18n';
 import { setupCategories, ACT, onNotificationResponse } from './src/notify';
 import { startTracking } from './src/location';
 import * as A from './src/actions';
-import { useTheme, useArabicFont, applyAppearance, Icon } from './src/ui';
+import { useTheme, useArabicFont, applyAppearance, Icon, Glass, HAS_GLASS } from './src/ui';
 import { haptic } from './src/haptics';
 import { useFonts } from 'expo-font';
 import { PLATE_FONTS } from './src/plates';
@@ -129,18 +129,18 @@ export default function App() {
               {tab === 'vehicles' && <VehiclesScreen {...screenProps} />}
               {tab === 'settings' && <SettingsScreen {...screenProps} />}
             </View>
-            {/* Floating tab bar: a rounded bar above the bottom edge; the selected tab sits on a pill */}
-            <SafeAreaView edges={['bottom']} style={{ backgroundColor: c.bg, paddingHorizontal: 12, paddingTop: 6 }}>
-              <View accessibilityRole="tablist" style={{ flexDirection: 'row', backgroundColor: c.card, borderRadius: 28, padding: 5, marginBottom: 6,
-                borderWidth: c.dark ? 1 : 0, borderColor: c.line, shadowColor: '#000', shadowOpacity: c.dark ? 0 : 0.08, shadowRadius: 12, shadowOffset: { width: 0, height: 4 }, elevation: 6 }}>
+            {/* Floating tab bar over the content (Liquid Glass on iOS 26); the selected tab sits on a pill */}
+            <SafeAreaView edges={['bottom']} pointerEvents="box-none" style={{ position: 'absolute', left: 0, right: 0, bottom: 0, paddingHorizontal: 12 }}>
+              <Glass accessibilityRole="tablist" style={{ flexDirection: 'row', borderRadius: 30, padding: 5, marginBottom: 6,
+                borderWidth: HAS_GLASS || !c.dark ? 0 : 1, borderColor: c.line, shadowColor: '#000', shadowOpacity: HAS_GLASS || c.dark ? 0 : 0.1, shadowRadius: 14, shadowOffset: { width: 0, height: 4 }, elevation: HAS_GLASS ? 0 : 6 }}>
                 {TABS.map(([k, icon]) => { const on = tab === k;
                   return (
                     <Pressable key={k} accessibilityRole="tab" accessibilityState={{ selected: on }} onPress={() => { if (!on) haptic('select'); go(k); }}
-                      style={{ flex: 1, alignItems: 'center', gap: 2, paddingVertical: 7, borderRadius: 23, backgroundColor: on ? c.chip : 'transparent' }}>
+                      style={{ flex: 1, alignItems: 'center', gap: 2, paddingVertical: 7, borderRadius: 25, backgroundColor: on ? (HAS_GLASS ? 'rgba(127,127,127,0.18)' : c.chip) : 'transparent' }}>
                       <Icon name={on ? icon : icon + '-outline'} size={22} color={on ? c.fg : c.muted} />
                       <Text numberOfLines={1} maxFontSizeMultiplier={1.3} style={[{ fontSize: 11, fontWeight: on ? '700' : '500', color: on ? c.fg : c.muted }, af]}>{t('tab_' + k)}</Text>
                     </Pressable>); })}
-              </View>
+              </Glass>
             </SafeAreaView>
             <DisclaimerSheet visible={!!disc} afterPay={!!disc?.afterPay} onClose={() => { const next = disc?.onContinue; setDisc(null); if (next) setTimeout(next, 350); }} />
           </View>

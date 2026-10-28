@@ -4,6 +4,7 @@ import React from 'react';
 import { View, Text, Pressable, TextInput, StyleSheet, useColorScheme, Appearance } from 'react-native';
 import Ionicons from '@expo/vector-icons/Ionicons';
 import Svg, { Path } from 'react-native-svg';
+import { GlassView, isLiquidGlassAvailable } from 'expo-glass-effect';
 import { brandMark } from './data';
 import { BRAND_LOGOS } from './brand-logos';
 import { useStore } from './store';
@@ -35,6 +36,15 @@ export function applyAppearance(mode) {
   if (typeof Appearance.setColorScheme === 'function') Appearance.setColorScheme(mode === 'light' || mode === 'dark' ? mode : 'unspecified');
 }
 export const useRtl = () => useStore().settings.lang === 'ar';
+
+// iOS 26 Liquid Glass for things that float over the content (tab bar, round buttons).
+// Elsewhere (older iOS, Android, web) the same shape gets the solid card colour.
+export const HAS_GLASS = isLiquidGlassAvailable();
+export function Glass({ style, interactive, children, ...rest }) {
+  const c = useTheme();
+  if (!HAS_GLASS) return <View {...rest} style={[{ backgroundColor: c.card }, style]}>{children}</View>;
+  return <GlassView {...rest} glassEffectStyle="regular" isInteractive={!!interactive} colorScheme={c.dark ? 'dark' : 'light'} style={style}>{children}</GlassView>;
+}
 // Arabic text uses Janna LT Bold (loaded in App.js). The face is already bold, so weights are reset.
 const ARABIC_FONT = { fontFamily: 'JannaLT', fontWeight: 'normal' };
 export const useArabicFont = () => (useRtl() ? ARABIC_FONT : null);
@@ -227,6 +237,6 @@ export function Progress({ value, color }) {
   );
 }
 export const styles = StyleSheet.create({
-  screen: { paddingHorizontal: 16, paddingTop: 8, gap: 12, paddingBottom: 40 },
+  screen: { paddingHorizontal: 16, paddingTop: 8, gap: 12, paddingBottom: 120 }, // room to scroll past the floating tab bar
   title: { fontSize: 32, fontWeight: '800', letterSpacing: -0.5 },
 });

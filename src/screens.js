@@ -5,7 +5,7 @@ import { t, T, emName, hrsOf, fmtDate, fmtTime, LANGS, getLang, gateName } from 
 import { EMIRATES, EM_ORDER, ISSUERS, GATES, BRANDS, aed, buildSms, cleanCode, ZONE_RE, fineOffer, discounted, daysLeft,
   validateVehicle, parseDate, emirateAt, distanceM, crossingCharge, latinDigits, visibleCampaigns, campaignStatus, campaignEnd, PAY_URLS, PARKING_EMIRATES } from './data';
 import { Card, Sec, Txt, Figure, Btn, Chip, Segmented, Toggle, Pill, List, ListRow, Field, Wrap, Notice, Warn, BrandBadge, Bubble, Progress, Icon,
-  useTheme, useArabicFont, styles, applyAppearance } from './ui';
+  useTheme, useArabicFont, styles, applyAppearance, Glass } from './ui';
 import * as A from './actions';
 import { currentPosition, requestLocation, locationStatus, startTracking } from './location';
 import { requestNotifPermission, setupCategories, notifStatus } from './notify';
@@ -20,11 +20,11 @@ export const PRIVACY_URL = 'https://jhy2njr6w7-a11y.github.io/road-dues/privacy.
 
 // Screen header: big title, ⓘ (disclaimer) on every screen, settings gear or a back button.
 function RoundBtn({ icon, label, onPress }) {
-  const c = useTheme();
   return (
-    <Pressable accessibilityRole="button" accessibilityLabel={label} onPress={onPress} hitSlop={6}
-      style={({ pressed }) => ({ width: 42, height: 42, borderRadius: 21, backgroundColor: c.card, alignItems: 'center', justifyContent: 'center', opacity: pressed ? 0.7 : 1 })}>
-      <Icon name={icon} size={22} />
+    <Pressable accessibilityRole="button" accessibilityLabel={label} onPress={onPress} hitSlop={6} style={({ pressed }) => ({ opacity: pressed ? 0.7 : 1 })}>
+      <Glass interactive style={{ width: 42, height: 42, borderRadius: 21, alignItems: 'center', justifyContent: 'center' }}>
+        <Icon name={icon} size={22} />
+      </Glass>
     </Pressable>
   );
 }
