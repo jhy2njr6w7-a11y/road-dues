@@ -10,7 +10,8 @@ OUT = sys.argv[1]
 S = 1024
 INK = (14, 17, 22, 255)
 WHITE = (255, 255, 255, 255)
-GLASS = (178, 182, 190, 255)  # windows and tyres
+GLASS = (178, 182, 190, 255)
+TYRE = (120, 126, 136, 255)
 BLUE = (29, 78, 216, 255)     # the app's blue (#1d4ed8), for the P
 FONT = '/usr/share/fonts/opentype/inter/Inter-ExtraBold.otf'
 SS = 4  # supersample for smooth edges
@@ -25,7 +26,7 @@ def mark(scale):
         return [cx + (x0 - 512) * k, cy + (y0 - 512) * k, cx + (x1 - 512) * k, cy + (y1 - 512) * k]
     for ty in (300, 640):                                                                # tyres poking out at both axles
         for tx in (286, 694):
-            d.rounded_rectangle(box(tx, ty, tx + 44, ty + 118), radius=14 * k, fill=GLASS)
+            d.rounded_rectangle(box(tx, ty, tx + 44, ty + 118), radius=14 * k, fill=TYRE)
     d.rounded_rectangle(box(312, 150, 712, 874), radius=170 * k, fill=WHITE)            # body
     # headlights: slanted lenses along the curve of the front corners, left and right
     for mx, ang in ((405, 137), (619, 43)):
