@@ -42,6 +42,7 @@ A free iPhone + Android app (Expo / React Native, JavaScript) for UAE drivers:
 | `src/campaigns.js`, `src/campaign-source.js`, `campaigns.json` | Fine discount campaigns: download, reminders, the published list (web preview uses demo campaigns from `campaign-source.web.js`) |
 | `src/plates.js`, `src/brand-logos.js` | Number plate per emirate (from photos; names typeset, no emblems) and car-maker logo outlines (`scripts/make-brand-logos.mjs`) |
 | `src/store.js` | AsyncStorage state shared by UI and background task |
+| `scripts/simulate-users.js` | Simulated users on the web preview (crashes, overflow, junk text, SMS format). Default and Saif's preference: **40 users** (`node scripts/simulate-users.js`); run it after UI changes |
 | `tests/logic.test.mjs` | `node tests/logic.test.mjs`: 900+ checks of rules and translations. Run after any rule or string change |
 | `docs/privacy.html`, `docs/index.html` | Privacy policy and support page, served by GitHub Pages (main ▸ /docs) at https://jhy2njr6w7-a11y.github.io/road-dues/ |
 | `STORE-LISTING.md`, `README.md`, `store/screenshots/` | Store text + App Review notes, Windows build guide, store screenshots (`scripts/store-screenshots.js`) |

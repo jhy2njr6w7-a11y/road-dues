@@ -1,6 +1,6 @@
-// Simulated users: drives the web preview like 100 different people would and reports anything broken.
+// Simulated users: drives the web preview like 40 different people would (Saif's default) and reports anything broken.
 // Run the web preview first (npx expo start --web), then:
-//   node scripts/simulate-users.js [count=100] [http://localhost:8081]
+//   node scripts/simulate-users.js [count=40] [http://localhost:8081]
 // Needs Playwright with Chromium. Each user gets a random language, phone size, theme, location,
 // cars (some with typos), parking zone, Salik balance and fine, and every screen is checked for:
 // crashes/console errors, sideways overflow, "undefined"/"NaN"/"{placeholder}" text, and that the
@@ -10,7 +10,7 @@ const fs = require('fs');
 const os = require('os');
 const path = require('path');
 
-const COUNT = Number(process.argv[2] || 100);
+const COUNT = Number(process.argv[2] || 40);
 const BASE = process.argv[3] || 'http://localhost:8081';
 
 // Load the app's own rules and strings (ES modules) so expectations match the app exactly.

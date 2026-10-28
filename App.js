@@ -18,6 +18,7 @@ import { refreshCampaigns, syncCampaignReminders } from './src/campaigns';
 import { TodayScreen, FinesScreen, SalikScreen, ParkingScreen, VehiclesScreen, SettingsScreen, Onboarding, DisclaimerSheet } from './src/screens';
 import { setDisclaimerOpener } from './src/disclaimer';
 
+export const TAB_KEYS = ['today', 'parking', 'salik', 'fines', 'vehicles'];
 const TABS = [['today', 'home'], ['parking', 'car'], ['salik', 'swap-horizontal'], ['fines', 'pricetags'], ['vehicles', 'car-sport']];
 
 export default function App() {
@@ -55,6 +56,9 @@ export default function App() {
     if (!st.settings.lang) await update((x) => { x.settings.lang = lang; });
     await setupCategories();
     if (st.settings.onboarded) startTracking();
+    // Settings ▸ Open the app on. A notification tap that already chose a screen wins.
+    const start = TAB_KEYS.includes(st.settings.startTab) ? st.settings.startTab : 'today';
+    setTab((cur) => (cur === 'today' ? start : cur));
     setReady(true);
     refreshCampaigns();
   })(); }, []);
