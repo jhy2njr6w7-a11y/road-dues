@@ -5,7 +5,7 @@ import { t, T, emName, hrsOf, fmtDate, fmtTime, LANGS, getLang, gateName } from 
 import { EMIRATES, EM_ORDER, ISSUERS, GATES, BRANDS, aed, buildSms, cleanCode, ZONE_RE, fineOffer, discounted, daysLeft,
   validateVehicle, parseDate, emirateAt, distanceM, crossingCharge, latinDigits, visibleCampaigns, campaignStatus, campaignEnd, PAY_URLS, PARKING_EMIRATES } from './data';
 import { Card, Sec, Txt, Figure, Btn, Chip, Segmented, Toggle, Pill, List, ListRow, Field, Wrap, Notice, Warn, BrandBadge, Bubble, Progress, Icon,
-  useTheme, useArabicFont, styles, applyAppearance } from './ui';
+  useTheme, useArabicFont, styles, applyAppearance, Glass } from './ui';
 import * as A from './actions';
 import { currentPosition, requestLocation, locationStatus, startTracking } from './location';
 import { requestNotifPermission, setupCategories, notifStatus } from './notify';
@@ -20,11 +20,11 @@ export const PRIVACY_URL = 'https://jhy2njr6w7-a11y.github.io/road-dues/privacy.
 
 // Screen header: big title, ⓘ (disclaimer) on every screen, settings gear or a back button.
 function RoundBtn({ icon, label, onPress }) {
-  const c = useTheme();
   return (
-    <Pressable accessibilityRole="button" accessibilityLabel={label} onPress={onPress} hitSlop={6}
-      style={({ pressed }) => ({ width: 42, height: 42, borderRadius: 21, backgroundColor: c.card, alignItems: 'center', justifyContent: 'center', opacity: pressed ? 0.7 : 1 })}>
-      <Icon name={icon} size={22} />
+    <Pressable accessibilityRole="button" accessibilityLabel={label} onPress={onPress} hitSlop={6} style={({ pressed }) => ({ opacity: pressed ? 0.7 : 1 })}>
+      <Glass interactive style={{ width: 42, height: 42, borderRadius: 21, alignItems: 'center', justifyContent: 'center' }}>
+        <Icon name={icon} size={22} />
+      </Glass>
     </Pressable>
   );
 }
@@ -48,7 +48,7 @@ function DisclaimerCard() {
     { text: t('hideDisc'), onPress: () => update((x) => { x.settings.discHome = false; }) },
   ]);
   return (
-    <View style={{ backgroundColor: c.redBg, borderRadius: 16, flexDirection: 'row', alignItems: 'center' }}>
+    <Glass tint={c.red + '2e'} fallback={c.redBg} style={{ borderRadius: 16, flexDirection: 'row', alignItems: 'center' }}>
       <Pressable accessibilityRole="button" accessibilityLabel={t('viewDisclaimer')} onPress={() => openDisclaimer()}
         style={({ pressed }) => ({ flex: 1, paddingVertical: 10, paddingStart: 12, flexDirection: 'row', alignItems: 'center', gap: 10, opacity: pressed ? 0.7 : 1 })}>
         <Icon name="shield-checkmark-outline" size={20} color={c.red} />
@@ -57,7 +57,7 @@ function DisclaimerCard() {
       <Pressable accessibilityRole="button" accessibilityLabel={t('hideDisc')} onPress={hide} hitSlop={8} style={{ padding: 12 }}>
         <Icon name="close" size={18} color={c.red} />
       </Pressable>
-    </View>
+    </Glass>
   );
 }
 const Screen = ({ children }) => { const c = useTheme(); return <ScrollView style={{ backgroundColor: c.bg }} contentContainerStyle={styles.screen} keyboardShouldPersistTaps="handled" automaticallyAdjustKeyboardInsets keyboardDismissMode="interactive">{children}</ScrollView>; };
@@ -285,13 +285,15 @@ function EmirateTiles({ value, onChange }) {
       {PARKING_EMIRATES.map((k) => { const on = k === value;
         return (
           <Pressable key={k} accessibilityRole="radio" accessibilityState={{ selected: on }} onPress={() => onChange(k)}
-            style={({ pressed }) => ({ flexBasis: '47%', flexGrow: 1, flexDirection: 'row', alignItems: 'center', gap: 10, padding: 12, borderRadius: 18,
-              backgroundColor: on ? EM_COLORS[k] + '22' : c.card, borderWidth: 2, borderColor: on ? EM_COLORS[k] : 'transparent', opacity: pressed ? 0.8 : 1 })}>
-            <TicketIcon em={k} size={30} />
-            <View style={{ flex: 1, minWidth: 0 }}>
-              <Txt bold numberOfLines={1}>{emName(k)}</Txt>
-              <Txt muted size={12} numberOfLines={1}>{second(k)}</Txt>
-            </View>
+            style={({ pressed }) => ({ flexBasis: '47%', flexGrow: 1, opacity: pressed ? 0.8 : 1 })}>
+            <Glass interactive tint={on ? EM_COLORS[k] + '40' : undefined} fallback={on ? EM_COLORS[k] + '22' : c.card}
+              style={{ flexDirection: 'row', alignItems: 'center', gap: 10, padding: 12, borderRadius: 18, borderWidth: 2, borderColor: on ? EM_COLORS[k] : 'transparent' }}>
+              <TicketIcon em={k} size={30} />
+              <View style={{ flex: 1, minWidth: 0 }}>
+                <Txt bold numberOfLines={1}>{emName(k)}</Txt>
+                <Txt muted size={12} numberOfLines={1}>{second(k)}</Txt>
+              </View>
+            </Glass>
           </Pressable>); })}
     </View>
   );

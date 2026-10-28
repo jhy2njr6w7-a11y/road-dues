@@ -4,6 +4,7 @@ import React from 'react';
 import { View, Text, Pressable, TextInput, StyleSheet, useColorScheme, Appearance } from 'react-native';
 import Ionicons from '@expo/vector-icons/Ionicons';
 import Svg, { Path } from 'react-native-svg';
+import { GlassView, isLiquidGlassAvailable } from 'expo-glass-effect';
 import { brandMark } from './data';
 import { BRAND_LOGOS } from './brand-logos';
 import { useStore } from './store';
@@ -35,6 +36,18 @@ export function applyAppearance(mode) {
   if (typeof Appearance.setColorScheme === 'function') Appearance.setColorScheme(mode === 'light' || mode === 'dark' ? mode : 'unspecified');
 }
 export const useRtl = () => useStore().settings.lang === 'ar';
+
+// iOS 26 Liquid Glass for things that float over the content (tab bar, round buttons).
+// Elsewhere (older iOS, Android, web) the same shape gets the solid card colour.
+export const HAS_GLASS = isLiquidGlassAvailable();
+// tint: colour mixed into the glass (iOS 26); fallback: the solid background used without glass.
+export function Glass({ style, interactive, tint, fallback, children, ...rest }) {
+  const c = useTheme();
+  if (!HAS_GLASS) return <View {...rest} style={[{ backgroundColor: fallback || c.card }, style]}>{children}</View>;
+  return <GlassView {...rest} glassEffectStyle="regular" isInteractive={!!interactive} tintColor={tint} colorScheme={c.dark ? 'dark' : 'light'} style={style}>{children}</GlassView>;
+}
+// Tinted glass for a meaning colour (ok / warn / danger / info): a light wash of the colour
+const glassTone = (c, tn) => (TONES[tn] ? { tint: tone(c, tn).fg + '2e', fallback: tone(c, tn).bg } : {});
 // Arabic text uses Janna LT Bold (loaded in App.js). The face is already bold, so weights are reset.
 const ARABIC_FONT = { fontFamily: 'JannaLT', fontWeight: 'normal' };
 export const useArabicFont = () => (useRtl() ? ARABIC_FONT : null);
@@ -51,9 +64,11 @@ export function Icon({ name, size = 20, color, style }) {
 
 export function Card({ children, style, tone: tn, onPress }) {
   const c = useTheme();
-  const box = [{ backgroundColor: tn ? tone(c, tn).bg : c.card, borderRadius: 20, padding: 16, gap: 12 }, style];
-  if (!onPress) return <View style={box}>{children}</View>;
-  return <Pressable accessibilityRole="button" onPress={onPress} style={({ pressed }) => [box, pressed && { opacity: 0.85 }]}>{children}</Pressable>;
+  const box = [{ borderRadius: 20, padding: 16, gap: 12 }, style];
+  const card = <Glass {...glassTone(c, tn)} interactive={!!onPress} style={box}>{children}</Glass>;
+  if (!onPress) return card;
+  // flex/size from style also goes on the touch area so tiles in a row keep their width
+  return <Pressable accessibilityRole="button" onPress={onPress} style={({ pressed }) => [StyleSheet.flatten(style) && { flex: StyleSheet.flatten(style).flex, minWidth: StyleSheet.flatten(style).minWidth }, pressed && { opacity: 0.85 }]}>{card}</Pressable>;
 }
 /** Section heading between cards. `action` is an optional plain button on the other side. */
 export function Sec({ children, action }) {
@@ -84,14 +99,25 @@ export function Btn({ title, onPress, ghost, plain, danger, disabled, icon, icon
   const c = useTheme();
   const bg = danger ? c.red : plain ? 'transparent' : ghost ? c.chip : c.primary;
   const fg = danger ? '#ffffff' : plain || ghost ? c.fg : c.onPrimary;
+  const inner = (<>
+    {icon ? <Icon name={icon} size={small ? 16 : 18} color={fg} /> : null}
+    <Text maxFontSizeMultiplier={1.6} style={[{ color: fg, fontWeight: '700', fontSize: small ? 14 : 16, textAlign: 'center', flexShrink: 1 }, af]}>{title}</Text>
+    {iconEnd ? <Icon name={iconEnd} size={small ? 16 : 18} color={fg} /> : null}
+  </>);
+  if (ghost && HAS_GLASS) {
+    return (
+      <Pressable accessibilityRole="button" accessibilityState={{ disabled: !!disabled }} disabled={disabled} onPress={(e) => { haptic(); onPress?.(e); }}
+        style={({ pressed }) => [{ opacity: disabled ? 0.4 : pressed ? 0.75 : 1, transform: [{ scale: pressed && !disabled ? 0.98 : 1 }] }, style]}>
+        <Glass interactive style={{ minHeight: small ? 40 : 50, paddingHorizontal: small ? 14 : 18, borderRadius: 14, flexDirection: 'row', gap: 8, justifyContent: 'center', alignItems: 'center' }}>{inner}</Glass>
+      </Pressable>
+    );
+  }
   return (
     <Pressable accessibilityRole="button" accessibilityState={{ disabled: !!disabled }} disabled={disabled} onPress={(e) => { haptic(); onPress?.(e); }} hitSlop={plain ? 8 : 0}
       style={({ pressed }) => [{ minHeight: small ? 40 : 50, paddingHorizontal: plain ? 4 : small ? 14 : 18, borderRadius: 14, backgroundColor: bg,
         flexDirection: 'row', gap: 8, justifyContent: 'center', alignItems: 'center', opacity: disabled ? 0.4 : pressed ? 0.75 : 1,
         transform: [{ scale: pressed && !disabled ? 0.98 : 1 }] }, style]}>
-      {icon ? <Icon name={icon} size={small ? 16 : 18} color={fg} /> : null}
-      <Text maxFontSizeMultiplier={1.6} style={[{ color: fg, fontWeight: '700', fontSize: small ? 14 : 16, textAlign: 'center', flexShrink: 1 }, af]}>{title}</Text>
-      {iconEnd ? <Icon name={iconEnd} size={small ? 16 : 18} color={fg} /> : null}
+      {inner}
     </Pressable>
   );
 }
@@ -100,10 +126,12 @@ export function Chip({ title, on, onPress, lang }) {
   const af = useArabicFont();
   const font = lang && lang !== 'ar' ? null : af;
   const c = useTheme();
+  const label = <Text maxFontSizeMultiplier={1.6} style={[{ color: on ? c.onPrimary : c.fg, fontWeight: '600', fontSize: 14 }, font]}>{title}</Text>;
+  const shape = { minHeight: 40, paddingHorizontal: 14, borderRadius: 20, justifyContent: 'center' };
   return (
     <Pressable accessibilityRole="button" accessibilityState={{ selected: !!on }} onPress={() => { haptic('select'); onPress?.(); }}
-      style={({ pressed }) => ({ minHeight: 40, paddingHorizontal: 14, borderRadius: 20, justifyContent: 'center', backgroundColor: on ? c.primary : c.chip, opacity: pressed ? 0.75 : 1 })}>
-      <Text maxFontSizeMultiplier={1.6} style={[{ color: on ? c.onPrimary : c.fg, fontWeight: '600', fontSize: 14 }, font]}>{title}</Text>
+      style={({ pressed }) => (on || !HAS_GLASS ? { ...shape, backgroundColor: on ? c.primary : c.chip, opacity: pressed ? 0.75 : 1 } : { opacity: pressed ? 0.75 : 1 })}>
+      {on || !HAS_GLASS ? label : <Glass interactive style={shape}>{label}</Glass>}
     </Pressable>
   );
 }
@@ -112,14 +140,14 @@ export function Segmented({ options, value, onChange }) {
   const af = useArabicFont();
   const c = useTheme();
   return (
-    <View accessibilityRole="radiogroup" style={{ flexDirection: 'row', backgroundColor: c.chip, borderRadius: 14, padding: 3 }}>
+    <Glass accessibilityRole="radiogroup" fallback={c.chip} style={{ flexDirection: 'row', borderRadius: 14, padding: 3 }}>
       {options.map(([k, label]) => { const on = k === value;
         return (
           <Pressable key={k} accessibilityRole="radio" accessibilityState={{ selected: on }} onPress={() => { if (!on) haptic('select'); onChange(k); }}
             style={{ flex: 1, minHeight: 40, borderRadius: 11, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 6, backgroundColor: on ? c.card : 'transparent' }}>
             <Text numberOfLines={1} maxFontSizeMultiplier={1.4} style={[{ color: on ? c.fg : c.muted, fontWeight: on ? '700' : '600', fontSize: 14 }, af]}>{label}</Text>
           </Pressable>); })}
-    </View>
+    </Glass>
   );
 }
 /** On/off switch drawn by the app, so it lines up the same way in English and Arabic on every platform. */
@@ -143,9 +171,9 @@ export function List({ children }) {
   const c = useTheme();
   const rows = React.Children.toArray(children).filter(Boolean);
   return (
-    <View style={{ backgroundColor: c.card, borderRadius: 20, overflow: 'hidden' }}>
+    <Glass style={{ borderRadius: 20, overflow: 'hidden' }}>
       {rows.map((r, i) => <React.Fragment key={i}>{i ? <View style={{ height: StyleSheet.hairlineWidth, backgroundColor: c.line, marginStart: 16 }} /> : null}{r}</React.Fragment>)}
-    </View>
+    </Glass>
   );
 }
 export function ListRow({ icon, iconTone, title, sub, right, onPress, chevron }) {
@@ -187,13 +215,13 @@ export function Wrap({ children, style }) {
 export function Notice({ tone: tn = 'warn', icon = 'alert-circle', title, children }) {
   const c = useTheme(); const { fg, bg } = tone(c, tn);
   return (
-    <View accessibilityRole="alert" style={{ backgroundColor: bg, borderRadius: 16, padding: 14, flexDirection: 'row', gap: 10 }}>
+    <Glass accessibilityRole="alert" {...glassTone(c, tn)} fallback={bg} style={{ borderRadius: 16, padding: 14, flexDirection: 'row', gap: 10 }}>
       <Icon name={icon} size={20} color={fg} style={{ marginTop: 1 }} />
       <View style={{ flex: 1, minWidth: 0, gap: 6 }}>
         {title ? <Txt bold>{title}</Txt> : null}
         {typeof children === 'string' ? <Txt size={14}>{children}</Txt> : children}
       </View>
-    </View>
+    </Glass>
   );
 }
 export const Warn = ({ children }) => <Notice>{children}</Notice>;
@@ -227,6 +255,6 @@ export function Progress({ value, color }) {
   );
 }
 export const styles = StyleSheet.create({
-  screen: { paddingHorizontal: 16, paddingTop: 8, gap: 12, paddingBottom: 40 },
+  screen: { paddingHorizontal: 16, paddingTop: 8, gap: 12, paddingBottom: 120 }, // room to scroll past the floating tab bar
   title: { fontSize: 32, fontWeight: '800', letterSpacing: -0.5 },
 });
