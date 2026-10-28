@@ -62,7 +62,7 @@ export async function sendParkingSms({ em, text, hours, zone, lat, lng }) {
   const h = e.hours ? hours : 1;
   const until = new Date(Date.now() + h * 3600e3).toISOString();
   await update((x) => {
-    x.parking = { ...(x.parking || { id: newId(), start: new Date().toISOString(), lat, lng }), em, status: 'paid', zone: e.input === 'zone' ? cleanCode(zone) : null, until };
+    x.parking = { ...(x.parking || { id: newId(), start: new Date().toISOString(), lat, lng }), em, status: 'paid', zone: e.input === 'zone' ? cleanCode(zone) : null, until, paidAt: new Date().toISOString(), hours: h };
     if (e.input === 'zone' && lat != null) {
       x.zones = x.zones.filter((z) => Math.abs(z.lat - lat) > 0.0015 || Math.abs(z.lng - lng) > 0.0015);
       x.zones.push({ lat, lng, zone: cleanCode(zone) });
@@ -75,7 +75,7 @@ export async function sendParkingSms({ em, text, hours, zone, lat, lng }) {
 
 export async function markParkingPaid(hours = 1) {
   const until = new Date(Date.now() + hours * 3600e3).toISOString();
-  await update((x) => { if (x.parking) { x.parking.status = 'paid'; x.parking.until = until; } });
+  await update((x) => { if (x.parking) { x.parking.status = 'paid'; x.parking.until = until; x.parking.paidAt = new Date().toISOString(); x.parking.hours = hours; } });
   await cancelParkCheck();
   await scheduleExpiry(until);
 }
