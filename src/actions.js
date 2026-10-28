@@ -1,6 +1,6 @@
 // User actions that change state and keep notifications in sync.
 import { Linking, Alert, Platform } from 'react-native';
-import * as SMS from 'expo-sms';
+import * as SMS from './sms';
 import { update, getState, newId } from './store';
 import { t } from './i18n';
 import { EMIRATES, cleanCode, discounted, fineOffer, PAY_URLS } from './data';

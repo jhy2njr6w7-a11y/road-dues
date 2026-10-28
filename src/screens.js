@@ -3,7 +3,7 @@ import { ScrollView, View, Text, Pressable, Modal, Linking, Alert, AppState, Pla
 import { useStore, update, newId } from './store';
 import { t, T, emName, hrsOf, fmtDate, fmtTime, LANGS, getLang, gateName } from './i18n';
 import { EMIRATES, EM_ORDER, ISSUERS, GATES, BRANDS, aed, buildSms, cleanCode, ZONE_RE, fineOffer, discounted, daysLeft,
-  validateVehicle, parseDate, emirateAt, distanceM, crossingCharge, latinDigits, visibleCampaigns, campaignStatus, campaignEnd, PAY_URLS } from './data';
+  validateVehicle, parseDate, emirateAt, distanceM, crossingCharge, latinDigits, visibleCampaigns, campaignStatus, campaignEnd, PAY_URLS, PARKING_EMIRATES } from './data';
 import { Card, Sec, Txt, Figure, Btn, Chip, Segmented, Toggle, Pill, List, ListRow, Field, Wrap, Notice, Warn, BrandBadge, Bubble, Progress, Icon,
   useTheme, useArabicFont, styles, applyAppearance } from './ui';
 import * as A from './actions';
@@ -282,7 +282,7 @@ function EmirateTiles({ value, onChange }) {
   const second = (k) => (getLang() === 'ar' ? T.en['em_' + k] : T.ar['em_' + k]);
   return (
     <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 10 }}>
-      {EM_ORDER.map((k) => { const on = k === value;
+      {PARKING_EMIRATES.map((k) => { const on = k === value;
         return (
           <Pressable key={k} accessibilityRole="radio" accessibilityState={{ selected: on }} onPress={() => onChange(k)}
             style={({ pressed }) => ({ flexBasis: '47%', flexGrow: 1, flexDirection: 'row', alignItems: 'center', gap: 10, padding: 12, borderRadius: 18,
@@ -311,7 +311,9 @@ export function ParkingScreen({ go, prefill }) {
   const s = useStore(); const c = useTheme();
   const [pos, setPos] = useState(null);
   const [locating, setLocating] = useState(true);
-  const [em, setEm] = useState(prefill?.em || s.parking?.em || 'DXB');
+  const startEm = prefill?.em || s.parking?.em;
+  const [em, setEm] = useState(PARKING_EMIRATES.includes(startEm) ? startEm : 'DXB');
+  const [freeEm, setFreeEm] = useState(null); // GPS says we're in an emirate without paid street parking
   const [vehId, setVehId] = useState(s.defaultVeh || s.vehicles[0]?.id);
   const [zone, setZone] = useState(prefill?.zone || '');
   const [type, setType] = useState('S');
@@ -324,7 +326,7 @@ export function ParkingScreen({ go, prefill }) {
     setPos(p); setLocating(false);
     if (p) {
       const e = prefill?.em || emirateAt(p);
-      if (e) setEm(e);
+      if (PARKING_EMIRATES.includes(e)) setEm(e); else if (e) setFreeEm(e);
       const z = s.zones.find((z) => distanceM(p, z) < 150);
       if (z && !prefill?.zone) setZone(z.zone);
     }
@@ -359,8 +361,9 @@ export function ParkingScreen({ go, prefill }) {
 
       <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, paddingHorizontal: 4 }}>
         <Icon name={detected ? 'navigate' : 'location-outline'} size={16} color={c.muted} />
-        <Txt muted>{locating ? t('detecting') : !pos ? t('noLocation') : detected ? emName(em) + ' · ' + t('gps') : emName(em)}</Txt>
+        <Txt muted>{locating ? t('detecting') : !pos ? t('noLocation') : freeEm ? emName(freeEm) + ' · ' + t('gps') : detected ? emName(em) + ' · ' + t('gps') : emName(em)}</Txt>
       </View>
+      {freeEm ? <Notice tone="info" icon="information-circle-outline">{t('freeEmirate', { em: emName(freeEm) })}</Notice> : null}
       <Sec>{t('chooseEmirate')}</Sec>
       <EmirateTiles value={em} onChange={(k) => { setEm(k); const hs = EMIRATES[k].hours; if (hs && !hs.includes(hours)) setHours(hs[0]); }} />
 

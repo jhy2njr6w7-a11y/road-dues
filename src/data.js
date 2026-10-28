@@ -11,12 +11,13 @@ export const EMIRATES = {
     fmt: (v, x, h) => `${v.em} ${v.code} ${v.num} ${x} ${h}` },
   AJM: { sms: '5155', input: null, hours: null,
     fmt: (v) => `${v.em} ${v.code} ${v.num}` },
-  RAK: { sms: '7275', input: 'zone', hours: [1, 2, 3], unverified: true,
-    fmt: (v, x, h) => `${v.em === 'RAK' ? '' : v.em + ' '}${v.code}${v.num} ${x} ${h}` },
-  FUJ: { sms: null },
-  UAQ: { sms: null },
+  // No public paid street parking found (Oct 2026): mostly free; paid spots (airport, beaches) use machines.
+  RAK: { sms: null, freeParking: true },
+  FUJ: { sms: null, freeParking: true },
+  UAQ: { sms: null, freeParking: true },
 };
-export const EM_ORDER = ['DXB', 'SHJ', 'AUH', 'AJM', 'RAK', 'FUJ', 'UAQ'];
+export const EM_ORDER = ['DXB', 'SHJ', 'AUH', 'AJM', 'RAK', 'FUJ', 'UAQ']; // plates: cars from every emirate
+export const PARKING_EMIRATES = EM_ORDER.filter((k) => !EMIRATES[k].freeParking); // where you can pay by SMS
 
 // Paid parking windows in UAE local time. day: 0 = Sunday … 6 = Saturday. null = unknown (always ask).
 const PAID = {
@@ -31,6 +32,7 @@ export function uaeParts(date) {
   return { day: d.getUTCDay(), hour: d.getUTCHours() + d.getUTCMinutes() / 60 };
 }
 export function isPaidTime(em, date = new Date()) {
+  if (EMIRATES[em]?.freeParking) return false; // no parking reminders there
   const p = PAID[em];
   if (!p) return true; // unknown rules: remind anyway, the user checks the sign
   const { day, hour } = uaeParts(date);

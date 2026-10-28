@@ -108,7 +108,7 @@ When police announce a discount (for example "50% off Sharjah fines until 31 Dec
 
 ## Before you publish: check list
 - **Drive-test it.** Correct the Salik gate positions with "I'm here" in Settings (as a passenger), then copy the corrected numbers into `GATES` in `src/data.js`.
-- **Confirm the parking SMS formats** for each emirate with a real payment, especially Ras Al Khaimah, which is marked unverified.
+- **Confirm the parking SMS formats** for each emirate with a real payment.
 - **Get the translations checked.** Have native speakers review the Hindi, Chinese and Russian text in `src/i18n.js` and `src/i18n-extra.js`.
 - **Run the logic tests** after any change to rules: `node tests/logic.test.mjs`.
 

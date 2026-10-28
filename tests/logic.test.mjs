@@ -34,7 +34,10 @@ ok('Paid parking Dubai Sun = free', () => assert.equal(D.isPaidTime('DXB', uae('
 ok('Paid parking Dubai Mon noon', () => assert.equal(D.isPaidTime('DXB', uae('2026-10-26T12:00:00')), true));
 ok('Sharjah Fri free', () => assert.equal(D.isPaidTime('SHJ', uae('2026-10-30T12:00:00')), false));
 ok('Ajman afternoon break', () => assert.equal(D.isPaidTime('AJM', uae('2026-10-26T14:00:00')), false));
-ok('Unknown emirate always asks', () => assert.equal(D.isPaidTime('FUJ', uae('2026-10-26T03:00:00')), true));
+ok('No reminders in Fujairah', () => assert.equal(D.isPaidTime('FUJ', uae('2026-10-26T10:00:00')), false));
+ok('No reminders in RAK', () => assert.equal(D.isPaidTime('RAK', uae('2026-10-26T10:00:00')), false));
+ok('RAK has no SMS', () => assert.equal(D.buildSms('RAK', shj, { zone: '335A', hours: 1 }), null));
+ok('Parking emirates', () => assert.deepEqual(D.PARKING_EMIRATES, ['DXB', 'SHJ', 'AUH', 'AJM']));
 
 ok('Emirate: Kalba', () => assert.equal(D.emirateAt({ lat: 25.05, lng: 56.355 }), 'SHJ'));
 ok('Emirate: Dubai Marina', () => assert.equal(D.emirateAt({ lat: 25.08, lng: 55.14 }), 'DXB'));

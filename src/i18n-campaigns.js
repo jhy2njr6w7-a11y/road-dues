@@ -1,6 +1,7 @@
 // Strings added after the first release candidate: fine campaigns, appearance, onboarding steps, Salik gate names.
 export const CAMPAIGN_STRINGS = {
 en: {
+  freeEmirate: "You're in {em}. Parking here is mostly free. Where it's paid, follow the sign or pay at the machine.",
   activeTicket: 'Active ticket', ticketEndsIn: 'Ticket ends in', ticketEnded: 'Ticket ended', forHours: 'For {n} h', checkSms: 'Make sure you get the confirmation SMS from the parking authority.', chooseEmirate: 'Where are you parking?',
   'gate_garhoud': "Al Garhoud Bridge", 'gate_maktoum': "Al Maktoum Bridge", 'gate_airport': "Airport Tunnel", 'gate_mamzar-s': "Al Mamzar South", 'gate_mamzar-n': "Al Mamzar North", 'gate_safa-n': "Al Safa North", 'gate_safa-s': "Al Safa South", 'gate_barsha': "Al Barsha", 'gate_jebelali': "Jebel Ali", 'gate_businessbay': "Business Bay Crossing",
   salikAskT: "What's your Salik balance?", salikAskB: 'Check it in the Salik app and type it here. Parking+ then takes off each crossing it detects.', addBalance: 'Add balance', fixBal: 'Correct balance', next: 'Next', back: 'Back', notNow: 'Not now', stepOf: 'Step {n} of {total}',
@@ -19,6 +20,7 @@ en: {
   privacyShort: 'Your location, vehicles and fines stay on this phone. Parking+ has no servers. It only downloads a public list of fine discount campaigns, and sends nothing about you.',
 },
 ar: {
+  freeEmirate: 'أنت في {em}. المواقف هنا مجانية في الغالب، وحيث تكون مدفوعة اتبع اللوحة أو ادفع عند الجهاز.',
   activeTicket: 'تذكرة حالية', ticketEndsIn: 'تنتهي التذكرة خلال', ticketEnded: 'انتهت التذكرة', forHours: 'لمدة {n} ساعة', checkSms: 'تأكد من وصول رسالة التأكيد النصية من جهة المواقف.', chooseEmirate: 'أين توقفت؟',
   'gate_garhoud': "جسر القرهود", 'gate_maktoum': "جسر آل مكتوم", 'gate_airport': "نفق المطار", 'gate_mamzar-s': "الممزر الجنوبي", 'gate_mamzar-n': "الممزر الشمالي", 'gate_safa-n': "الصفا الشمالي", 'gate_safa-s': "الصفا الجنوبي", 'gate_barsha': "البرشاء", 'gate_jebelali': "جبل علي", 'gate_businessbay': "معبر الخليج التجاري",
   salikAskT: 'كم رصيدك في سالك؟', salikAskB: 'تحقق منه في تطبيق سالك واكتبه هنا. بعدها يخصم التطبيق كل عبور يرصده.', addBalance: 'أضف الرصيد', fixBal: 'تصحيح الرصيد', next: 'التالي', back: 'رجوع', notNow: 'ليس الآن', stepOf: 'الخطوة {n} من {total}',
@@ -37,6 +39,7 @@ ar: {
   privacyShort: 'موقعك ومركباتك ومخالفاتك تبقى على هذا الهاتف. لا يملك التطبيق خوادم، وكل ما يفعله هو تنزيل قائمة عامة بحملات تخفيض المخالفات، ولا يرسل أي بيانات عنك.',
 },
 hi: {
+  freeEmirate: 'आप {em} में हैं। यहाँ पार्किंग ज़्यादातर मुफ़्त है। जहाँ भुगतान करना हो, वहाँ बोर्ड देखें या मशीन पर भुगतान करें।',
   activeTicket: 'चालू टिकट', ticketEndsIn: 'टिकट खत्म होगा', ticketEnded: 'टिकट खत्म हो गया', forHours: '{n} घंटे के लिए', checkSms: 'पक्का करें कि पार्किंग प्राधिकरण से पुष्टि SMS आया है।', chooseEmirate: 'आप कहाँ पार्क कर रहे हैं?',
   'gate_garhoud': "अल गढ़ूद ब्रिज", 'gate_maktoum': "अल मकतूम ब्रिज", 'gate_airport': "एयरपोर्ट टनल", 'gate_mamzar-s': "अल मम्ज़र दक्षिण", 'gate_mamzar-n': "अल मम्ज़र उत्तर", 'gate_safa-n': "अल सफ़ा उत्तर", 'gate_safa-s': "अल सफ़ा दक्षिण", 'gate_barsha': "अल बरशा", 'gate_jebelali': "जेबेल अली", 'gate_businessbay': "बिज़नेस बे क्रॉसिंग",
   salikAskT: 'आपका Salik बैलेंस कितना है?', salikAskB: 'इसे Salik ऐप में देखें और यहाँ लिखें। फिर Parking+ हर पहचाने गए क्रॉसिंग को घटा देगा।', addBalance: 'बैलेंस जोड़ें', fixBal: 'बैलेंस ठीक करें', next: 'आगे', back: 'वापस', notNow: 'अभी नहीं', stepOf: 'चरण {n} / {total}',
@@ -55,6 +58,7 @@ hi: {
   privacyShort: 'आपकी लोकेशन, वाहन और जुर्माने इसी फ़ोन पर रहते हैं। Parking+ का कोई सर्वर नहीं है। यह सिर्फ़ जुर्माना छूट अभियानों की एक सार्वजनिक सूची डाउनलोड करता है और आपके बारे में कुछ नहीं भेजता।',
 },
 zh: {
+  freeEmirate: '您在{em}。这里停车大多免费。需要付费的地方，请按标志或在缴费机上付款。',
   activeTicket: '当前停车票', ticketEndsIn: '停车票剩余', ticketEnded: '停车票已到期', forHours: '{n} 小时', checkSms: '请确认已收到停车管理部门的确认短信。', chooseEmirate: '您在哪里停车？',
   'gate_garhoud': "加尔胡德桥", 'gate_maktoum': "马克图姆桥", 'gate_airport': "机场隧道", 'gate_mamzar-s': "马姆扎尔南", 'gate_mamzar-n': "马姆扎尔北", 'gate_safa-n': "萨法北", 'gate_safa-s': "萨法南", 'gate_barsha': "巴尔沙", 'gate_jebelali': "杰贝阿里", 'gate_businessbay': "商业湾跨河通道",
   salikAskT: '您的 Salik 余额是多少？', salikAskB: '请在 Salik 应用中查看并在此输入。之后 Parking+ 会扣除检测到的每次通行。', addBalance: '添加余额', fixBal: '更正余额', next: '下一步', back: '返回', notNow: '暂不', stepOf: '第 {n} 步，共 {total} 步',
@@ -73,6 +77,7 @@ zh: {
   privacyShort: '您的位置、车辆和罚单仅保存在本手机上。Parking+ 没有服务器，只会下载一份公开的罚单折扣活动列表，不会发送任何关于您的信息。',
 },
 ru: {
+  freeEmirate: 'Вы в {em}. Парковка здесь в основном бесплатная. Где она платная, следуйте знаку или платите в автомате.',
   activeTicket: 'Действующий билет', ticketEndsIn: 'Билет закончится через', ticketEnded: 'Билет закончился', forHours: 'На {n} ч', checkSms: 'Убедитесь, что пришло SMS-подтверждение от парковочной службы.', chooseEmirate: 'Где вы паркуетесь?',
   'gate_garhoud': "Мост Аль-Гаруд", 'gate_maktoum': "Мост Аль-Мактум", 'gate_airport': "Тоннель аэропорта", 'gate_mamzar-s': "Аль-Мамзар (юг)", 'gate_mamzar-n': "Аль-Мамзар (север)", 'gate_safa-n': "Аль-Сафа (север)", 'gate_safa-s': "Аль-Сафа (юг)", 'gate_barsha': "Аль-Барша", 'gate_jebelali': "Джебель-Али", 'gate_businessbay': "Переправа Бизнес-Бей",
   salikAskT: 'Какой у вас баланс Salik?', salikAskB: 'Посмотрите его в приложении Salik и введите здесь. Затем Parking+ будет вычитать каждый замеченный проезд.', addBalance: 'Добавить баланс', fixBal: 'Исправить баланс', next: 'Далее', back: 'Назад', notNow: 'Не сейчас', stepOf: 'Шаг {n} из {total}',

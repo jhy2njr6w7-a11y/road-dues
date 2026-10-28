@@ -91,7 +91,7 @@ async function simulate(browser, id, D, I) {
 
   await step('parking', async () => {
     await tab('parking');
-    const em = pick(D.EM_ORDER);
+    const em = pick(D.PARKING_EMIRATES);
     await p.getByText(t('em_' + em), { exact: true }).last().click({ timeout: 4000 });
     await p.waitForTimeout(250);
     const zoneBox = p.getByPlaceholder('335A');
