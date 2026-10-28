@@ -652,6 +652,8 @@ export function SettingsScreen({ go, onLang }) {
       <Sec>{t('appearanceH')}</Sec>
       <Segmented value={s.settings.appearance} onChange={(k) => { applyAppearance(k); setSetting('appearance')(k); }}
         options={['auto', 'light', 'dark'].map((k) => [k, t('look_' + k)])} />
+      <Sec>{t('startTabH')}</Sec>
+      <Wrap>{['today', 'parking', 'salik', 'fines', 'vehicles'].map((k) => <Chip key={k} title={t('tab_' + k)} on={(s.settings.startTab || 'today') === k} onPress={() => setSetting('startTab')(k)} />)}</Wrap>
       <LocationNotice />
       <Sec>{t('remindersH')}</Sec>
       <NotifNotice />
