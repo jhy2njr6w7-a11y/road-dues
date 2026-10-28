@@ -178,8 +178,8 @@ export default function App() {
                   return (
                     <Press key={k} accessibilityRole="tab" accessibilityState={{ selected: on }} onPress={() => { if (!on) haptic('select'); go(k); }}
                       style={{ flex: 1, alignItems: 'center', gap: 2, paddingVertical: 7, borderRadius: 25 }}>
-                      <Icon name={on ? icon : icon + '-outline'} size={22} color={on ? c.fg : c.muted} />
-                      <Text numberOfLines={1} maxFontSizeMultiplier={1.3} style={[{ fontSize: 11, fontWeight: on ? '700' : '500', color: on ? c.fg : c.muted }, af]}>{t('tab_' + k)}</Text>
+                      <Icon name={on ? icon : icon + '-outline'} size={22} color={on ? c.accent || c.fg : c.muted} />
+                      <Text numberOfLines={1} maxFontSizeMultiplier={1.3} style={[{ fontSize: 11, fontWeight: on ? '700' : '500', color: on ? c.accent || c.fg : c.muted }, af]}>{t('tab_' + k)}</Text>
                     </Press>); })}
               </Glass>
             </SafeAreaView>
