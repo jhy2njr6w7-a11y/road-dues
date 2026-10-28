@@ -6,6 +6,6 @@ When an item is built, move it to "Done" with the PR link.
 
 ## Waiting
 
-_(nothing yet)_
+1. **Show the parking price** (Parking tab, 28 Oct 2026). Saif's reference: another parking app shows "السعر درهمان + رسوم الرسائل النصية" (price AED 2 + SMS fees) for Abu Dhabi, standard (فرعي, S), 1 hour, under the duration picker, with the zone's paid hours and max stay (24 h) below it. Wanted: show the price for the chosen emirate / zone type / hours before sending the SMS, plus "+ SMS fee". Needs each emirate's current tariff checked from official sources (AUH standard/premium per hour, DXB zone A–D/codes, SHJ per hour, AJM).
 
 ## Done
