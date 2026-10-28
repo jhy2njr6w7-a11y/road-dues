@@ -3,7 +3,7 @@
 import React, { useState } from 'react';
 import { View, Text, Pressable, Platform } from 'react-native';
 import DateTimePicker, { DateTimePickerAndroid } from '@react-native-community/datetimepicker';
-import { useTheme, useArabicFont, Icon } from './ui';
+import { useTheme, useArabicFont, Icon, Press } from './ui';
 import { getLang, LOCALE, t } from './i18n';
 import { parseDate } from './data';
 
@@ -25,11 +25,11 @@ export function DateField({ label, value, onChange, minDate, maxDate, placeholde
     <View style={{ gap: 6 }}>
       {label ? <Text style={[{ color: c.muted, fontSize: 13, fontWeight: '600' }, af]}>{label}</Text> : null}
       <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
-        <Pressable accessibilityRole="button" accessibilityLabel={label} onPress={press}
+        <Press accessibilityRole="button" accessibilityLabel={label} onPress={press}
           style={{ flex: 1, minHeight: 50, borderRadius: 12, paddingHorizontal: 14, backgroundColor: c.field, flexDirection: 'row', alignItems: 'center', gap: 10 }}>
           <Icon name="calendar-outline" size={18} color={c.muted} />
           <Text style={[{ fontSize: 17, color: date ? c.fg : c.muted, flex: 1 }, af]}>{shown}</Text>
-        </Pressable>
+        </Press>
         {clearable && date ? <Pressable accessibilityRole="button" accessibilityLabel={t('remove')} hitSlop={8} onPress={() => { onChange(''); setOpen(false); }}>
           <Icon name="close-circle" size={22} color={c.muted} /></Pressable> : null}
       </View>
