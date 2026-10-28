@@ -9,7 +9,7 @@ Parking, Salik & fine reminders
 ## Description
 Parking+ reminds UAE drivers before they get fined or miss a discount.
 
-- Parking: notices when you park during paid hours and prepares the parking SMS for Dubai, Sharjah, Abu Dhabi, Ajman and Ras Al Khaimah. You review it and tap Send.
+- Parking: notices when you park during paid hours and prepares the parking SMS for Dubai, Sharjah, Abu Dhabi and Ajman. You review it and tap Send.
 - Salik: detects gate crossings, keeps an estimate of your balance and warns you before it runs out.
 - Fine discounts: tells you when police announce a fine discount campaign and reminds you before it ends. You can also track your own fines and their early-payment discounts.
 - Vehicles: save all your cars and pick which one you are driving.
@@ -27,7 +27,7 @@ DISCLAIMER: Parking+ is an unofficial app and is not affiliated with Salik, RTA,
 **Subtitle:** تذكير المواقف وسالك والمخالفات
 **Description:**
 تطبيق مواقف+ يذكّر السائقين في الإمارات قبل أن تصلهم مخالفة أو يفوتهم خصم.
-- المواقف: يلاحظ وقوفك خلال ساعات الدفع ويجهّز رسالة دفع الموقف لدبي والشارقة وأبوظبي وعجمان ورأس الخيمة. تراجعها ثم تضغط إرسال.
+- المواقف: يلاحظ وقوفك خلال ساعات الدفع ويجهّز رسالة دفع الموقف لدبي والشارقة وأبوظبي وعجمان. تراجعها ثم تضغط إرسال.
 - سالك: يرصد العبور من البوابات ويقدّر رصيدك وينبهك قبل أن ينفد.
 - تخفيضات المخالفات: ينبهك عند إعلان الشرطة حملة تخفيض ويذكّرك قبل انتهائها.
 - خصوصية: كل بياناتك تبقى على هاتفك. بدون حساب أو إعلانات أو تتبع.

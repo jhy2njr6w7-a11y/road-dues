@@ -16,8 +16,8 @@ A free iPhone + Android app (Expo / React Native, JavaScript) for UAE drivers:
 ## Decisions already made (keep them)
 | Topic | Decision |
 |---|---|
-| Parking SMS | Dubai 7275 `A12345 335A 2` (Dubai plate) / `SHJ3 12345 335A 1` (other plates); Sharjah 5566 `SHJ 12345 2` (1,2,3,5 h); Abu Dhabi 3009 `AUH 1 12345 S 2` (S/P); Ajman 5155 `AJM B 12345`; RAK 7275 marked **unverified**; Fujairah and UAQ: no SMS, point to meter/app |
-| Paid hours | DXB Mon–Sat 08–22; SHJ Sat–Thu 08–22; AUH 08–24 (free Sun); AJM Sat–Thu 08–13 & 17–22; others unknown → always ask |
+| Parking SMS | Dubai 7275 `A12345 335A 2` (Dubai plate) / `SHJ3 12345 335A 1` (other plates); Sharjah 5566 `SHJ 12345 2` (1,2,3,5 h); Abu Dhabi 3009 `AUH 1 12345 S 2` (S/P); Ajman 5155 `AJM B 12345`; RAK, Fujairah, UAQ: **no parking** in the app (Oct 2026 check found no public paid street parking or SMS service there; mostly free, paid spots use machines). `PARKING_EMIRATES` = DXB, SHJ, AUH, AJM; cars registered anywhere still work |
+| Paid hours | DXB Mon–Sat 08–22; SHJ Sat–Thu 08–22; AUH 08–24 (free Sun); AJM Sat–Thu 08–13 & 17–22; RAK/FUJ/UAQ never (no reminders) |
 | Salik | AED 6.30 peak (Mon–Sat 06–10, 16–20), 4.20 off-peak and Sunday, free 01–06; 1-hour pair rule for Safa N/S and Mamzar N/S; ignore same gate within 10 min. Ramadan schedule not implemented |
 | Fine discounts | Abu Dhabi and Sharjah: 35% within 60 days, 25% within a year, not for serious violations. Dubai: no built-in rule; user enters the discount shown in the official app |
 | Parking detection | While moving (speed ≥ 6 m/s) every GPS update reschedules a notification 4 min ahead; when the car stops the updates stop and it fires. Skipped near saved free spots (150 m) and outside paid hours |
@@ -57,7 +57,7 @@ A free iPhone + Android app (Expo / React Native, JavaScript) for UAE drivers:
 
 ## Open items for Saif (before publishing)
 - Drive-test and correct Salik gate coordinates (Settings ▸ "I'm here"), then copy into `GATES` in `src/data.js`.
-- Confirm SMS formats with real payments, especially RAK.
+- Confirm SMS formats with real payments.
 - Native-speaker review of Hindi, Chinese, Russian.
 - Turn on GitHub Pages (Settings ▸ Pages ▸ main, /docs) and put his email in `docs/privacy.html` and `docs/index.html` (`PRIVACY_URL` already points there).
 - Not legal advice: free app needs no government permission; earning money (ads/subscriptions) usually needs a UAE freelance/trade license; never use Salik/RTA/police logos.
