@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { ScrollView, View, Text, Pressable, Modal, Linking, Alert, AppState, Platform } from 'react-native';
+import { ScrollView, View, Text, Pressable, Modal, Linking, Alert, AppState, Platform, Image } from 'react-native';
 import { useStore, update, newId } from './store';
 import { t, T, emName, hrsOf, fmtDate, fmtTime, LANGS, getLang, gateName } from './i18n';
 import { EMIRATES, EM_ORDER, ISSUERS, GATES, BRANDS, aed, buildSms, cleanCode, ZONE_RE, fineOffer, discounted, daysLeft,
@@ -735,7 +735,7 @@ export function Onboarding({ onDone, onLang }) {
       <ScrollView contentContainerStyle={{ padding: 16, gap: 16, flexGrow: 1 }}>
         {step === 'lang' ? <>
           <View style={{ gap: 14, marginTop: 24 }}>
-            <ParkingMark size={64} />
+            <Image source={require('../assets/icon.png')} accessibilityIgnoresInvertColors style={{ width: 72, height: 72, borderRadius: 16 }} />
             <Txt bold size={30} style={{ letterSpacing: -0.5 }}>{t('welcomeT')}</Txt>
             <Txt size={17} muted>{t('welcomeB')}</Txt>
           </View>
