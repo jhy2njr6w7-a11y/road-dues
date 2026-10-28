@@ -125,16 +125,18 @@ export default function App() {
               {tab === 'vehicles' && <VehiclesScreen {...screenProps} />}
               {tab === 'settings' && <SettingsScreen {...screenProps} />}
             </View>
-            <SafeAreaView edges={['bottom']} style={{ flexDirection: 'row', borderTopWidth: 0.5, borderColor: c.line, backgroundColor: c.card, paddingTop: 6 }} accessibilityRole="tablist">
-              {TABS.map(([k, icon]) => { const on = tab === k;
-                return (
-                  <Pressable key={k} accessibilityRole="tab" accessibilityState={{ selected: on }} onPress={() => { if (!on) haptic('select'); go(k); }}
-                    style={{ flex: 1, alignItems: 'center', gap: 2, paddingBottom: 6, minHeight: 50 }}>
-                    <View style={{ paddingHorizontal: 16, paddingVertical: 3, borderRadius: 14, backgroundColor: on ? c.chip : 'transparent' }}>
+            {/* Floating tab bar: a rounded bar above the bottom edge; the selected tab sits on a pill */}
+            <SafeAreaView edges={['bottom']} style={{ backgroundColor: c.bg, paddingHorizontal: 12, paddingTop: 6 }}>
+              <View accessibilityRole="tablist" style={{ flexDirection: 'row', backgroundColor: c.card, borderRadius: 28, padding: 5, marginBottom: 6,
+                borderWidth: c.dark ? 1 : 0, borderColor: c.line, shadowColor: '#000', shadowOpacity: c.dark ? 0 : 0.08, shadowRadius: 12, shadowOffset: { width: 0, height: 4 }, elevation: 6 }}>
+                {TABS.map(([k, icon]) => { const on = tab === k;
+                  return (
+                    <Pressable key={k} accessibilityRole="tab" accessibilityState={{ selected: on }} onPress={() => { if (!on) haptic('select'); go(k); }}
+                      style={{ flex: 1, alignItems: 'center', gap: 2, paddingVertical: 7, borderRadius: 23, backgroundColor: on ? c.chip : 'transparent' }}>
                       <Icon name={on ? icon : icon + '-outline'} size={22} color={on ? c.fg : c.muted} />
-                    </View>
-                    <Text numberOfLines={1} maxFontSizeMultiplier={1.3} style={[{ fontSize: 11, fontWeight: on ? '700' : '500', color: on ? c.fg : c.muted }, af]}>{t('tab_' + k)}</Text>
-                  </Pressable>); })}
+                      <Text numberOfLines={1} maxFontSizeMultiplier={1.3} style={[{ fontSize: 11, fontWeight: on ? '700' : '500', color: on ? c.fg : c.muted }, af]}>{t('tab_' + k)}</Text>
+                    </Pressable>); })}
+              </View>
             </SafeAreaView>
             <DisclaimerSheet visible={!!disc} afterPay={!!disc?.afterPay} onClose={() => { const next = disc?.onContinue; setDisc(null); if (next) setTimeout(next, 350); }} />
           </View>

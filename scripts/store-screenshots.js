@@ -37,7 +37,7 @@ function state({ lang = 'en', parking = 'paid', appearance = 'light' } = {}) {
       { id: 'c3', gate: 'airport', date: iso(-60 * 30), charge: 6.3, auto: true },
       { id: 'c4', gate: 'businessbay', date: iso(-60 * 50), charge: 4.2, auto: true },
     ],
-    parking: parking === 'paid' ? { id: 'p1', start: iso(-25), lat: DUBAI.latitude, lng: DUBAI.longitude, em: 'DXB', status: 'paid', zone: '335A', until: iso(95) } : null,
+    parking: parking === 'paid' ? { id: 'p1', start: iso(-25), lat: DUBAI.latitude, lng: DUBAI.longitude, em: 'DXB', status: 'paid', zone: '335A', until: iso(95), paidAt: iso(-25), hours: 2 } : null,
     freeSpots: [], zones: [],
     drive: { lastMoving: null, lastLat: null, lastLng: null },
     campaigns: [

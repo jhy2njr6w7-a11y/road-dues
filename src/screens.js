@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { ScrollView, View, Text, Pressable, Modal, Linking, Alert, AppState, Platform } from 'react-native';
 import { useStore, update, newId } from './store';
-import { t, emName, hrsOf, fmtDate, fmtTime, LANGS, getLang, gateName } from './i18n';
+import { t, T, emName, hrsOf, fmtDate, fmtTime, LANGS, getLang, gateName } from './i18n';
 import { EMIRATES, EM_ORDER, ISSUERS, GATES, BRANDS, aed, buildSms, cleanCode, ZONE_RE, fineOffer, discounted, daysLeft,
   validateVehicle, parseDate, emirateAt, distanceM, crossingCharge, latinDigits, visibleCampaigns, campaignStatus, campaignEnd, PAY_URLS } from './data';
 import { Card, Sec, Txt, Figure, Btn, Chip, Segmented, Toggle, Pill, List, ListRow, Field, Wrap, Notice, Warn, BrandBadge, Bubble, Progress, Icon,
@@ -171,7 +171,7 @@ export function TodayScreen({ go }) {
         </Card>
       )}
 
-      <Card tone={s.parking?.status === 'awaiting' ? 'danger' : undefined}><ParkingStatus go={go} /></Card>
+      <ParkingStatus go={go} />
 
       <View style={{ flexDirection: 'row', gap: 12 }}>
         <Card onPress={() => go('salik')} style={{ flex: 1, minWidth: 0 }} tone={balTone}>
@@ -200,37 +200,103 @@ export function TodayScreen({ go }) {
   );
 }
 
+// Each emirate's colour, used for its parking ticket icon and tile
+export const EM_COLORS = { AUH: '#3aa6c2', DXB: '#2f5fd0', SHJ: '#e0a72e', AJM: '#8a6d45', RAK: '#c4473c', FUJ: '#2f9467', UAQ: '#7357c9' };
+
+// A parking ticket in the emirate's colour, with the P of parking signs
+function TicketIcon({ em, size = 34 }) {
+  return (
+    <View style={{ width: size, height: size, alignItems: 'center', justifyContent: 'center', transform: [{ rotate: '-14deg' }] }}>
+      <Icon name="ticket" size={size} color={EM_COLORS[em] || '#1a56b8'} />
+      <Text style={{ position: 'absolute', color: '#fff', fontWeight: '900', fontSize: size * 0.36 }}>P</Text>
+    </View>
+  );
+}
+
+// Re-renders every second while mounted (live countdown)
+function useNow(active) {
+  const [now, setNow] = useState(Date.now());
+  useEffect(() => { if (!active) return; const id = setInterval(() => setNow(Date.now()), 1000); return () => clearInterval(id); }, [active]);
+  return now;
+}
+const countdown = (ms) => {
+  const s = Math.max(0, Math.floor(ms / 1000)); const h = Math.floor(s / 3600); const m = Math.floor((s % 3600) / 60); const sec = s % 60;
+  const p2 = (n) => String(n).padStart(2, '0');
+  return h ? `${h}:${p2(m)}:${p2(sec)}` : `${p2(m)}:${p2(sec)}`;
+};
+
+// The parking ticket: emirate, when, how long, which car, a live countdown, and what to do next
 function ParkingStatus({ go }) {
-  const s = useStore(); const p = s.parking;
+  const s = useStore(); const c = useTheme(); const p = s.parking;
+  const paid = p?.status === 'paid'; const left = paid && p.until ? new Date(p.until).getTime() - Date.now() : 0;
+  useNow(paid && left > 0);
   if (!p) {
     return (
-      <View style={{ gap: 12 }}>
+      <Card>
         <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
           <ParkingMark />
           <View style={{ flex: 1, minWidth: 0 }}><Txt bold>{t('parking')}</Txt><Txt muted>{t('notParked')}</Txt></View>
         </View>
         <Btn icon="chatbubble-ellipses-outline" title={t('payBySms')} onPress={() => go('parking')} />
-      </View>
+      </Card>
     );
   }
+  const v = s.vehicles.find((x) => x.id === s.defaultVeh) || s.vehicles[0];
+  const since = p.paidAt || p.start;
+  const Line = ({ icon, children }) => (
+    <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}><Icon name={icon} size={18} color={c.muted} />{children}</View>
+  );
   return (
-    <View style={{ gap: 12 }}>
-      <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
-        <ParkingMark />
-        <View style={{ flex: 1, minWidth: 0, gap: 4 }}>
-          <Txt bold>{t('parkedAt', { time: fmtTime(p.start), em: emName(p.em) })}</Txt>
-          {p.status === 'paid' ? <Pill tone="ok" text={t('paidUntil', { time: fmtTime(p.until) })} /> : p.status === 'free' ? <Pill text={t('freeSpot')} /> : <Pill tone="danger" text={t('notPaid')} />}
-        </View>
+    <Card style={{ padding: 0, gap: 0, overflow: 'hidden' }}>
+      <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10, paddingHorizontal: 16, paddingVertical: 12, borderBottomWidth: 1, borderColor: c.line }}>
+        <TicketIcon em={p.em} size={30} />
+        <Txt bold style={{ flex: 1 }} numberOfLines={1}>{t('parking')} · {emName(p.em)}</Txt>
+        {paid ? <Pill tone={left > 0 ? 'ok' : 'danger'} text={left > 0 ? t('activeTicket') : t('ticketEnded')} />
+          : p.status === 'free' ? <Pill text={t('freeSpot')} /> : <Pill tone="danger" text={t('notPaid')} />}
       </View>
-      {p.zone ? <Txt muted>{p.zone}</Txt> : null}
-      <Wrap>
-        {p.status === 'awaiting' ? <><Btn small title={t('payNow')} onPress={() => go('parking')} /><Btn ghost small title={t('freeHere')} onPress={A.markFreeHere} /></> : null}
-        {p.status === 'paid' ? <Btn ghost small title={t('extend')} onPress={() => go('parking')} /> : null}
-        <Btn plain small title={t('removeTicket')} onPress={A.removeParkingTicket} />
-      </Wrap>
+      <View style={{ padding: 16, gap: 10 }}>
+        <Line icon="calendar-outline"><Txt>{fmtDate(since)} · {fmtTime(since)}</Txt></Line>
+        {paid && p.hours ? <Line icon="time-outline"><Txt>{t('forHours', { n: p.hours })}</Txt></Line> : null}
+        {p.zone ? <Line icon="location-outline"><Txt>{p.zone}</Txt></Line> : null}
+        {v ? <Line icon="car-outline"><Plate v={v} width={150} /></Line> : null}
+        {paid && left > 0 ? (
+          <View style={{ marginTop: 4 }}>
+            <Txt muted>{t('ticketEndsIn')}</Txt>
+            <Figure size={44} color={left < 10 * 60e3 ? c.red : c.fg}>{countdown(left)}</Figure>
+          </View>
+        ) : null}
+        {paid ? <Notice icon="chatbubble-ellipses-outline">{t('checkSms')}</Notice> : null}
+        <Wrap>
+          {p.status === 'awaiting' ? <><Btn small title={t('payNow')} onPress={() => go('parking')} /><Btn ghost small title={t('freeHere')} onPress={A.markFreeHere} /></> : null}
+          {paid ? <Btn ghost small icon="add" title={t('extend')} onPress={() => go('parking')} /> : null}
+          <Btn plain small title={t('removeTicket')} onPress={A.removeParkingTicket} />
+        </Wrap>
+      </View>
+    </Card>
+  );
+}
+
+// Emirate picker: a coloured tile per emirate, name in the app's language and the other of Arabic/English
+function EmirateTiles({ value, onChange }) {
+  const c = useTheme();
+  const second = (k) => (getLang() === 'ar' ? T.en['em_' + k] : T.ar['em_' + k]);
+  return (
+    <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 10 }}>
+      {EM_ORDER.map((k) => { const on = k === value;
+        return (
+          <Pressable key={k} accessibilityRole="radio" accessibilityState={{ selected: on }} onPress={() => onChange(k)}
+            style={({ pressed }) => ({ flexBasis: '47%', flexGrow: 1, flexDirection: 'row', alignItems: 'center', gap: 10, padding: 12, borderRadius: 18,
+              backgroundColor: on ? EM_COLORS[k] + '22' : c.card, borderWidth: 2, borderColor: on ? EM_COLORS[k] : 'transparent', opacity: pressed ? 0.8 : 1 })}>
+            <TicketIcon em={k} size={30} />
+            <View style={{ flex: 1, minWidth: 0 }}>
+              <Txt bold numberOfLines={1}>{emName(k)}</Txt>
+              <Txt muted size={12} numberOfLines={1}>{second(k)}</Txt>
+            </View>
+          </Pressable>); })}
     </View>
   );
 }
+
 // The blue "P" of UAE parking signs
 function ParkingMark({ size = 40 }) {
   return (
@@ -289,15 +355,14 @@ export function ParkingScreen({ go, prefill }) {
     <Screen>
       <Title k="parking" onSettings={() => go('settings')} />
       <LocationNotice extra="locParkNote" />
-      {s.parking ? <Card tone={s.parking.status === 'awaiting' ? 'danger' : undefined}><ParkingStatus go={go} /></Card> : null}
+      {s.parking ? <ParkingStatus go={go} /> : null}
 
       <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, paddingHorizontal: 4 }}>
         <Icon name={detected ? 'navigate' : 'location-outline'} size={16} color={c.muted} />
         <Txt muted>{locating ? t('detecting') : !pos ? t('noLocation') : detected ? emName(em) + ' · ' + t('gps') : emName(em)}</Txt>
       </View>
-      <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 8 }}>
-        {EM_ORDER.map((k) => <Chip key={k} title={emName(k)} on={k === em} onPress={() => { setEm(k); const hs = EMIRATES[k].hours; if (hs && !hs.includes(hours)) setHours(hs[0]); }} />)}
-      </ScrollView>
+      <Sec>{t('chooseEmirate')}</Sec>
+      <EmirateTiles value={em} onChange={(k) => { setEm(k); const hs = EMIRATES[k].hours; if (hs && !hs.includes(hours)) setHours(hs[0]); }} />
 
       <Card>
         {s.vehicles.length ? <><Txt muted size={13}>{t('vehicle')}</Txt>
