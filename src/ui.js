@@ -43,7 +43,8 @@ export const HAS_GLASS = isLiquidGlassAvailable();
 export function Glass({ style, interactive, children, ...rest }) {
   const c = useTheme();
   if (!HAS_GLASS) return <View {...rest} style={[{ backgroundColor: c.card }, style]}>{children}</View>;
-  return <GlassView {...rest} glassEffectStyle="regular" isInteractive={!!interactive} colorScheme={c.dark ? 'dark' : 'light'} style={style}>{children}</GlassView>;
+  // Tinted with the card colour so the icons stay readable over bright content (white cards, blue buttons)
+  return <GlassView {...rest} glassEffectStyle="regular" isInteractive={!!interactive} tintColor={c.card + 'b3'} colorScheme={c.dark ? 'dark' : 'light'} style={style}>{children}</GlassView>;
 }
 // Arabic text uses Janna LT Bold (loaded in App.js). The face is already bold, so weights are reset.
 const ARABIC_FONT = { fontFamily: 'JannaLT', fontWeight: 'normal' };
