@@ -25,6 +25,8 @@ When an item is built, move it to "Done" with the PR link.
     - **"walked away" signal:** after the car stops, if the next GPS updates move away at walking speed (~1–2 m/s, > 40 m from where the car stopped), the user parked and left the car → notify right away;
     - if no walking is seen, wait longer (e.g. 8–10 min stopped) before asking;
     - a "Not a parking spot" / "Don't ask here" button on the notification that saves the place (like free spots);
+    - **Update 29 Oct:** Saif says it fires even after stopping for only a few seconds. So the 4-min timer is firing while he drives: the background task is not getting (or not finishing) GPS updates often enough to keep pushing it back (possible causes: iOS delivering updates late/in batches in the background, `speed` reported as -1 so updates aren't counted as moving, the task running out of background time, e.g. while `refreshCampaigns()` downloads). Fix must not rely on the timer alone: re-arm on any update that moved > 50 m from the last stop point (whatever `speed` says), move the campaign download after the parking logic, use the walked-away signal as the main trigger and a longer fallback (10 min).
+    - add a hidden **trip log** (Settings ▸ tap version 5×) that records each GPS update time/speed and each schedule/cancel, so Saif can screenshot it after a drive and we see exactly why it fired.
     - later: real paid-zone maps where open data exists (e.g. Dubai RTA zones), so it only asks inside known paid zones. No such data found yet for Sharjah/Kalba.
 
 ## Done
