@@ -4,7 +4,7 @@ import { useSyncExternalStore } from 'react';
 
 const KEY = 'road-dues-state-v1';
 export const DEFAULT_STATE = {
-  settings: { lang: null, onboarded: false, low: 25, remParking: true, remSalik: true, remFines: true, gateOverrides: {}, discHome: true, discAfterPay: true, appearance: 'auto', startTab: 'today' },
+  settings: { lang: null, onboarded: false, low: 25, remParking: true, remSalik: true, remFines: true, gateOverrides: {}, discHome: true, discAfterPay: true, appearance: 'auto', startTab: 'today', inCarWait: 10 },
   balance: null,            // Salik balance in AED (user-entered, then reduced by detected crossings)
   vehicles: [],             // {id, brand, model, color, em, code, num}
   defaultVeh: null,
@@ -13,7 +13,7 @@ export const DEFAULT_STATE = {
   parking: null,            // {id, start, lat, lng, em, status: 'awaiting'|'paid'|'free', zone, until}
   freeSpots: [],            // {id, name, lat, lng}
   zones: [],                // remembered zone codes {lat, lng, zone}
-  drive: { lastMoving: null, lastLat: null, lastLng: null }, // used by the background task
+  drive: { lastMoving: null, lastLat: null, lastLng: null, asked: false, anchorLat: null, anchorLng: null }, // used by the background task (src/park-detect.js)
   campaigns: [],            // fine discount campaigns from campaigns.json (see src/campaigns.js)
   campaignsAt: null,        // when the list was last downloaded
   trackingVersion: null,    // options the background GPS was started with (see startTracking)

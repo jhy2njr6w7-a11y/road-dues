@@ -2,9 +2,10 @@ import React, { useEffect, useState } from 'react';
 import { ScrollView, View, Text, Pressable, Modal, Linking, Alert, AppState, Platform, Image } from 'react-native';
 import { useStore, update, newId } from './store';
 import { t, T, emName, hrsOf, fmtDate, fmtTime, LANGS, getLang, gateName } from './i18n';
+import { IN_CAR_WAITS, DEFAULT_IN_CAR_WAIT } from './park-detect';
 import { EMIRATES, EM_ORDER, ISSUERS, GATES, BRANDS, aed, buildSms, cleanCode, ZONE_RE, fineOffer, discounted, daysLeft,
   validateVehicle, parseDate, emirateAt, distanceM, crossingCharge, latinDigits, visibleCampaigns, campaignStatus, campaignEnd, PAY_URLS, PARKING_EMIRATES } from './data';
-import { Card, Sec, Txt, Figure, Btn, Chip, Segmented, Toggle, Pill, List, ListRow, Field, Wrap, Notice, Warn, BrandBadge, Bubble, Progress, Icon,
+import { Card, Row, Sec, Txt, Figure, Btn, Chip, Segmented, Toggle, Pill, List, ListRow, Field, Wrap, Notice, Warn, BrandBadge, Bubble, Progress, Icon,
   useTheme, useArabicFont, styles, applyAppearance, Glass, Press } from './ui';
 import * as A from './actions';
 import { currentPosition, requestLocation, locationStatus, startTracking } from './location';
@@ -642,6 +643,7 @@ export function VehiclesScreen({ go }) {
 export function SettingsScreen({ go, onLang }) {
   const s = useStore();
   const [saved, setSaved] = useState(null);
+  const [taps, setTaps] = useState(0); // 5 taps on "Reminders" shows the trip log (for testing on the road)
   const setSetting = (k) => async (v) => { await update((x) => { x.settings[k] = v; }); if (k === 'remFines') { A.syncFineReminders(); syncCampaignReminders(); } };
   const toggleRow = (k, label) => <ListRow title={label} right={<Toggle label={label} value={s.settings[k]} onValueChange={setSetting(k)} />} />;
   return (
@@ -655,7 +657,9 @@ export function SettingsScreen({ go, onLang }) {
       <Sec>{t('startTabH')}</Sec>
       <Wrap>{['today', 'parking', 'salik', 'fines', 'vehicles'].map((k) => <Chip key={k} title={t('tab_' + k)} on={(s.settings.startTab || 'today') === k} onPress={() => setSetting('startTab')(k)} />)}</Wrap>
       <LocationNotice />
-      <Sec>{t('remindersH')}</Sec>
+      <Press onPress={() => { const n = taps + 1; setTaps(n); if (n >= 5) setSetting('tripLog')(!s.settings.tripLog); }} accessible={false}>
+        <Sec>{t('remindersH')}</Sec>
+      </Press>
       <NotifNotice />
       <List>
         {toggleRow('remParking', t('remParking'))}
@@ -667,6 +671,9 @@ export function SettingsScreen({ go, onLang }) {
             <Btn ghost small title="+" onPress={() => setSetting('low')(Math.min(200, s.settings.low + 5))} />
           </View>} />
       </List>
+      <Txt muted size={13} style={{ paddingHorizontal: 4 }}>{t('inCarWait')}</Txt>
+      <Segmented value={s.settings.inCarWait || DEFAULT_IN_CAR_WAIT} onChange={setSetting('inCarWait')} options={IN_CAR_WAITS.map((n) => [n, t('nMin', { n })])} />
+      {s.settings.tripLog ? <TripLog /> : null}
       {Platform.OS === 'android' ? <>
         <List><ListRow icon="battery-half-outline" iconTone="warn" title={t('battT')} sub={t('battB')} chevron onPress={openBatterySettings} /></List>
       </> : null}
@@ -696,6 +703,19 @@ export function SettingsScreen({ go, onLang }) {
         <ListRow icon="shield-checkmark-outline" title={t('viewDisclaimer')} chevron onPress={() => openDisclaimer()} />
       </List>
     </Screen>
+  );
+}
+
+// Hidden testing aid: what the background task saw on the last drives and what it decided (src/location.js).
+function TripLog() {
+  const s = useStore(); const c = useTheme();
+  const lines = (s.tripLog || []).slice(-120).reverse();
+  return (
+    <Card>
+      <Row><Txt bold>{t('tripLog')}</Txt><Btn plain small title={t('clearLog')} onPress={() => update((x) => { x.tripLog = []; })} /></Row>
+      {lines.length ? <Text selectable style={{ fontFamily: Platform.OS === 'ios' ? 'Menlo' : 'monospace', fontSize: 11, color: c.muted, writingDirection: 'ltr', textAlign: 'left' }}>{lines.join('\n')}</Text>
+        : <Txt muted size={13}>{t('tripLogEmpty')}</Txt>}
+    </Card>
   );
 }
 

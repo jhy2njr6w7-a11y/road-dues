@@ -63,7 +63,7 @@ export async function scheduleParkCheck({ em, smsText, num, minutes = 4, lat, ln
   await Notifications.scheduleNotificationAsync({
     identifier: PARK_CHECK_ID,
     content: content(t('didPayT'), body, ready || smsText === null ? CAT.parking : CAT.parkingZone, { kind: 'parking', em, lat, lng, scheduledFor: Date.now() + minutes * 60e3 }),
-    trigger: at(Date.now() + minutes * 60e3),
+    trigger: minutes > 0 ? at(Date.now() + minutes * 60e3) : { channelId: 'reminders' }, // 0: right now (walked away from the car)
   });
 }
 export const cancelParkCheck = () => Notifications.cancelScheduledNotificationAsync(PARK_CHECK_ID).catch(() => {});

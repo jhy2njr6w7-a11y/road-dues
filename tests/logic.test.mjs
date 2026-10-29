@@ -2,8 +2,8 @@
 import fs from 'node:fs'; import path from 'node:path'; import os from 'node:os'; import assert from 'node:assert/strict';
 const tmp = fs.mkdtempSync(path.join(os.tmpdir(), 'rd-'));
 fs.writeFileSync(path.join(tmp, 'package.json'), '{"type":"module"}');
-for (const f of ['data.js', 'i18n.js', 'i18n-extra.js', 'i18n-campaigns.js']) fs.writeFileSync(path.join(tmp, f), fs.readFileSync(new URL('../src/' + f, import.meta.url), 'utf8').replace(/from '\.\/(i18n-\w+)'/g, "from './$1.js'"));
-const D = await import(path.join(tmp, 'data.js')); const I = await import(path.join(tmp, 'i18n.js'));
+for (const f of ['data.js', 'park-detect.js', 'i18n.js', 'i18n-extra.js', 'i18n-campaigns.js']) fs.writeFileSync(path.join(tmp, f), fs.readFileSync(new URL('../src/' + f, import.meta.url), 'utf8').replace(/from '\.\/(i18n-\w+)'/g, "from './$1.js'"));
+const D = await import(path.join(tmp, 'data.js')); const P = await import(path.join(tmp, 'park-detect.js')); const I = await import(path.join(tmp, 'i18n.js'));
 let n = 0; const ok = (name, fn) => { fn(); n++; };
 
 const shj = { em: 'SHJ', code: '3', num: '12345' }, dxb = { em: 'DXB', code: 'A', num: '54321' }, auh = { em: 'AUH', code: '1', num: '777' };
@@ -86,6 +86,48 @@ const shipped = JSON.parse(fs.readFileSync(new URL('../campaigns.json', import.m
 ok('campaigns.json is valid', () => assert.equal(D.parseCampaigns(shipped).length, shipped.campaigns.length));
 
 ok('Every Salik gate has a name', () => D.GATES.forEach((g) => assert.ok(I.T.en['gate_' + g.id], g.id)));
+
+// Parking detection on simulated trips (src/park-detect.js). Second by second: GPS updates every 30 m
+// (or none when iOS holds them back), the ~100 m circle that wakes the app, the step counter, and the
+// fallback reminder. Each trip returns when "Did you pay?" would appear.
+function trip(steps, { gpsAfterStop = true, stepCounter = true, wait = 10 } = {}) {
+  const start = Date.UTC(2026, 9, 29, 6, 0, 0); // 10:00 UAE, a Thursday
+  let t = start, x = 0, speed = 0;             // metres east of a Kalba street
+  const pos = () => ({ lat: 25.0742, lng: 56.3553 + x / 100800 });
+  let drive = {}, anchor = null, fireAt = null, lastGps = null, stepCount = 0, stepsAtMove = 0, stoppedOnce = false;
+  const fired = [];
+  const apply = (r) => {
+    drive = r.drive;
+    if (r.action === 'arm') { fireAt = t + wait * 60e3; stepsAtMove = stepCount; const p = pos(); if (!anchor || D.distanceM(p, anchor) >= 50) anchor = p; }
+    if (r.action === 'ask') { fired.push({ at: (t - start) / 1000, speed, how: 'now' }); fireAt = null; }
+  };
+  for (const [kind, secs, kmh = 0] of steps) {
+    for (let i = 0; i < secs; i++) {
+      t += 1000; speed = kind === 'walk' ? 1.4 : kmh / 3.6;
+      x += speed; if (kind === 'walk') stepCount += 1.8;
+      if (kind === 'stop' || kind === 'walk') stoppedOnce = true;
+      const p = pos(); const steps = stepCounter ? Math.round(stepCount - stepsAtMove) : null;
+      const gpsOn = gpsAfterStop || !stoppedOnce;
+      if (gpsOn && (!lastGps || D.distanceM(p, lastGps) >= 30)) { lastGps = p; apply(P.runDriveEvents(drive, [{ type: 'loc', t, ...p, speed: kind === 'walk' ? 1.4 : speed, steps }], D.distanceM)); }
+      if (anchor && D.distanceM(p, anchor) > P.ANCHOR_RADIUS) { anchor = null; apply(P.runDriveEvents(drive, [{ type: 'exit', t, ...p, steps }], D.distanceM)); }
+      if (fireAt && t >= fireAt) { fired.push({ at: (t - start) / 1000, speed, how: 'fallback' }); fireAt = null; }
+    }
+  }
+  return fired;
+}
+const drivingWhen = (f) => f.filter((e) => e.speed > 2);
+ok('Trip: red light 1 min then drive on, GPS normal → no question', () => assert.deepEqual(trip([['drive', 300, 60], ['stop', 60], ['drive', 600, 60]]), []));
+ok('Trip: red light then drive on, iOS holds GPS back → circle wakes it, no question', () => assert.deepEqual(trip([['drive', 300, 60], ['stop', 60], ['drive', 600, 60]], { gpsAfterStop: false }), []));
+ok('Trip: 117 km/h after a short stop never gets asked', () => assert.deepEqual(drivingWhen(trip([['drive', 120, 117], ['stop', 40], ['drive', 900, 117]], { gpsAfterStop: false })), []));
+ok('Trip: crawling traffic 7 km/h for 12 min → no question', () => assert.deepEqual(trip([['drive', 200, 50], ['drive', 720, 7], ['drive', 200, 50]]), []));
+ok('Trip: several lights in a row → no question', () => assert.deepEqual(trip([['drive', 120, 50], ['stop', 90], ['drive', 60, 40], ['stop', 120], ['drive', 60, 40], ['stop', 45], ['drive', 300, 60]], { gpsAfterStop: false }), []));
+ok('Trip: park and walk away → asked within 30 s', () => { const f = trip([['drive', 300, 50], ['stop', 20], ['walk', 120]]); assert.equal(f.length, 1); assert.equal(f[0].how, 'now'); assert.ok(f[0].at - 320 <= 30, `asked after ${f[0].at - 320} s`); });
+ok('Trip: park and walk away, GPS held back → circle + steps ask', () => { const f = trip([['drive', 300, 50], ['stop', 20], ['walk', 180]], { gpsAfterStop: false }); assert.equal(f.length, 1); assert.equal(f[0].how, 'now'); });
+ok('Trip: park and stay in the car → asked after the in-car wait', () => { const f = trip([['drive', 300, 50], ['stop', 15 * 60]]); assert.equal(f.length, 1); assert.equal(f[0].how, 'fallback'); assert.ok(Math.abs(f[0].at - 300 - 600) < 30); });
+ok('Trip: in-car wait 5 min setting', () => { const f = trip([['drive', 300, 50], ['stop', 15 * 60]], { wait: 5 }); assert.ok(Math.abs(f[0].at - 300 - 300) < 30); });
+ok('Trip: asked only once per stop', () => assert.equal(trip([['drive', 300, 50], ['stop', 20], ['walk', 600]]).length, 1));
+ok('Trip: no step counter (Android) walk away → asked by walking speed', () => { const f = trip([['drive', 300, 50], ['stop', 20], ['walk', 120]], { stepCounter: false }); assert.equal(f[0].how, 'now'); });
+ok('Trip: unknown speed (-1) while driving still counts as driving', () => { let d = {}; for (let i = 0; i < 20; i++) d = P.onDriveEvent(d, { type: 'loc', t: i * 3000, lat: 25, lng: 56 + i * 0.0012, speed: i ? -1 : 15 }, D.distanceM).drive; assert.equal(new Date(d.lastMoving).getTime(), 19 * 3000); });
 
 // Translations: every language has every key, with the same {placeholders}
 const keys = Object.keys(I.T.en);

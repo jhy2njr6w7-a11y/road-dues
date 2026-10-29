@@ -106,7 +106,9 @@ export default function App() {
       const x = await loadState();
       refreshCampaigns();
       const d = x.drive;
-      if (!x.parking && d.lastMoving && Date.now() - new Date(d.lastMoving).getTime() > 4 * 60e3 && Date.now() - new Date(d.lastMoving).getTime() < 3 * 3600e3 && d.handled !== d.lastMoving) {
+      const since = d.lastMoving ? Date.now() - new Date(d.lastMoving).getTime() : 0;
+      const parked = d.asked || since > (x.settings.inCarWait || 10) * 60e3; // walked away, or sat longer than the in-car wait
+      if (!x.parking && d.lastMoving && parked && since < 3 * 3600e3 && d.handled !== d.lastMoving) {
         const em = emirateAt({ lat: d.lastLat, lng: d.lastLng });
         if (em) await A.startParkingSession({ lat: d.lastLat, lng: d.lastLng, em });
         await update((y) => { y.drive.handled = d.lastMoving; });

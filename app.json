@@ -40,7 +40,8 @@
       ["expo-notifications", { "color": "#0e1116" }],
       "expo-localization",
       "@react-native-community/datetimepicker",
-      "expo-font"
+      "expo-font",
+      ["expo-sensors", { "motionPermission": "Parking+ uses your steps to tell when you got out of the car, so it asks about parking only when you have really parked. Nothing leaves your phone." }]
     ]
   }
 }
