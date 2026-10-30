@@ -34,3 +34,6 @@ When an item is built, move it to "Done" with the PR link.
     - later: real paid-zone maps where open data exists (e.g. Dubai RTA zones), so it only asks inside known paid zones. No such data found yet for Sharjah/Kalba.
 
 ## Done
+
+- **Build 5 (PR #30, branch `claude/build-5`):** items 1–12, 14, 15 built. Item 11: Saif picks one of 6 badge options (`EM_STYLE` in screens.js). Item 13 (Darb) not built: needs official gate positions and peak hours.
+
