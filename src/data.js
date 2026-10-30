@@ -123,6 +123,15 @@ const dayEnd = (s) => { const d = parseDate(s); d.setHours(23, 59, 59, 999); ret
 const at9 = (d) => { const x = new Date(d); x.setHours(9, 0, 0, 0); return x; };
 
 /** Keeps only well-formed campaigns from the downloaded JSON; anything odd is dropped, never shown. */
+// "1.2.0" newer than "1.1.9"? For the update notice (campaigns.json ▸ latestVersion).
+export function isNewerVersion(latest, current) {
+  const ok = (v) => typeof v === 'string' && /^\d+(\.\d+){0,3}$/.test(v);
+  if (!ok(latest) || !ok(current)) return false;
+  const a = latest.split('.').map(Number), b = current.split('.').map(Number);
+  for (let i = 0; i < Math.max(a.length, b.length); i++) { const d = (a[i] || 0) - (b[i] || 0); if (d) return d > 0; }
+  return false;
+}
+
 export function parseCampaigns(json) {
   const list = Array.isArray(json?.campaigns) ? json.campaigns : [];
   const out = [];

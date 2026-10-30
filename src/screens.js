@@ -1,9 +1,9 @@
 import React, { useEffect, useState } from 'react';
 import { ScrollView, View, Text, Pressable, Modal, Linking, Alert, AppState, Platform, Image } from 'react-native';
 import { useStore, update, newId } from './store';
-import { t, T, emName, hrsOf, fmtDate, fmtTime, LANGS, getLang, gateName } from './i18n';
+import { t, T, emName, hrsOf, fmtDate, fmtDay, fmtTime, LANGS, getLang, gateName } from './i18n';
 import { IN_CAR_WAITS, DEFAULT_IN_CAR_WAIT } from './park-detect';
-import { EMIRATES, EM_ORDER, ISSUERS, GATES, gatePos, BRANDS, aed, buildSms, cleanCode, ZONE_RE, fineOffer, discounted, daysLeft,
+import { EMIRATES, EM_ORDER, ISSUERS, GATES, gatePos, isNewerVersion, BRANDS, aed, buildSms, cleanCode, ZONE_RE, fineOffer, discounted, daysLeft,
   validateVehicle, parseDate, emirateAt, distanceM, crossingCharge, latinDigits, visibleCampaigns, campaignStatus, campaignEnd, PAY_URLS, PARKING_EMIRATES } from './data';
 import { Card, Row, Sec, Txt, Figure, Btn, Chip, Segmented, Toggle, Pill, List, ListRow, Field, Wrap, Notice, Warn, BrandBadge, Bubble, Progress, Icon,
   useTheme, useArabicFont, useTextScale, TEXT_SIZES, styles, applyAppearance, Glass, Press, ACCENTS } from './ui';
@@ -157,6 +157,7 @@ export function TodayScreen({ go }) {
       <Title k="appName" onSettings={() => go('settings')} />
       {s.settings.discHome ? <DisclaimerCard /> : null}
       <NamePendingCard />
+      <UpdateCard />
       <LocationNotice />
 
       {dv ? (
@@ -351,7 +352,7 @@ export function ParkingScreen({ go, prefill }) {
     if (busy) return; setBusy(true);
     try {
       if (!s.parking && pos) await A.startParkingSession({ lat: pos.lat, lng: pos.lng, em });
-      const ok = await A.sendParkingSms({ em, text, hours, zone, lat: pos?.lat, lng: pos?.lng });
+      const ok = await A.sendParkingSms({ em, text, hours, zone, lat: pos?.lat, lng: pos?.lng, vehicle });
       if (ok) { if (s.settings.discAfterPay) setSheet(true); else go('today'); }
     } finally { setTimeout(() => setBusy(false), 2500); }
   }
@@ -652,6 +653,7 @@ export function SettingsScreen({ go, onLang }) {
   if (page === 'disc') return <DisclaimerPage onBack={() => setPage(null)} />;
   if (page === 'colour') return <ColourPage onBack={() => setPage(null)} />;
   if (page === 'access') return <AccessPage onBack={() => setPage(null)} />;
+  if (page === 'history') return <HistoryPage onBack={() => setPage(null)} />;
   return <SettingsMain go={go} onLang={onLang} setPage={setPage} />;
 }
 
@@ -703,6 +705,28 @@ function ColourPage({ onBack }) {
             right={<View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>{cur === k ? <Icon name="checkmark-circle" size={22} /> : null}<Swatch k={k} /></View>} />))}
       </List>
       <Btn title={t('gotIt')} onPress={onBack} />
+    </Screen>
+  );
+}
+
+// Settings ▸ Transaction history: every parking SMS sent from the app, newest first (stored on the phone only).
+function HistoryPage({ onBack }) {
+  const s = useStore();
+  const list = (s.history || []).slice().reverse();
+  return (
+    <Screen>
+      <Title k="historyH" onBack={onBack} />
+      {list.length === 0 ? <Card><Txt muted>{t('historyEmpty')}</Txt></Card> : (
+        <List>{list.map((h) => (
+          <View key={h.id} style={{ flexDirection: 'row', alignItems: 'center', gap: 12, padding: 14 }}>
+            <View style={{ width: 6, alignSelf: 'stretch', borderRadius: 3, backgroundColor: EM_COLORS[h.em] || '#888' }} />
+            <View style={{ flex: 1, minWidth: 0, gap: 4 }}>
+              <Txt bold>{fmtDay(h.date)}</Txt>
+              <Txt muted size={13}>{fmtTime(h.date)} · {t('histFor', { n: h.hours, em: emName(h.em) })}</Txt>
+              {h.car ? <Plate v={h.car} width={120} /> : null}
+            </View>
+          </View>))}
+        </List>)}
     </Screen>
   );
 }
@@ -765,6 +789,9 @@ function SettingsMain({ go, onLang, setPage }) {
       <Sec>{t('appearanceH')}</Sec>
       <Segmented value={s.settings.appearance} onChange={(k) => { applyAppearance(k); setSetting('appearance')(k); }}
         options={['auto', 'light', 'dark'].map((k) => [k, t('look_' + k)])} />
+      <List>
+        <ListRow icon="receipt-outline" iconTone="info" title={t('historyH')} sub={t('histCount', { n: (s.history || []).length })} chevron onPress={() => setPage('history')} />
+      </List>
       <List>
         <ListRow icon="text-outline" title={t('accessH')} sub={t('textSizeH') + ' · ' + t('ts_' + (s.settings.textSize || 'm'))} chevron onPress={() => setPage('access')} />
         <ListRow title={t('accentH')} chevron onPress={() => setPage('colour')}
@@ -842,6 +869,20 @@ function NamePrompt({ title, initial = '', onSave, onClose }) {
         </View>
       </View>
     </Modal>
+  );
+}
+
+// A newer version is in the store (Saif sets latestVersion in campaigns.json): offer to update.
+function UpdateCard() {
+  const s = useStore(); const cur = Application.nativeApplicationVersion;
+  if (!isNewerVersion(s.latestVersion, cur) || s.settings.updateDismissed === s.latestVersion) return null;
+  const open = () => Linking.openURL(Platform.OS === 'ios' ? `itms-apps://apps.apple.com/app/id${APP_STORE_ID}` : 'market://details?id=ae.parkingplus.app').catch(() => {});
+  return (
+    <Card tone="info">
+      <Row><Txt bold style={{ flex: 1 }}>{t('updateT')}</Txt><Btn plain small icon="close" title="" onPress={() => update((x) => { x.settings.updateDismissed = s.latestVersion; })} /></Row>
+      <Txt size={14}>{t('updateB', { v: s.latestVersion })}</Txt>
+      <Btn icon="download-outline" title={t('updateBtn')} onPress={open} />
+    </Card>
   );
 }
 

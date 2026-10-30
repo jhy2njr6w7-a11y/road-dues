@@ -226,4 +226,5 @@ export function clock(h, m = 0) {
 const to12 = (text) => text.replace(/\b(\d{2}):(\d{2})\b/g, (_, h, m) => clock(+h, +m));
 export const hrsOf = (k) => to12(t(['DXB', 'SHJ', 'AUH', 'AJM'].includes(k) ? 'hrs_' + k : 'hrs_other'));
 export const fmtDate = (d) => new Date(d).toLocaleDateString(LOCALE[lang], { day: 'numeric', month: 'short' });
+export const fmtDay = (d) => new Date(d).toLocaleDateString(LOCALE[lang], { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
 export const fmtTime = (d) => { const x = new Date(d); return clock(x.getHours(), x.getMinutes()); };

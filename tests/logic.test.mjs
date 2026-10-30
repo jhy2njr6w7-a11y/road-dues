@@ -129,6 +129,9 @@ ok('Trip: asked only once per stop', () => assert.equal(trip([['drive', 300, 50]
 ok('Trip: no step counter (Android) walk away → asked by walking speed', () => { const f = trip([['drive', 300, 50], ['stop', 20], ['walk', 120]], { stepCounter: false }); assert.equal(f[0].how, 'now'); });
 ok('Trip: unknown speed (-1) while driving still counts as driving', () => { let d = {}; for (let i = 0; i < 20; i++) d = P.onDriveEvent(d, { type: 'loc', t: i * 3000, lat: 25, lng: 56 + i * 0.0012, speed: i ? -1 : 15 }, D.distanceM).drive; assert.equal(new Date(d.lastMoving).getTime(), 19 * 3000); });
 
+ok('Update notice: version compare', () => { assert.equal(D.isNewerVersion('1.0.1', '1.0.0'), true); assert.equal(D.isNewerVersion('1.0.0', '1.0.0'), false); assert.equal(D.isNewerVersion('1.10.0', '1.9.9'), true); assert.equal(D.isNewerVersion('1.0', '1.0.1'), false); assert.equal(D.isNewerVersion('x', '1.0.0'), false); assert.equal(D.isNewerVersion('1.1.0', null), false); });
+ok('campaigns.json latestVersion is a version', () => assert.match(shipped.latestVersion, /^\d+\.\d+\.\d+$/));
+
 // 12-hour times (Saif): Arabic with full words
 ok('12h English', () => { I.setLangCode('en'); assert.equal(I.hrsOf('DXB'), 'Mon–Sat 8:00 AM–10:00 PM'); assert.equal(I.clock(0, 5), '12:05 AM'); assert.equal(I.clock(12), '12:00 PM'); });
 ok('12h Arabic full words', () => { I.setLangCode('ar'); assert.equal(I.clock(8), '8:00 صباحاً'); assert.equal(I.clock(22), '10:00 مساءً'); assert.equal(I.clock(12), '12:00 ظهراً'); assert.ok(!/ص$|م$/.test(I.clock(17))); });
