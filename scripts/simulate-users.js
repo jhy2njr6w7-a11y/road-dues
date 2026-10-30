@@ -17,7 +17,7 @@ const BASE = process.argv[3] || 'http://localhost:8081';
 async function loadApp() {
   const tmp = fs.mkdtempSync(path.join(os.tmpdir(), 'rd-sim-'));
   fs.writeFileSync(path.join(tmp, 'package.json'), '{"type":"module"}');
-  for (const f of ['data.js', 'i18n.js', 'i18n-extra.js', 'i18n-campaigns.js']) {
+  for (const f of ['data.js', 'i18n.js', 'i18n-extra.js', 'i18n-campaigns.js', 'i18n-build5.js']) {
     fs.writeFileSync(path.join(tmp, f), fs.readFileSync(path.join(__dirname, '..', 'src', f), 'utf8').replace(/from '\.\/(i18n-\w+)'/g, "from './$1.js'"));
   }
   return { D: await import(path.join(tmp, 'data.js')), I: await import(path.join(tmp, 'i18n.js')) };

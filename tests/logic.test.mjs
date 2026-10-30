@@ -2,7 +2,7 @@
 import fs from 'node:fs'; import path from 'node:path'; import os from 'node:os'; import assert from 'node:assert/strict';
 const tmp = fs.mkdtempSync(path.join(os.tmpdir(), 'rd-'));
 fs.writeFileSync(path.join(tmp, 'package.json'), '{"type":"module"}');
-for (const f of ['data.js', 'park-detect.js', 'i18n.js', 'i18n-extra.js', 'i18n-campaigns.js']) fs.writeFileSync(path.join(tmp, f), fs.readFileSync(new URL('../src/' + f, import.meta.url), 'utf8').replace(/from '\.\/(i18n-\w+)'/g, "from './$1.js'"));
+for (const f of ['data.js', 'park-detect.js', 'i18n.js', 'i18n-extra.js', 'i18n-campaigns.js', 'i18n-build5.js']) fs.writeFileSync(path.join(tmp, f), fs.readFileSync(new URL('../src/' + f, import.meta.url), 'utf8').replace(/from '\.\/(i18n-\w+)'/g, "from './$1.js'"));
 const D = await import(path.join(tmp, 'data.js')); const P = await import(path.join(tmp, 'park-detect.js')); const I = await import(path.join(tmp, 'i18n.js'));
 let n = 0; const ok = (name, fn) => { fn(); n++; };
 
@@ -128,6 +128,12 @@ ok('Trip: in-car wait 5 min setting', () => { const f = trip([['drive', 300, 50]
 ok('Trip: asked only once per stop', () => assert.equal(trip([['drive', 300, 50], ['stop', 20], ['walk', 600]]).length, 1));
 ok('Trip: no step counter (Android) walk away → asked by walking speed', () => { const f = trip([['drive', 300, 50], ['stop', 20], ['walk', 120]], { stepCounter: false }); assert.equal(f[0].how, 'now'); });
 ok('Trip: unknown speed (-1) while driving still counts as driving', () => { let d = {}; for (let i = 0; i < 20; i++) d = P.onDriveEvent(d, { type: 'loc', t: i * 3000, lat: 25, lng: 56 + i * 0.0012, speed: i ? -1 : 15 }, D.distanceM).drive; assert.equal(new Date(d.lastMoving).getTime(), 19 * 3000); });
+
+// 12-hour times (Saif): Arabic with full words
+ok('12h English', () => { I.setLangCode('en'); assert.equal(I.hrsOf('DXB'), 'Mon–Sat 8:00 AM–10:00 PM'); assert.equal(I.clock(0, 5), '12:05 AM'); assert.equal(I.clock(12), '12:00 PM'); });
+ok('12h Arabic full words', () => { I.setLangCode('ar'); assert.equal(I.clock(8), '8:00 صباحاً'); assert.equal(I.clock(22), '10:00 مساءً'); assert.equal(I.clock(12), '12:00 ظهراً'); assert.ok(!/ص$|م$/.test(I.clock(17))); });
+ok('12h AUH ends at midnight', () => { I.setLangCode('en'); assert.match(I.hrsOf('AUH'), /8:00 AM–12:00 AM/); });
+ok('No 24-hour times left in paid hours', () => { for (const L of ['en', 'ar', 'hi', 'zh', 'ru']) { I.setLangCode(L); for (const e of ['DXB', 'SHJ', 'AUH', 'AJM']) assert.ok(!/\b(1[3-9]|2\d|0\d):\d{2}\b/.test(I.hrsOf(e)), L + e + ' ' + I.hrsOf(e)); } I.setLangCode('en'); });
 
 // Translations: every language has every key, with the same {placeholders}
 const keys = Object.keys(I.T.en);

@@ -3,7 +3,7 @@ import { ScrollView, View, Text, Pressable, Modal, Linking, Alert, AppState, Pla
 import { useStore, update, newId } from './store';
 import { t, T, emName, hrsOf, fmtDate, fmtTime, LANGS, getLang, gateName } from './i18n';
 import { IN_CAR_WAITS, DEFAULT_IN_CAR_WAIT } from './park-detect';
-import { EMIRATES, EM_ORDER, ISSUERS, GATES, BRANDS, aed, buildSms, cleanCode, ZONE_RE, fineOffer, discounted, daysLeft,
+import { EMIRATES, EM_ORDER, ISSUERS, GATES, gatePos, BRANDS, aed, buildSms, cleanCode, ZONE_RE, fineOffer, discounted, daysLeft,
   validateVehicle, parseDate, emirateAt, distanceM, crossingCharge, latinDigits, visibleCampaigns, campaignStatus, campaignEnd, PAY_URLS, PARKING_EMIRATES } from './data';
 import { Card, Row, Sec, Txt, Figure, Btn, Chip, Segmented, Toggle, Pill, List, ListRow, Field, Wrap, Notice, Warn, BrandBadge, Bubble, Progress, Icon,
   useTheme, useArabicFont, styles, applyAppearance, Glass, Press } from './ui';
@@ -155,6 +155,7 @@ export function TodayScreen({ go }) {
     <Screen>
       <Title k="appName" onSettings={() => go('settings')} />
       {s.settings.discHome ? <DisclaimerCard /> : null}
+      <NamePendingCard />
       <LocationNotice />
 
       {dv ? (
@@ -543,6 +544,9 @@ export function SalikScreen({ go }) {
     if (val.trim() === '' || !isFinite(v) || v < 0 || v > 5000) return setErr(true);
     setErr(false); setVal(''); setFixing(false); await update((x) => { x.balance = Math.round(v * 100) / 100; });
   }
+  // What is being typed, shown right away in the big figure (saved on Done, leaving the box or Save)
+  const typed = (() => { const v = Number(latinDigits(val.trim())); return val.trim() !== '' && isFinite(v) && v >= 0 && v <= 5000 ? Math.round(v * 100) / 100 : null; })();
+  const saveIfTyped = () => { if (val.trim() !== '') saveBal(); };
   async function addCrossing(g) {
     setAdding(false);
     const now = new Date(); const charge = crossingCharge(g.id, now, s.crossings);
@@ -558,17 +562,18 @@ export function SalikScreen({ go }) {
           <Icon name="wallet-outline" size={28} />
           <Txt bold size={20}>{t('salikAskT')}</Txt>
           <Txt muted>{t('salikAskB')}</Txt>
-          <Field value={val} onChangeText={setVal} keyboardType="decimal-pad" placeholder="AED 50.00" error={err ? t('balErr') : null} onSubmitEditing={saveBal} />
+          {typed != null ? <Figure size={34}>{aed(typed)}</Figure> : null}
+          <Field value={val} onChangeText={(v) => { setVal(v); setErr(false); }} keyboardType="decimal-pad" placeholder="AED 50.00" error={err ? t('balErr') : null} onSubmitEditing={saveBal} onBlur={saveIfTyped} />
           <Btn title={t('save')} onPress={saveBal} />
         </Card>
       ) : (
         <Card tone={balTone}>
           <Txt muted size={13}>{t('estBalance')}</Txt>
-          <Figure size={42} color={balTone === 'danger' ? c.red : balTone === 'warn' ? c.amber : c.fg}>{aed(bal)}</Figure>
+          <Figure size={42} color={fixing && typed != null ? c.fg : balTone === 'danger' ? c.red : balTone === 'warn' ? c.amber : c.fg}>{aed(fixing && typed != null ? typed : bal)}</Figure>
           {balTone ? <Txt color={balTone === 'danger' ? c.red : c.amber}>{t(balTone === 'danger' ? 'balNeg' : 'balLow')}</Txt> : null}
           <Btn icon="card-outline" title={t('topUp')} onPress={A.topUpSalik} />
           {fixing ? <>
-            <Field label={t('correctBal')} value={val} onChangeText={setVal} keyboardType="decimal-pad" placeholder="50.00" error={err ? t('balErr') : null} autoFocus onSubmitEditing={saveBal} />
+            <Field label={t('correctBal')} value={val} onChangeText={(v) => { setVal(v); setErr(false); }} keyboardType="decimal-pad" placeholder="50.00" error={err ? t('balErr') : null} autoFocus onSubmitEditing={saveBal} onBlur={saveIfTyped} />
             <View style={{ flexDirection: 'row', gap: 10 }}>
               <Btn ghost title={t('cancel')} onPress={() => { setFixing(false); setErr(false); }} style={{ flex: 1 }} />
               <Btn title={t('save')} onPress={saveBal} style={{ flex: 1 }} />
@@ -641,8 +646,44 @@ export function VehiclesScreen({ go }) {
 
 // ---------- Settings
 export function SettingsScreen({ go, onLang }) {
+  const [page, setPage] = useState(null); // a sub-page of Settings: 'gates', ...
+  if (page === 'gates') return <GatesPage onBack={() => setPage(null)} />;
+  return <SettingsMain go={go} onLang={onLang} setPage={setPage} />;
+}
+
+// Settings ▸ Salik gate positions: every gate, open it in Maps, "I'm here" to correct it, reset a mistaken one.
+function GatesPage({ onBack }) {
+  const s = useStore(); const [saved, setSaved] = useState(null);
+  const openMap = (g) => { const p = gatePos(g, s.settings.gateOverrides); const q = encodeURIComponent(gateName(g.id));
+    Linking.openURL(Platform.OS === 'ios' ? `http://maps.apple.com/?ll=${p.lat},${p.lng}&q=${q}` : `geo:${p.lat},${p.lng}?q=${p.lat},${p.lng}(${q})`); };
+  const imHere = async (g) => { const p = await currentPosition(); if (p) { await update((x) => { x.settings.gateOverrides[g.id] = p; }); setSaved(g.id); } };
+  const reset = (g) => Alert.alert(t('resetGate'), t('resetGateQ', { gate: gateName(g.id) }), [
+    { text: t('cancel'), style: 'cancel' },
+    { text: t('resetGate'), style: 'destructive', onPress: () => { update((x) => { delete x.settings.gateOverrides[g.id]; }); setSaved(null); } },
+  ]);
+  return (
+    <Screen>
+      <Title k="gatesH" onBack={onBack} />
+      <Txt muted size={13} style={{ paddingHorizontal: 4 }}>{t('gatesNote')}</Txt>
+      {GATES.map((g) => { const fixed = !!s.settings.gateOverrides[g.id];
+        return (
+          <Card key={g.id} style={{ gap: 10 }}>
+            <Row>
+              <View style={{ flex: 1, minWidth: 0 }}><Txt bold>{gateName(g.id)}</Txt><Txt muted size={13}>{fixed ? t('corrected') : t('approx')}</Txt></View>
+              <Btn plain small icon="map-outline" title={t('gateMap')} onPress={() => openMap(g)} />
+            </Row>
+            <View style={{ flexDirection: 'row', gap: 10 }}>
+              <Btn ghost small icon="locate-outline" title={saved === g.id ? '✓ ' + t('corrected') : t('imHere')} onPress={() => imHere(g)} style={{ flex: 1 }} />
+              {fixed ? <Btn ghost small icon="arrow-undo-outline" title={t('resetGate')} onPress={() => reset(g)} style={{ flex: 1 }} /> : null}
+            </View>
+          </Card>); })}
+    </Screen>
+  );
+}
+
+function SettingsMain({ go, onLang, setPage }) {
   const s = useStore();
-  const [saved, setSaved] = useState(null);
+  const [naming, setNaming] = useState(null); // { id, name } to rename, or { pos } for a new free spot
   const [taps, setTaps] = useState(0); // 5 taps on "Reminders" shows the trip log (for testing on the road)
   const setSetting = (k) => async (v) => { await update((x) => { x.settings[k] = v; }); if (k === 'remFines') { A.syncFineReminders(); syncCampaignReminders(); } };
   const toggleRow = (k, label) => <ListRow title={label} right={<Toggle label={label} value={s.settings[k]} onValueChange={setSetting(k)} />} />;
@@ -679,16 +720,18 @@ export function SettingsScreen({ go, onLang }) {
       </> : null}
       <Sec>{t('freeSpots')}</Sec>
       <List>
-        {s.freeSpots.map((f) => <ListRow key={f.id} icon="location-outline" title={f.name}
+        {s.freeSpots.map((f) => <ListRow key={f.id} icon="location-outline" title={f.name} onPress={() => setNaming({ id: f.id, name: f.name })}
           right={<Btn plain small title={t('remove')} onPress={() => update((x) => { x.freeSpots = x.freeSpots.filter((y) => y.id !== f.id); })} />} />)}
-        <ListRow icon="add" title={t('addFreeHere')} onPress={async () => { const p = await currentPosition(); if (p) update((x) => { x.freeSpots.push({ id: newId(), name: t('freeSpotName', { n: x.freeSpots.length + 1 }), ...p }); }); }} />
+        <ListRow icon="add" title={t('addFreeHere')} onPress={async () => { const p = await currentPosition(); if (p) setNaming({ pos: p, name: '' }); }} />
       </List>
-      <Sec>{t('gatesH')}</Sec>
-      <Txt muted size={13} style={{ paddingHorizontal: 4 }}>{t('gatesNote')}</Txt>
+      {naming ? <NamePrompt title={naming.id ? t('rename') : t('spotNameT')} initial={naming.name} onClose={() => setNaming(null)}
+        onSave={async (v) => {
+          if (naming.id) await A.renameFreeSpot(naming.id, v);
+          else await update((x) => { x.freeSpots.push({ id: newId(), name: (v || '').trim().slice(0, 40) || t('freeSpotName', { n: x.freeSpots.length + 1 }), ...naming.pos }); });
+          setNaming(null);
+        }} /> : null}
       <List>
-        {GATES.map((g) => (
-          <ListRow key={g.id} title={gateName(g.id)} sub={s.settings.gateOverrides[g.id] ? t('corrected') : t('approx')}
-            right={<Btn ghost small title={saved === g.id ? '✓' : t('imHere')} onPress={async () => { const p = await currentPosition(); if (p) { await update((x) => { x.settings.gateOverrides[g.id] = p; }); setSaved(g.id); } }} />} />))}
+        <ListRow icon="swap-horizontal" iconTone="info" title={t('gatesH')} sub={t('gatesCount', { n: GATES.length })} chevron onPress={() => setPage('gates')} />
       </List>
       <Sec>{t('discH')}</Sec>
       <List>
@@ -703,6 +746,42 @@ export function SettingsScreen({ go, onLang }) {
         <ListRow icon="shield-checkmark-outline" title={t('viewDisclaimer')} chevron onPress={() => openDisclaimer()} />
       </List>
     </Screen>
+  );
+}
+
+/** Small sheet asking for a name (free spots). */
+function NamePrompt({ title, initial = '', onSave, onClose }) {
+  const c = useTheme(); const [v, setV] = useState(initial);
+  return (
+    <Modal visible transparent animationType="fade" onRequestClose={onClose}>
+      <View style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.4)', justifyContent: 'center', padding: 24 }}>
+        <View style={{ backgroundColor: c.card, borderRadius: 20, padding: 18, gap: 12 }}>
+          <Txt bold size={18}>{title}</Txt>
+          <Field value={v} onChangeText={setV} placeholder={t('spotNamePh')} autoFocus maxLength={40} onSubmitEditing={() => onSave(v)} />
+          <View style={{ flexDirection: 'row', gap: 10 }}>
+            <Btn ghost title={t('cancel')} onPress={onClose} style={{ flex: 1 }} />
+            <Btn title={t('save')} onPress={() => onSave(v)} style={{ flex: 1 }} />
+          </View>
+        </View>
+      </View>
+    </Modal>
+  );
+}
+
+// After "Free here" on the parking notification: ask for a name right on Today.
+function NamePendingCard() {
+  const s = useStore(); const [v, setV] = useState('');
+  const spot = s.freeSpots.find((f) => f.id === s.namePending);
+  if (!spot) return null;
+  return (
+    <Card>
+      <Txt bold>{t('spotNameT')}</Txt>
+      <Field value={v} onChangeText={setV} placeholder={t('spotNamePh')} maxLength={40} onSubmitEditing={() => A.renameFreeSpot(spot.id, v)} />
+      <View style={{ flexDirection: 'row', gap: 10 }}>
+        <Btn ghost title={t('skip')} onPress={() => update((x) => { x.namePending = null; })} style={{ flex: 1 }} />
+        <Btn title={t('save')} onPress={() => A.renameFreeSpot(spot.id, v)} style={{ flex: 1 }} />
+      </View>
+    </Card>
   );
 }
 

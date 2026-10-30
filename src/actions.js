@@ -84,7 +84,9 @@ export async function markFreeHere() {
     if (!x.parking) return;
     x.parking.status = 'free';
     if (x.parking.lat != null && !x.freeSpots.some((f) => Math.abs(f.lat - x.parking.lat) < 0.0015 && Math.abs(f.lng - x.parking.lng) < 0.0015)) {
-      x.freeSpots.push({ id: newId(), name: t('freeSpotName', { n: x.freeSpots.length + 1 }), lat: x.parking.lat, lng: x.parking.lng });
+      const id = newId();
+      x.freeSpots.push({ id, name: t('freeSpotName', { n: x.freeSpots.length + 1 }), lat: x.parking.lat, lng: x.parking.lng });
+      x.namePending = id; // Today asks for a name (Home, Work…)
     }
   });
   await cancelParkCheck();
@@ -95,3 +97,8 @@ export async function startParkingSession({ lat, lng, em }) {
   await update((x) => { if (!x.parking) x.parking = { id: newId(), start: new Date().toISOString(), lat, lng, em, status: 'awaiting' }; });
 }
 export const isIOS = Platform.OS === 'ios';
+
+export async function renameFreeSpot(id, name) {
+  const n = (name || '').trim().slice(0, 40);
+  await update((x) => { const f = x.freeSpots.find((y) => y.id === id); if (f && n) f.name = n; if (x.namePending === id) x.namePending = null; });
+}

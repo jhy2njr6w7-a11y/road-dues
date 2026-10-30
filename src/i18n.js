@@ -201,7 +201,8 @@ ru:{
 };
 import { EXTRA } from './i18n-extra';
 import { CAMPAIGN_STRINGS } from './i18n-campaigns';
-for (const k of Object.keys(T)) Object.assign(T[k], EXTRA[k], CAMPAIGN_STRINGS[k]);
+import { BUILD5_STRINGS } from './i18n-build5';
+for (const k of Object.keys(T)) Object.assign(T[k], EXTRA[k], CAMPAIGN_STRINGS[k], BUILD5_STRINGS[k]);
 
 let lang = 'en';
 export const getLang = () => lang;
@@ -212,6 +213,17 @@ export function t(k, v = {}) {
 }
 export const emName = (k) => t('em_' + k);
 export const gateName = (id) => (T[lang]['gate_' + id] ? t('gate_' + id) : id);
-export const hrsOf = (k) => t(['DXB', 'SHJ', 'AUH', 'AJM'].includes(k) ? 'hrs_' + k : 'hrs_other');
+// 12-hour clock in the app language (Saif: no 24-hour times). Arabic uses the full words صباحاً / ظهراً / مساءً.
+const DAY_PART = {
+  en: (h) => (h < 12 ? 'AM' : 'PM'), ar: (h) => (h < 12 ? 'صباحاً' : h === 12 ? 'ظهراً' : 'مساءً'), hi: (h) => (h < 12 ? 'AM' : 'PM'),
+  zh: (h) => (h < 12 ? '上午' : '下午'), ru: (h) => (h < 5 ? 'ночи' : h < 12 ? 'утра' : h < 17 ? 'дня' : 'вечера'),
+};
+export function clock(h, m = 0) {
+  if (h === 24) h = 0; // "08:00–24:00" ends at midnight
+  const hh = h % 12 || 12; const time = `${hh}:${String(m).padStart(2, '0')}`; const part = (DAY_PART[lang] || DAY_PART.en)(h);
+  return lang === 'zh' ? part + time : time + ' ' + part;
+}
+const to12 = (text) => text.replace(/\b(\d{2}):(\d{2})\b/g, (_, h, m) => clock(+h, +m));
+export const hrsOf = (k) => to12(t(['DXB', 'SHJ', 'AUH', 'AJM'].includes(k) ? 'hrs_' + k : 'hrs_other'));
 export const fmtDate = (d) => new Date(d).toLocaleDateString(LOCALE[lang], { day: 'numeric', month: 'short' });
-export const fmtTime = (d) => new Date(d).toLocaleTimeString(LOCALE[lang], { hour: '2-digit', minute: '2-digit' });
+export const fmtTime = (d) => { const x = new Date(d); return clock(x.getHours(), x.getMinutes()); };
