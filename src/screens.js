@@ -212,7 +212,7 @@ const EM_PALETTES = {
   1: { DXB: '#e4572e', SHJ: '#4338ca', AUH: '#0f9d76', AJM: '#a21caf' },
   2: { DXB: '#d1495b', SHJ: '#00798c', AUH: '#e09f3e', AJM: '#335c81' },
 };
-const EM_STYLE = { palette: 1, shape: 'ticket' }; // shape: 'ticket' | 'receipt' | 'stub' (options sent 30 Oct 2026)
+const EM_STYLE = { palette: 1, shape: 'ticket' }; // Saif chose ticket 1 (30 Oct 2026); others: 'receipt', 'stub'
 export const EM_COLORS = { RAK: '#c4473c', FUJ: '#2f9467', UAQ: '#7357c9', ...EM_PALETTES[EM_STYLE.palette] };
 
 // A real parking ticket in the emirate's colour (our own drawing). Cut-outs are real holes, so the
