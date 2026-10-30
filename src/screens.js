@@ -6,7 +6,7 @@ import { IN_CAR_WAITS, DEFAULT_IN_CAR_WAIT } from './park-detect';
 import { EMIRATES, EM_ORDER, ISSUERS, GATES, gatePos, BRANDS, aed, buildSms, cleanCode, ZONE_RE, fineOffer, discounted, daysLeft,
   validateVehicle, parseDate, emirateAt, distanceM, crossingCharge, latinDigits, visibleCampaigns, campaignStatus, campaignEnd, PAY_URLS, PARKING_EMIRATES } from './data';
 import { Card, Row, Sec, Txt, Figure, Btn, Chip, Segmented, Toggle, Pill, List, ListRow, Field, Wrap, Notice, Warn, BrandBadge, Bubble, Progress, Icon,
-  useTheme, useArabicFont, styles, applyAppearance, Glass, Press } from './ui';
+  useTheme, useArabicFont, useTextScale, TEXT_SIZES, styles, applyAppearance, Glass, Press, ACCENTS } from './ui';
 import * as A from './actions';
 import * as Application from 'expo-application';
 import { currentPosition, requestLocation, locationStatus, startTracking } from './location';
@@ -30,12 +30,12 @@ function RoundBtn({ icon, label, onPress }) {
     </Press>
   );
 }
-function Title({ k, onSettings, onBack }) {
-  const c = useTheme(); const af = useArabicFont();
+function Title({ k: key, onSettings, onBack }) {
+  const c = useTheme(); const af = useArabicFont(); const k = useTextScale();
   return (
     <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10, marginBottom: 4 }}>
       {onBack ? <RoundBtn icon="chevron-back" label={t('back')} onPress={onBack} /> : null}
-      <Text accessibilityRole="header" numberOfLines={1} adjustsFontSizeToFit maxFontSizeMultiplier={1.3} style={[styles.title, { color: c.fg, flex: 1 }, af]}>{t(k)}</Text>
+      <Text accessibilityRole="header" numberOfLines={1} adjustsFontSizeToFit maxFontSizeMultiplier={1.3} style={[styles.title, { color: c.fg, flex: 1, fontSize: 32 * k }, af]}>{t(key)}</Text>
       <RoundBtn icon="information-circle-outline" label={t('viewDisclaimer')} onPress={() => openDisclaimer()} />
       {onSettings ? <RoundBtn icon="settings-outline" label={t('settings')} onPress={onSettings} /> : null}
     </View>
@@ -650,6 +650,8 @@ export function SettingsScreen({ go, onLang }) {
   const [page, setPage] = useState(null); // a sub-page of Settings: 'gates', ...
   if (page === 'gates') return <GatesPage onBack={() => setPage(null)} />;
   if (page === 'disc') return <DisclaimerPage onBack={() => setPage(null)} />;
+  if (page === 'colour') return <ColourPage onBack={() => setPage(null)} />;
+  if (page === 'access') return <AccessPage onBack={() => setPage(null)} />;
   return <SettingsMain go={go} onLang={onLang} setPage={setPage} />;
 }
 
@@ -679,6 +681,41 @@ function GatesPage({ onBack }) {
               {fixed ? <Btn ghost small icon="arrow-undo-outline" title={t('resetGate')} onPress={() => reset(g)} style={{ flex: 1 }} /> : null}
             </View>
           </Card>); })}
+    </Screen>
+  );
+}
+
+// A round sample of an app colour ('ink' = the original black/white look).
+function Swatch({ k, size = 28 }) {
+  const c = useTheme(); const a = ACCENTS[k];
+  return <View style={{ width: size, height: size, borderRadius: size / 2, backgroundColor: a ? a[c.dark ? 1 : 0] : c.fg, borderWidth: k === 'ink' ? 1 : 0, borderColor: c.line }} />;
+}
+
+// Settings ▸ App colour: pick the accent for main buttons, selected chips and the selected tab.
+function ColourPage({ onBack }) {
+  const s = useStore(); const cur = s.settings.accent || 'ink';
+  return (
+    <Screen>
+      <Title k="accentH" onBack={onBack} />
+      <List>
+        {Object.keys(ACCENTS).map((k) => (
+          <ListRow key={k} title={t('col_' + k)} onPress={() => update((x) => { x.settings.accent = k; })}
+            right={<View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>{cur === k ? <Icon name="checkmark-circle" size={22} /> : null}<Swatch k={k} /></View>} />))}
+      </List>
+      <Btn title={t('gotIt')} onPress={onBack} />
+    </Screen>
+  );
+}
+
+// Settings ▸ Accessibility: text size on top of the phone's own setting.
+function AccessPage({ onBack }) {
+  const s = useStore();
+  return (
+    <Screen>
+      <Title k="accessH" onBack={onBack} />
+      <Sec>{t('textSizeH')}</Sec>
+      <Segmented value={s.settings.textSize || 'm'} onChange={(v) => update((x) => { x.settings.textSize = v; })} options={Object.keys(TEXT_SIZES).map((k) => [k, t('ts_' + k)])} />
+      <Card><Txt>{t('textPreview')}</Txt><Btn title={t('sendSms')} icon="send" onPress={() => {}} /></Card>
     </Screen>
   );
 }
@@ -715,7 +752,7 @@ function AppFooter() {
 }
 
 function SettingsMain({ go, onLang, setPage }) {
-  const s = useStore();
+  const s = useStore(); const c = useTheme();
   const [naming, setNaming] = useState(null); // { id, name } to rename, or { pos } for a new free spot
   const [taps, setTaps] = useState(0); // 5 taps on "Reminders" shows the trip log (for testing on the road)
   const setSetting = (k) => async (v) => { await update((x) => { x.settings[k] = v; }); if (k === 'remFines') { A.syncFineReminders(); syncCampaignReminders(); } };
@@ -728,6 +765,11 @@ function SettingsMain({ go, onLang, setPage }) {
       <Sec>{t('appearanceH')}</Sec>
       <Segmented value={s.settings.appearance} onChange={(k) => { applyAppearance(k); setSetting('appearance')(k); }}
         options={['auto', 'light', 'dark'].map((k) => [k, t('look_' + k)])} />
+      <List>
+        <ListRow icon="text-outline" title={t('accessH')} sub={t('textSizeH') + ' · ' + t('ts_' + (s.settings.textSize || 'm'))} chevron onPress={() => setPage('access')} />
+        <ListRow title={t('accentH')} chevron onPress={() => setPage('colour')}
+          right={<View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}><Txt muted size={14}>{t('col_' + (s.settings.accent || 'ink'))}</Txt><Swatch k={s.settings.accent || 'ink'} size={22} /></View>} />
+      </List>
       <Sec>{t('startTabH')}</Sec>
       <Wrap>{['today', 'parking', 'salik', 'fines', 'vehicles'].map((k) => <Chip key={k} title={t('tab_' + k)} on={(s.settings.startTab || 'today') === k} onPress={() => setSetting('startTab')(k)} />)}</Wrap>
       <LocationNotice />

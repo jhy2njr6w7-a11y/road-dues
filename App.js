@@ -9,7 +9,7 @@ import { t, setLangCode, T } from './src/i18n';
 import { setupCategories, ACT, onNotificationResponse } from './src/notify';
 import { startTracking } from './src/location';
 import * as A from './src/actions';
-import { useTheme, useArabicFont, applyAppearance, Icon, Glass, HAS_GLASS, Press } from './src/ui';
+import { useTheme, useArabicFont, useTextScale, applyAppearance, Icon, Glass, HAS_GLASS, Press } from './src/ui';
 import { haptic } from './src/haptics';
 import { useFonts } from 'expo-font';
 import { PLATE_FONTS } from './src/plates';
@@ -24,7 +24,7 @@ const TABS = [['today', 'home'], ['parking', 'car'], ['salik', 'swap-horizontal'
 export default function App() {
   const s = useStore();
   const c = useTheme();
-  const af = useArabicFont();
+  const af = useArabicFont(); const textK = Math.min(useTextScale(), 1.15); // tab labels: keep the bar from overflowing
   // Number-plate fonts and the Arabic UI font (licensed, not in git: see README). Nothing is drawn until
   // they load: text measured with the fallback font and then drawn in Janna (much taller) gets clipped on iOS.
   const [fontsLoaded, fontError] = useFonts({ ...PLATE_FONTS, JannaLT: require('./assets/fonts/JannaLT-Bold.ttf') });
@@ -180,8 +180,8 @@ export default function App() {
                   return (
                     <Press key={k} accessibilityRole="tab" accessibilityState={{ selected: on }} onPress={() => { if (!on) haptic('select'); go(k); }}
                       style={{ flex: 1, alignItems: 'center', gap: 2, paddingVertical: 7, borderRadius: 25 }}>
-                      <Icon name={on ? icon : icon + '-outline'} size={22} color={on ? c.fg : c.muted} />
-                      <Text numberOfLines={1} maxFontSizeMultiplier={1.3} style={[{ fontSize: 11, fontWeight: on ? '700' : '500', color: on ? c.fg : c.muted }, af]}>{t('tab_' + k)}</Text>
+                      <Icon name={on ? icon : icon + '-outline'} size={22} color={on ? c.accent || c.fg : c.muted} />
+                      <Text numberOfLines={1} maxFontSizeMultiplier={1.3} style={[{ fontSize: 11 * textK, fontWeight: on ? '700' : '500', color: on ? c.accent || c.fg : c.muted }, af]}>{t('tab_' + k)}</Text>
                     </Press>); })}
               </Glass>
             </SafeAreaView>

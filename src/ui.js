@@ -25,17 +25,34 @@ const DARK = {
 // Older screens refer to the accent as sign/signText; keep those names pointing at the ink colour.
 LIGHT.sign = LIGHT.primary; LIGHT.signText = LIGHT.fg; DARK.sign = DARK.primary; DARK.signText = DARK.fg;
 
-/** Settings ▸ Appearance: 'auto' follows the phone, or force 'light' / 'dark'. */
+// Settings ▸ App colour: the accent used for main buttons, selected chips and the selected tab.
+// 'ink' is the original black/white look. Each colour has a light-mode and a dark-mode shade.
+export const ACCENTS = {
+  ink: null,
+  blue: ['#1d4ed8', '#5b8cff'], teal: ['#0f766e', '#2dd4bf'], green: ['#15803d', '#4ade80'],
+  purple: ['#6d28d9', '#a78bfa'], rose: ['#be185d', '#f472b6'], orange: ['#c2410c', '#fb923c'],
+  red: ['#b4231a', '#ff7b6e'], brown: ['#7c5230', '#c99a6e'], // red is a deeper shade than the warning red
+};
+const themed = {};
+/** Settings ▸ Appearance: 'auto' follows the phone, or force 'light' / 'dark'; plus the chosen accent. */
 export function useTheme() {
   const system = useColorScheme();
-  const { appearance = 'auto' } = useStore().settings;
-  return (appearance === 'auto' ? system : appearance) === 'dark' ? DARK : LIGHT;
+  const { appearance = 'auto', accent = 'ink' } = useStore().settings;
+  const base = (appearance === 'auto' ? system : appearance) === 'dark' ? DARK : LIGHT;
+  const a = ACCENTS[accent];
+  if (!a) return base;
+  const key = accent + (base.dark ? 'D' : 'L');
+  // the dark-mode shades are light, so their text is dark
+  return themed[key] || (themed[key] = { ...base, primary: a[base.dark ? 1 : 0], onPrimary: base.dark ? '#0b0d10' : '#ffffff', accent: a[base.dark ? 1 : 0] });
 }
 /** Also switches native parts (alerts, keyboard) to the chosen appearance. */
 export function applyAppearance(mode) {
   if (typeof Appearance.setColorScheme === 'function') Appearance.setColorScheme(mode === 'light' || mode === 'dark' ? mode : 'unspecified');
 }
 export const useRtl = () => useStore().settings.lang === 'ar';
+// Settings ▸ Accessibility ▸ Text size: on top of the phone's own text size.
+export const TEXT_SIZES = { s: 0.9, m: 1, l: 1.15, xl: 1.3 };
+export const useTextScale = () => TEXT_SIZES[useStore().settings.textSize] || 1;
 
 // iOS 26 Liquid Glass for things that float over the content (tab bar, round buttons).
 // Elsewhere (older iOS, Android, web) the same shape gets the solid card colour.
@@ -93,10 +110,11 @@ export function Card({ children, style, tone: tn, onPress }) {
 /** Section heading between cards. `action` is an optional plain button on the other side. */
 export function Sec({ children, action }) {
   const af = useArabicFont();
+  const k = useTextScale();
   const c = useTheme();
   return (
     <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginTop: 10, paddingHorizontal: 4 }}>
-      <Text accessibilityRole="header" style={[{ fontSize: 17, fontWeight: '700', color: c.fg, flexShrink: 1 }, af]}>{children}</Text>
+      <Text accessibilityRole="header" style={[{ fontSize: 17 * k, fontWeight: '700', color: c.fg, flexShrink: 1 }, af]}>{children}</Text>
       {action || null}
     </View>
   );
@@ -104,18 +122,20 @@ export function Sec({ children, action }) {
 export function Txt({ children, muted, color, bold, size = 15, style, ...rest }) {
   const af = useArabicFont();
   const c = useTheme();
-  return <Text {...rest} style={[{ color: color || (muted ? c.muted : c.fg), fontSize: muted ? Math.min(size, 14) : size, fontWeight: bold ? '700' : '400', lineHeight: Math.round(size * (af ? 1.65 : 1.4)) }, af, style]}>{children}</Text>;
+  const k = useTextScale(); const fs = (muted ? Math.min(size, 14) : size) * k;
+  return <Text {...rest} style={[{ color: color || (muted ? c.muted : c.fg), fontSize: fs, fontWeight: bold ? '700' : '400', lineHeight: Math.round(size * k * (af ? 1.65 : 1.4)) }, af, style]}>{children}</Text>;
 }
 /** Big figures (balance, percent). Digits line up. */
 export function Figure({ children, size = 34, color, style }) {
   const af = useArabicFont();
   const c = useTheme();
-  return <Text maxFontSizeMultiplier={1.3} style={[{ color: color || c.fg, fontSize: size, fontWeight: '800', letterSpacing: -0.5, fontVariant: ['tabular-nums'] }, af, style]}>{children}</Text>;
+  return <Text maxFontSizeMultiplier={1.3} style={[{ color: color || c.fg, fontSize: size * useTextScale(), fontWeight: '800', letterSpacing: -0.5, fontVariant: ['tabular-nums'] }, af, style]}>{children}</Text>;
 }
 
 /** primary (filled), ghost (soft grey), plain (text only), danger. */
 export function Btn({ title, onPress, ghost, plain, danger, disabled, icon, iconEnd, small, style }) {
   const af = useArabicFont();
+  const k = useTextScale();
   const c = useTheme();
   const bg = danger ? c.red : plain ? 'transparent' : ghost ? c.chip : c.primary;
   const fg = danger ? '#ffffff' : plain || ghost ? c.fg : c.onPrimary;
@@ -124,7 +144,7 @@ export function Btn({ title, onPress, ghost, plain, danger, disabled, icon, icon
       style={[{ minHeight: small ? 40 : 50, paddingHorizontal: plain ? 4 : small ? 14 : 18, borderRadius: 14, backgroundColor: bg,
         flexDirection: 'row', gap: 8, justifyContent: 'center', alignItems: 'center', opacity: disabled ? 0.4 : 1 }, style]}>
       {icon ? <Icon name={icon} size={small ? 16 : 18} color={fg} /> : null}
-      <Text maxFontSizeMultiplier={1.6} style={[{ color: fg, fontWeight: '700', fontSize: small ? 14 : 16, textAlign: 'center', flexShrink: 1 }, af]}>{title}</Text>
+      <Text maxFontSizeMultiplier={1.6} style={[{ color: fg, fontWeight: '700', fontSize: (small ? 14 : 16) * k, textAlign: 'center', flexShrink: 1 }, af]}>{title}</Text>
       {iconEnd ? <Icon name={iconEnd} size={small ? 16 : 18} color={fg} /> : null}
     </Press>
   );
@@ -132,18 +152,20 @@ export function Btn({ title, onPress, ghost, plain, danger, disabled, icon, icon
 // lang: the chip's own language (language picker), so Russian/Hindi/Chinese names don't get the Arabic font
 export function Chip({ title, on, onPress, lang }) {
   const af = useArabicFont();
+  const k = useTextScale();
   const font = lang && lang !== 'ar' ? null : af;
   const c = useTheme();
   return (
     <Press accessibilityRole="button" accessibilityState={{ selected: !!on }} onPress={() => { haptic('select'); onPress?.(); }}
       style={{ minHeight: 40, paddingHorizontal: 14, borderRadius: 20, justifyContent: 'center', backgroundColor: on ? c.primary : c.chip }}>
-      <Text maxFontSizeMultiplier={1.6} style={[{ color: on ? c.onPrimary : c.fg, fontWeight: '600', fontSize: 14 }, font]}>{title}</Text>
+      <Text maxFontSizeMultiplier={1.6} style={[{ color: on ? c.onPrimary : c.fg, fontWeight: '600', fontSize: 14 * k }, font]}>{title}</Text>
     </Press>
   );
 }
 /** One choice out of a few, side by side (appearance, duration, parking type). */
 export function Segmented({ options, value, onChange }) {
   const af = useArabicFont();
+  const k = useTextScale();
   const c = useTheme();
   return (
     <View accessibilityRole="radiogroup" style={{ flexDirection: 'row', backgroundColor: c.chip, borderRadius: 14, padding: 3 }}>
@@ -151,7 +173,7 @@ export function Segmented({ options, value, onChange }) {
         return (
           <Press key={k} accessibilityRole="radio" accessibilityState={{ selected: on }} onPress={() => { if (!on) haptic('select'); onChange(k); }}
             style={{ flex: 1, minHeight: 40, borderRadius: 11, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 6, backgroundColor: on ? c.card : 'transparent' }}>
-            <Text numberOfLines={1} maxFontSizeMultiplier={1.4} style={[{ color: on ? c.fg : c.muted, fontWeight: on ? '700' : '600', fontSize: 14 }, af]}>{label}</Text>
+            <Text numberOfLines={1} maxFontSizeMultiplier={1.4} style={[{ color: on ? c.fg : c.muted, fontWeight: on ? '700' : '600', fontSize: 14 * k }, af]}>{label}</Text>
           </Press>); })}
     </View>
   );
@@ -169,8 +191,9 @@ export function Toggle({ value, onValueChange, label }) {
 /** A small coloured label: Paid, Not paid, 2 days left. */
 export function Pill({ text, tone: tn }) {
   const af = useArabicFont();
+  const k = useTextScale();
   const c = useTheme(); const { fg, bg } = tone(c, tn);
-  return <View style={{ alignSelf: 'flex-start', backgroundColor: bg, borderRadius: 8, paddingHorizontal: 8, paddingVertical: 3 }}><Text maxFontSizeMultiplier={1.5} style={[{ color: fg, fontWeight: '700', fontSize: 12 }, af]}>{text}</Text></View>;
+  return <View style={{ alignSelf: 'flex-start', backgroundColor: bg, borderRadius: 8, paddingHorizontal: 8, paddingVertical: 3 }}><Text maxFontSizeMultiplier={1.5} style={[{ color: fg, fontWeight: '700', fontSize: 12 * k }, af]}>{text}</Text></View>;
 }
 /** Rows inside one card, separated by hairlines (settings, lists). */
 export function List({ children }) {
@@ -201,13 +224,14 @@ export function ListRow({ icon, iconTone, title, sub, right, onPress, chevron })
 }
 export function Field({ label, error, ...props }) {
   const af = useArabicFont();
+  const k = useTextScale();
   const c = useTheme();
   return (
     <View style={{ gap: 6 }}>
-      {label ? <Text style={[{ color: c.muted, fontSize: 13, fontWeight: '600' }, af]}>{label}</Text> : null}
+      {label ? <Text style={[{ color: c.muted, fontSize: 13 * k, fontWeight: '600' }, af]}>{label}</Text> : null}
       <TextInput placeholderTextColor={c.muted} {...props}
-        style={[{ borderWidth: 1.5, borderColor: error ? c.red : 'transparent', borderRadius: 12, paddingHorizontal: 14, minHeight: 50, color: c.fg, backgroundColor: c.field, fontSize: 17 }, af, props.style]} />
-      {error ? <Text style={[{ color: c.red, fontSize: 13 }, af]}>{error}</Text> : null}
+        style={[{ borderWidth: 1.5, borderColor: error ? c.red : 'transparent', borderRadius: 12, paddingHorizontal: 14, minHeight: 50, color: c.fg, backgroundColor: c.field, fontSize: 17 * k }, af, props.style]} />
+      {error ? <Text style={[{ color: c.red, fontSize: 13 * k }, af]}>{error}</Text> : null}
     </View>
   );
 }
