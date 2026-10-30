@@ -32,6 +32,7 @@ When an item is built, move it to "Done" with the PR link.
     - **Parked but stays in the car (Saif asked):** still ask, via the fallback: no steps and still inside the stop geofence after ~10 min → "Did you pay?". Walking → ask at once. Let the user pick the in-car wait in Settings (5 / 10 / 15 min).
     - add a hidden **trip log** (Settings ▸ tap version 5×) that records each GPS update time/speed and each schedule/cancel, so Saif can screenshot it after a drive and we see exactly why it fired.
     - later: real paid-zone maps where open data exists (e.g. Dubai RTA zones), so it only asks inside known paid zones. No such data found yet for Sharjah/Kalba.
+16. **Bug (build 5): ticket badge broken in Arabic, the P sits on the lines** (Saif, screenshot 30 Oct 2026). Cause: the P is placed with `left:` inside `TicketIcon` (src/screens.js); in Arabic the app runs right-to-left, so `left` is mirrored and the P lands on the printed lines on the right, while the SVG ticket itself isn't mirrored. Fix: give the ticket's View `direction: 'ltr'` (or draw the P inside the SVG), and check every badge (Parking tiles, active ticket card, history) in Arabic and English, light and dark.
 
 ## Done
 
