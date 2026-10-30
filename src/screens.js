@@ -3,7 +3,7 @@ import { ScrollView, View, Text, Pressable, Modal, Linking, Alert, AppState, Pla
 import { useStore, update, newId } from './store';
 import { t, T, emName, hrsOf, fmtDate, fmtDay, fmtTime, LANGS, getLang, gateName } from './i18n';
 import { IN_CAR_WAITS, DEFAULT_IN_CAR_WAIT } from './park-detect';
-import { EMIRATES, EM_ORDER, ISSUERS, GATES, gatePos, isNewerVersion, parkingPrice, BRANDS, aed, buildSms, cleanCode, ZONE_RE, fineOffer, discounted, daysLeft,
+import { EMIRATES, EM_ORDER, ISSUERS, GATES, gatePos, isNewerVersion, parkingPrice, notFuture, BRANDS, aed, buildSms, cleanCode, ZONE_RE, fineOffer, discounted, daysLeft,
   validateVehicle, parseDate, emirateAt, distanceM, crossingCharge, latinDigits, visibleCampaigns, campaignStatus, campaignEnd, PAY_URLS, PARKING_EMIRATES } from './data';
 import { Card, Row, Sec, Txt, Figure, Btn, Chip, Segmented, Toggle, Pill, List, ListRow, Field, Wrap, Notice, Warn, BrandBadge, Bubble, Progress, Icon,
   useTheme, useArabicFont, useTextScale, TEXT_SIZES, styles, applyAppearance, Glass, Press, ACCENTS } from './ui';
@@ -517,7 +517,7 @@ function FineForm({ initial, onClose }) {
     const amount = Number(latinDigits(f.amount));
     const date = parseDate(f.date);
     if (!(amount > 0) || amount > 100000) return setErr('errAmount');
-    if (!date || date > new Date()) return setErr('errDate');
+    if (!date || !notFuture(date)) return setErr('errDate');
     const pct = f.manualPct === '' ? null : Number(latinDigits(f.manualPct));
     const until = f.manualUntil === '' ? null : parseDate(f.manualUntil);
     if ((pct == null) !== (until == null) || (pct != null && !(pct > 0 && pct < 100))) return setErr('errManual');

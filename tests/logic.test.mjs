@@ -134,12 +134,13 @@ ok('Price Sharjah 2 h = AED 5', () => assert.deepEqual(D.parkingPrice('SHJ', { h
 ok('Price Abu Dhabi premium 2 h = AED 6', () => assert.deepEqual(D.parkingPrice('AUH', { hours: 2, type: 'P' }), { aed: 6 }));
 ok('Price Dubai is a range', () => assert.deepEqual(D.parkingPrice('DXB', { hours: 1 }), { from: 2, to: 6 }));
 ok('No price for Fujairah', () => assert.equal(D.parkingPrice('FUJ'), null));
+ok("Fine dated today is fine in the morning", () => { const morning = new Date(2026, 9, 30, 9, 0); assert.equal(D.notFuture(D.parseDate('2026-10-30'), morning), true); assert.equal(D.notFuture(D.parseDate('2026-10-31'), morning), false); });
 ok('Update notice: version compare', () => { assert.equal(D.isNewerVersion('1.0.1', '1.0.0'), true); assert.equal(D.isNewerVersion('1.0.0', '1.0.0'), false); assert.equal(D.isNewerVersion('1.10.0', '1.9.9'), true); assert.equal(D.isNewerVersion('1.0', '1.0.1'), false); assert.equal(D.isNewerVersion('x', '1.0.0'), false); assert.equal(D.isNewerVersion('1.1.0', null), false); });
 ok('campaigns.json latestVersion is a version', () => assert.match(shipped.latestVersion, /^\d+\.\d+\.\d+$/));
 
 // 12-hour times (Saif): Arabic with full words
 ok('12h English', () => { I.setLangCode('en'); assert.equal(I.hrsOf('DXB'), 'Mon–Sat 8:00 AM–10:00 PM'); assert.equal(I.clock(0, 5), '12:05 AM'); assert.equal(I.clock(12), '12:00 PM'); });
-ok('12h Arabic full words', () => { I.setLangCode('ar'); assert.equal(I.clock(8), '8:00 صباحاً'); assert.equal(I.clock(22), '10:00 مساءً'); assert.equal(I.clock(12), '12:00 ظهراً'); assert.ok(!/ص$|م$/.test(I.clock(17))); });
+ok('12h Arabic full words', () => { I.setLangCode('ar'); assert.equal(I.clock(8), '8:00 صباحاً'); assert.equal(I.clock(22), '10:00 مساءً'); assert.equal(I.clock(12), '12:00 ظهراً'); assert.equal(I.clock(24), '12:00 منتصف الليل'); assert.ok(!/ص$|م$/.test(I.clock(17))); });
 ok('12h AUH ends at midnight', () => { I.setLangCode('en'); assert.match(I.hrsOf('AUH'), /8:00 AM–12:00 AM/); });
 ok('No 24-hour times left in paid hours', () => { for (const L of ['en', 'ar', 'hi', 'zh', 'ru']) { I.setLangCode(L); for (const e of ['DXB', 'SHJ', 'AUH', 'AJM']) assert.ok(!/\b(1[3-9]|2\d|0\d):\d{2}\b/.test(I.hrsOf(e)), L + e + ' ' + I.hrsOf(e)); } I.setLangCode('en'); });
 

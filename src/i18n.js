@@ -215,12 +215,12 @@ export const emName = (k) => t('em_' + k);
 export const gateName = (id) => (T[lang]['gate_' + id] ? t('gate_' + id) : id);
 // 12-hour clock in the app language (Saif: no 24-hour times). Arabic uses the full words صباحاً / ظهراً / مساءً.
 const DAY_PART = {
-  en: (h) => (h < 12 ? 'AM' : 'PM'), ar: (h) => (h < 12 ? 'صباحاً' : h === 12 ? 'ظهراً' : 'مساءً'), hi: (h) => (h < 12 ? 'AM' : 'PM'),
+  en: (h) => (h < 12 ? 'AM' : 'PM'), ar: (h, m) => (h === 0 && !m ? 'منتصف الليل' : h < 12 ? 'صباحاً' : h === 12 ? 'ظهراً' : 'مساءً'), hi: (h) => (h < 12 ? 'AM' : 'PM'),
   zh: (h) => (h < 12 ? '上午' : '下午'), ru: (h) => (h < 5 ? 'ночи' : h < 12 ? 'утра' : h < 17 ? 'дня' : 'вечера'),
 };
 export function clock(h, m = 0) {
   if (h === 24) h = 0; // "08:00–24:00" ends at midnight
-  const hh = h % 12 || 12; const time = `${hh}:${String(m).padStart(2, '0')}`; const part = (DAY_PART[lang] || DAY_PART.en)(h);
+  const hh = h % 12 || 12; const time = `${hh}:${String(m).padStart(2, '0')}`; const part = (DAY_PART[lang] || DAY_PART.en)(h, m);
   return lang === 'zh' ? part + time : time + ' ' + part;
 }
 const to12 = (text) => text.replace(/\b(\d{2}):(\d{2})\b/g, (_, h, m) => clock(+h, +m));

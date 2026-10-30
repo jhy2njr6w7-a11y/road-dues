@@ -165,7 +165,7 @@ export function Chip({ title, on, onPress, lang }) {
 /** One choice out of a few, side by side (appearance, duration, parking type). */
 export function Segmented({ options, value, onChange }) {
   const af = useArabicFont();
-  const k = useTextScale();
+  const scale = useTextScale();
   const c = useTheme();
   return (
     <View accessibilityRole="radiogroup" style={{ flexDirection: 'row', backgroundColor: c.chip, borderRadius: 14, padding: 3 }}>
@@ -173,7 +173,7 @@ export function Segmented({ options, value, onChange }) {
         return (
           <Press key={k} accessibilityRole="radio" accessibilityState={{ selected: on }} onPress={() => { if (!on) haptic('select'); onChange(k); }}
             style={{ flex: 1, minHeight: 40, borderRadius: 11, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 6, backgroundColor: on ? c.card : 'transparent' }}>
-            <Text numberOfLines={1} maxFontSizeMultiplier={1.4} style={[{ color: on ? c.fg : c.muted, fontWeight: on ? '700' : '600', fontSize: 14 * k }, af]}>{label}</Text>
+            <Text numberOfLines={1} maxFontSizeMultiplier={1.4} style={[{ color: on ? c.fg : c.muted, fontWeight: on ? '700' : '600', fontSize: 14 * scale }, af]}>{label}</Text>
           </Press>); })}
     </View>
   );

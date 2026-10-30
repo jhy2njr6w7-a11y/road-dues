@@ -197,6 +197,12 @@ export function validateVehicle(v, existing = []) {
   if (existing.some((x) => x.em === v.em && x.code === code && x.num === num)) return { error: 'errDup' };
   return { vehicle: { ...v, code, num, model: (v.model || '').trim().slice(0, 24), color: (v.color || '').trim().slice(0, 16) } };
 }
+// A date (from parseDate, at noon) is not in the future if it is today or earlier. Comparing with "now"
+// rejected today's date every morning, so no fine could be added before 12 PM.
+export function notFuture(d, now = new Date()) {
+  const end = new Date(now); end.setHours(23, 59, 59, 999);
+  return d <= end;
+}
 export function parseDate(s) {
   const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(latinDigits(String(s).trim()));
   if (!m) return null;
