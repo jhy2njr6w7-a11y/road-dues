@@ -1,12 +1,15 @@
 import React, { useEffect, useState } from 'react';
 import { ScrollView, View, Text, Pressable, Modal, Linking, Alert, AppState, Platform, Image } from 'react-native';
 import { useStore, update, newId } from './store';
-import { t, T, emName, hrsOf, fmtDate, fmtTime, LANGS, getLang, gateName } from './i18n';
-import { EMIRATES, EM_ORDER, ISSUERS, GATES, BRANDS, aed, buildSms, cleanCode, ZONE_RE, fineOffer, discounted, daysLeft,
+import { t, T, emName, hrsOf, fmtDate, fmtDay, fmtTime, LANGS, getLang, gateName } from './i18n';
+import { IN_CAR_WAITS, DEFAULT_IN_CAR_WAIT } from './park-detect';
+import { EMIRATES, EM_ORDER, ISSUERS, GATES, gatePos, isNewerVersion, parkingPrice, notFuture, BRANDS, aed, buildSms, cleanCode, ZONE_RE, fineOffer, discounted, daysLeft,
   validateVehicle, parseDate, emirateAt, distanceM, crossingCharge, latinDigits, visibleCampaigns, campaignStatus, campaignEnd, PAY_URLS, PARKING_EMIRATES } from './data';
-import { Card, Sec, Txt, Figure, Btn, Chip, Segmented, Toggle, Pill, List, ListRow, Field, Wrap, Notice, Warn, BrandBadge, Bubble, Progress, Icon,
-  useTheme, useArabicFont, styles, applyAppearance, Glass, Press } from './ui';
+import { Card, Row, Sec, Txt, Figure, Btn, Chip, Segmented, Toggle, Pill, List, ListRow, Field, Wrap, Notice, Warn, BrandBadge, Bubble, Progress, Icon,
+  useTheme, useArabicFont, useTextScale, TEXT_SIZES, styles, applyAppearance, Glass, Press, ACCENTS } from './ui';
 import * as A from './actions';
+import * as Application from 'expo-application';
+import Svg, { Path, Line, Rect } from 'react-native-svg';
 import { currentPosition, requestLocation, locationStatus, startTracking } from './location';
 import { requestNotifPermission, setupCategories, notifStatus } from './notify';
 import { openBatterySettings } from './battery';
@@ -28,12 +31,12 @@ function RoundBtn({ icon, label, onPress }) {
     </Press>
   );
 }
-function Title({ k, onSettings, onBack }) {
-  const c = useTheme(); const af = useArabicFont();
+function Title({ k: key, onSettings, onBack }) {
+  const c = useTheme(); const af = useArabicFont(); const k = useTextScale();
   return (
     <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10, marginBottom: 4 }}>
       {onBack ? <RoundBtn icon="chevron-back" label={t('back')} onPress={onBack} /> : null}
-      <Text accessibilityRole="header" numberOfLines={1} adjustsFontSizeToFit maxFontSizeMultiplier={1.3} style={[styles.title, { color: c.fg, flex: 1 }, af]}>{t(k)}</Text>
+      <Text accessibilityRole="header" numberOfLines={1} adjustsFontSizeToFit maxFontSizeMultiplier={1.3} style={[styles.title, { color: c.fg, flex: 1, fontSize: 32 * k }, af]}>{t(key)}</Text>
       <RoundBtn icon="information-circle-outline" label={t('viewDisclaimer')} onPress={() => openDisclaimer()} />
       {onSettings ? <RoundBtn icon="settings-outline" label={t('settings')} onPress={onSettings} /> : null}
     </View>
@@ -154,6 +157,8 @@ export function TodayScreen({ go }) {
     <Screen>
       <Title k="appName" onSettings={() => go('settings')} />
       {s.settings.discHome ? <DisclaimerCard /> : null}
+      <NamePendingCard />
+      <UpdateCard />
       <LocationNotice />
 
       {dv ? (
@@ -201,14 +206,49 @@ export function TodayScreen({ go }) {
 }
 
 // Each emirate's colour, used for its parking ticket icon and tile
-export const EM_COLORS = { AUH: '#3aa6c2', DXB: '#2f5fd0', SHJ: '#e0a72e', AJM: '#8a6d45', RAK: '#c4473c', FUJ: '#2f9467', UAQ: '#7357c9' };
+// Our own emirate colours and badge (feedback 11: the old blue/yellow/light-blue/brown tickets looked like
+// another parking app). Saif picks from the options sent on 30 Oct 2026: change EM_STYLE to switch.
+const EM_PALETTES = {
+  1: { DXB: '#e4572e', SHJ: '#4338ca', AUH: '#0f9d76', AJM: '#a21caf' },
+  2: { DXB: '#d1495b', SHJ: '#00798c', AUH: '#e09f3e', AJM: '#335c81' },
+};
+const EM_STYLE = { palette: 1, shape: 'ticket' }; // Saif chose ticket 1 (30 Oct 2026); others: 'receipt', 'stub'
+export const EM_COLORS = { RAK: '#c4473c', FUJ: '#2f9467', UAQ: '#7357c9', ...EM_PALETTES[EM_STYLE.palette] };
 
-// A parking ticket in the emirate's colour, with the P of parking signs
+// A real parking ticket in the emirate's colour (our own drawing). Cut-outs are real holes, so the
+// tile behind shows through in light and dark mode.
+function ticketPath(shape, w, h) {
+  const r = h * 0.16, n = h * 0.16;
+  if (shape === 'stub') { // notches top and bottom, a punched hole on the small side
+    const x = w * 0.68, hr = h * 0.1, cx = w * 0.84, cy = h / 2;
+    return `M${r},0 H${x - n} A${n},${n} 0 0 0 ${x + n},0 H${w - r} A${r},${r} 0 0 1 ${w},${r} V${h - r} A${r},${r} 0 0 1 ${w - r},${h} H${x + n} A${n},${n} 0 0 0 ${x - n},${h} H${r} A${r},${r} 0 0 1 0,${h - r} V${r} A${r},${r} 0 0 1 ${r},0 Z`
+      + ` M${cx - hr},${cy} a${hr},${hr} 0 1 0 ${2 * hr},0 a${hr},${hr} 0 1 0 ${-2 * hr},0 Z`;
+  }
+  if (shape === 'receipt') { // paper slip with a torn zigzag bottom
+    const z = h * 0.08, rr = w * 0.14, teeth = 5;
+    let d = `M${rr},0 H${w - rr} A${rr},${rr} 0 0 1 ${w},${rr} V${h - z}`;
+    for (let i = teeth * 2 - 1; i >= 0; i--) d += ` L${(w * i) / (teeth * 2)},${i % 2 ? h : h - z}`;
+    return d + ` V${rr} A${rr},${rr} 0 0 1 ${rr},0 Z`;
+  }
+  return `M${r},0 H${w - r} A${r},${r} 0 0 1 ${w},${r} V${h / 2 - n} A${n},${n} 0 0 0 ${w},${h / 2 + n} V${h - r} A${r},${r} 0 0 1 ${w - r},${h} H${r} A${r},${r} 0 0 1 0,${h - r} V${h / 2 + n} A${n},${n} 0 0 0 0,${h / 2 - n} V${r} A${r},${r} 0 0 1 ${r},0 Z`;
+}
 function TicketIcon({ em, size = 34 }) {
+  const col = EM_COLORS[em] || '#555'; const shape = EM_STYLE.shape;
+  const tall = shape === 'receipt';
+  const w = tall ? size * 0.8 : size * 1.45, h = tall ? size * 1.1 : size;
+  const P = (x, y, fs) => <Text style={{ position: 'absolute', left: x - fs * 0.35, top: y - fs * 0.62, color: '#fff', fontWeight: '900', fontSize: fs, includeFontPadding: false }}>P</Text>;
   return (
-    <View style={{ width: size, height: size, alignItems: 'center', justifyContent: 'center', transform: [{ rotate: '-14deg' }] }}>
-      <Icon name="ticket" size={size} color={EM_COLORS[em] || '#1a56b8'} />
-      <Text style={{ position: 'absolute', color: '#fff', fontWeight: '900', fontSize: size * 0.36 }}>P</Text>
+    <View style={{ width: w, height: h }}>
+      <Svg width={w} height={h}>
+        <Path d={ticketPath(shape, w, h)} fill={col} fillRule="evenodd" />
+        {shape === 'ticket' ? <>
+          <Line x1={w * 0.36} y1={h * 0.14} x2={w * 0.36} y2={h * 0.88} stroke="#fff" strokeWidth={1.5} strokeDasharray={`${h * 0.08},${h * 0.07}`} />
+          {[0.42, 0.3, 0.36].map((l, i) => <Rect key={i} x={w * 0.47} y={h * (0.26 + i * 0.19)} width={w * l} height={h * 0.08} rx={h * 0.04} fill="#fff" />)}
+        </> : null}
+        {shape === 'stub' ? <Line x1={w * 0.68} y1={h * 0.2} x2={w * 0.68} y2={h * 0.82} stroke="#fff" strokeWidth={1.5} strokeDasharray={`${h * 0.07},${h * 0.07}`} /> : null}
+        {shape === 'receipt' ? [2, 1, 3, 1, 2, 1, 2, 3].reduce((a, wd) => { a.items.push(<Rect key={a.x} x={a.x} y={h * 0.58} width={wd * w * 0.025} height={h * 0.2} fill="#fff" />); a.x += wd * w * 0.025 + w * 0.04; return a; }, { x: w * 0.16, items: [] }).items : null}
+      </Svg>
+      {shape === 'ticket' ? P(w * 0.19, h / 2, h * 0.5) : shape === 'stub' ? P(w * 0.34, h / 2, h * 0.55) : P(w / 2, h * 0.3, w * 0.55)}
     </View>
   );
 }
@@ -348,7 +388,7 @@ export function ParkingScreen({ go, prefill }) {
     if (busy) return; setBusy(true);
     try {
       if (!s.parking && pos) await A.startParkingSession({ lat: pos.lat, lng: pos.lng, em });
-      const ok = await A.sendParkingSms({ em, text, hours, zone, lat: pos?.lat, lng: pos?.lng });
+      const ok = await A.sendParkingSms({ em, text, hours, zone, lat: pos?.lat, lng: pos?.lng, vehicle });
       if (ok) { if (s.settings.discAfterPay) setSheet(true); else go('today'); }
     } finally { setTimeout(() => setBusy(false), 2500); }
   }
@@ -383,6 +423,7 @@ export function ParkingScreen({ go, prefill }) {
 
       {e.sms ? (
         <Card>
+          <PriceLine em={em} hours={e.hours ? hours : 1} type={type} />
           <Txt muted size={13}>{t('toNum', { num: e.sms, hours: hrsOf(em) })}</Txt>
           {text ? <Bubble text={text} /> : e.input === 'zone' ? <Txt muted>{t('enterZone')}</Txt> : null}
           <Btn icon="send" title={busy ? t('sending') : t('sendSms')} disabled={!text || busy} onPress={send} />
@@ -503,7 +544,7 @@ function FineForm({ initial, onClose }) {
     const amount = Number(latinDigits(f.amount));
     const date = parseDate(f.date);
     if (!(amount > 0) || amount > 100000) return setErr('errAmount');
-    if (!date || date > new Date()) return setErr('errDate');
+    if (!date || !notFuture(date)) return setErr('errDate');
     const pct = f.manualPct === '' ? null : Number(latinDigits(f.manualPct));
     const until = f.manualUntil === '' ? null : parseDate(f.manualUntil);
     if ((pct == null) !== (until == null) || (pct != null && !(pct > 0 && pct < 100))) return setErr('errManual');
@@ -542,6 +583,9 @@ export function SalikScreen({ go }) {
     if (val.trim() === '' || !isFinite(v) || v < 0 || v > 5000) return setErr(true);
     setErr(false); setVal(''); setFixing(false); await update((x) => { x.balance = Math.round(v * 100) / 100; });
   }
+  // What is being typed, shown right away in the big figure (saved on Done, leaving the box or Save)
+  const typed = (() => { const v = Number(latinDigits(val.trim())); return val.trim() !== '' && isFinite(v) && v >= 0 && v <= 5000 ? Math.round(v * 100) / 100 : null; })();
+  const saveIfTyped = () => { if (val.trim() !== '') saveBal(); };
   async function addCrossing(g) {
     setAdding(false);
     const now = new Date(); const charge = crossingCharge(g.id, now, s.crossings);
@@ -557,17 +601,18 @@ export function SalikScreen({ go }) {
           <Icon name="wallet-outline" size={28} />
           <Txt bold size={20}>{t('salikAskT')}</Txt>
           <Txt muted>{t('salikAskB')}</Txt>
-          <Field value={val} onChangeText={setVal} keyboardType="decimal-pad" placeholder="AED 50.00" error={err ? t('balErr') : null} onSubmitEditing={saveBal} />
+          {typed != null ? <Figure size={34}>{aed(typed)}</Figure> : null}
+          <Field value={val} onChangeText={(v) => { setVal(v); setErr(false); }} keyboardType="decimal-pad" placeholder="AED 50.00" error={err ? t('balErr') : null} onSubmitEditing={saveBal} onBlur={saveIfTyped} />
           <Btn title={t('save')} onPress={saveBal} />
         </Card>
       ) : (
         <Card tone={balTone}>
           <Txt muted size={13}>{t('estBalance')}</Txt>
-          <Figure size={42} color={balTone === 'danger' ? c.red : balTone === 'warn' ? c.amber : c.fg}>{aed(bal)}</Figure>
+          <Figure size={42} color={fixing && typed != null ? c.fg : balTone === 'danger' ? c.red : balTone === 'warn' ? c.amber : c.fg}>{aed(fixing && typed != null ? typed : bal)}</Figure>
           {balTone ? <Txt color={balTone === 'danger' ? c.red : c.amber}>{t(balTone === 'danger' ? 'balNeg' : 'balLow')}</Txt> : null}
           <Btn icon="card-outline" title={t('topUp')} onPress={A.topUpSalik} />
           {fixing ? <>
-            <Field label={t('correctBal')} value={val} onChangeText={setVal} keyboardType="decimal-pad" placeholder="50.00" error={err ? t('balErr') : null} autoFocus onSubmitEditing={saveBal} />
+            <Field label={t('correctBal')} value={val} onChangeText={(v) => { setVal(v); setErr(false); }} keyboardType="decimal-pad" placeholder="50.00" error={err ? t('balErr') : null} autoFocus onSubmitEditing={saveBal} onBlur={saveIfTyped} />
             <View style={{ flexDirection: 'row', gap: 10 }}>
               <Btn ghost title={t('cancel')} onPress={() => { setFixing(false); setErr(false); }} style={{ flex: 1 }} />
               <Btn title={t('save')} onPress={saveBal} style={{ flex: 1 }} />
@@ -640,8 +685,137 @@ export function VehiclesScreen({ go }) {
 
 // ---------- Settings
 export function SettingsScreen({ go, onLang }) {
+  const [page, setPage] = useState(null); // a sub-page of Settings: 'gates', ...
+  if (page === 'gates') return <GatesPage onBack={() => setPage(null)} />;
+  if (page === 'disc') return <DisclaimerPage onBack={() => setPage(null)} />;
+  if (page === 'colour') return <ColourPage onBack={() => setPage(null)} />;
+  if (page === 'access') return <AccessPage onBack={() => setPage(null)} />;
+  if (page === 'history') return <HistoryPage onBack={() => setPage(null)} />;
+  return <SettingsMain go={go} onLang={onLang} setPage={setPage} />;
+}
+
+// Settings ▸ Salik gate positions: every gate, open it in Maps, "I'm here" to correct it, reset a mistaken one.
+function GatesPage({ onBack }) {
+  const s = useStore(); const [saved, setSaved] = useState(null);
+  const openMap = (g) => { const p = gatePos(g, s.settings.gateOverrides); const q = encodeURIComponent(gateName(g.id));
+    Linking.openURL(Platform.OS === 'ios' ? `http://maps.apple.com/?ll=${p.lat},${p.lng}&q=${q}` : `geo:${p.lat},${p.lng}?q=${p.lat},${p.lng}(${q})`); };
+  const imHere = async (g) => { const p = await currentPosition(); if (p) { await update((x) => { x.settings.gateOverrides[g.id] = p; }); setSaved(g.id); } };
+  const reset = (g) => Alert.alert(t('resetGate'), t('resetGateQ', { gate: gateName(g.id) }), [
+    { text: t('cancel'), style: 'cancel' },
+    { text: t('resetGate'), style: 'destructive', onPress: () => { update((x) => { delete x.settings.gateOverrides[g.id]; }); setSaved(null); } },
+  ]);
+  return (
+    <Screen>
+      <Title k="gatesH" onBack={onBack} />
+      <Txt muted size={13} style={{ paddingHorizontal: 4 }}>{t('gatesNote')}</Txt>
+      {GATES.map((g) => { const fixed = !!s.settings.gateOverrides[g.id];
+        return (
+          <Card key={g.id} style={{ gap: 10 }}>
+            <Row>
+              <View style={{ flex: 1, minWidth: 0 }}><Txt bold>{gateName(g.id)}</Txt><Txt muted size={13}>{fixed ? t('corrected') : t('approx')}</Txt></View>
+              <Btn plain small icon="map-outline" title={t('gateMap')} onPress={() => openMap(g)} />
+            </Row>
+            <View style={{ flexDirection: 'row', gap: 10 }}>
+              <Btn ghost small icon="locate-outline" title={saved === g.id ? '✓ ' + t('corrected') : t('imHere')} onPress={() => imHere(g)} style={{ flex: 1 }} />
+              {fixed ? <Btn ghost small icon="arrow-undo-outline" title={t('resetGate')} onPress={() => reset(g)} style={{ flex: 1 }} /> : null}
+            </View>
+          </Card>); })}
+    </Screen>
+  );
+}
+
+// A round sample of an app colour ('ink' = the original black/white look).
+function Swatch({ k, size = 28 }) {
+  const c = useTheme(); const a = ACCENTS[k];
+  return <View style={{ width: size, height: size, borderRadius: size / 2, backgroundColor: a ? a[c.dark ? 1 : 0] : c.fg, borderWidth: k === 'ink' ? 1 : 0, borderColor: c.line }} />;
+}
+
+// Settings ▸ App colour: pick the accent for main buttons, selected chips and the selected tab.
+function ColourPage({ onBack }) {
+  const s = useStore(); const cur = s.settings.accent || 'ink';
+  return (
+    <Screen>
+      <Title k="accentH" onBack={onBack} />
+      <List>
+        {Object.keys(ACCENTS).map((k) => (
+          <ListRow key={k} title={t('col_' + k)} onPress={() => update((x) => { x.settings.accent = k; })}
+            right={<View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>{cur === k ? <Icon name="checkmark-circle" size={22} /> : null}<Swatch k={k} /></View>} />))}
+      </List>
+      <Btn title={t('gotIt')} onPress={onBack} />
+    </Screen>
+  );
+}
+
+// Settings ▸ Transaction history: every parking SMS sent from the app, newest first (stored on the phone only).
+function HistoryPage({ onBack }) {
   const s = useStore();
-  const [saved, setSaved] = useState(null);
+  const list = (s.history || []).slice().reverse();
+  return (
+    <Screen>
+      <Title k="historyH" onBack={onBack} />
+      {list.length === 0 ? <Card><Txt muted>{t('historyEmpty')}</Txt></Card> : (
+        <List>{list.map((h) => (
+          <View key={h.id} style={{ flexDirection: 'row', alignItems: 'center', gap: 12, padding: 14 }}>
+            <View style={{ width: 6, alignSelf: 'stretch', borderRadius: 3, backgroundColor: EM_COLORS[h.em] || '#888' }} />
+            <View style={{ flex: 1, minWidth: 0, gap: 4 }}>
+              <Txt bold>{fmtDay(h.date)}</Txt>
+              <Txt muted size={13}>{fmtTime(h.date)} · {t('histFor', { n: h.hours, em: emName(h.em) })}</Txt>
+              {h.car ? <Plate v={h.car} width={120} /> : null}
+            </View>
+          </View>))}
+        </List>)}
+    </Screen>
+  );
+}
+
+// Settings ▸ Accessibility: text size on top of the phone's own setting.
+function AccessPage({ onBack }) {
+  const s = useStore();
+  return (
+    <Screen>
+      <Title k="accessH" onBack={onBack} />
+      <Sec>{t('textSizeH')}</Sec>
+      <Segmented value={s.settings.textSize || 'm'} onChange={(v) => update((x) => { x.settings.textSize = v; })} options={Object.keys(TEXT_SIZES).map((k) => [k, t('ts_' + k)])} />
+      <Card><Txt>{t('textPreview')}</Txt><Btn title={t('sendSms')} icon="send" onPress={() => {}} /></Card>
+    </Screen>
+  );
+}
+
+// Settings ▸ Disclaimer: the full text as a page (our own wording), red note last.
+function DisclaimerPage({ onBack }) {
+  const c = useTheme();
+  const points = ['dp1', 'dp2', 'dp3', 'dp4', 'dp5'];
+  return (
+    <Screen>
+      <Title k="discH" onBack={onBack} />
+      <List>{points.map((k) => <View key={k} style={{ padding: 16 }}><Txt size={16}>{t(k)}</Txt></View>)}</List>
+      <Card tone="danger"><Txt bold color={c.red}>{t('dpRed')}</Txt></Card>
+    </Screen>
+  );
+}
+
+const APP_STORE_ID = '6827734475'; // App Store Connect ▸ App Information ▸ Apple ID
+function rateApp() {
+  Linking.openURL(Platform.OS === 'ios' ? `itms-apps://apps.apple.com/app/id${APP_STORE_ID}?action=write-review` : 'market://details?id=ae.parkingplus.app')
+    .catch(() => Linking.openURL(`https://apps.apple.com/app/id${APP_STORE_ID}`));
+}
+
+// Bottom of Settings: name, version (build) and developer.
+function AppFooter() {
+  const v = Application.nativeApplicationVersion; const b = Application.nativeBuildVersion;
+  return (
+    <View style={{ alignItems: 'center', gap: 2, paddingVertical: 18 }}>
+      <Txt muted size={13}>{t('appName')}</Txt>
+      {v ? <Txt muted size={13}>{t('appVersion', { v: b ? `${v} (${b})` : v })}</Txt> : null}
+      <Txt muted size={13}>{t('byDev', { name: 'SAIF ALQAYDI' })}</Txt>
+    </View>
+  );
+}
+
+function SettingsMain({ go, onLang, setPage }) {
+  const s = useStore(); const c = useTheme();
+  const [naming, setNaming] = useState(null); // { id, name } to rename, or { pos } for a new free spot
+  const [taps, setTaps] = useState(0); // 5 taps on "Reminders" shows the trip log (for testing on the road)
   const setSetting = (k) => async (v) => { await update((x) => { x.settings[k] = v; }); if (k === 'remFines') { A.syncFineReminders(); syncCampaignReminders(); } };
   const toggleRow = (k, label) => <ListRow title={label} right={<Toggle label={label} value={s.settings[k]} onValueChange={setSetting(k)} />} />;
   return (
@@ -652,10 +826,20 @@ export function SettingsScreen({ go, onLang }) {
       <Sec>{t('appearanceH')}</Sec>
       <Segmented value={s.settings.appearance} onChange={(k) => { applyAppearance(k); setSetting('appearance')(k); }}
         options={['auto', 'light', 'dark'].map((k) => [k, t('look_' + k)])} />
+      <List>
+        <ListRow icon="receipt-outline" iconTone="info" title={t('historyH')} sub={t('histCount', { n: (s.history || []).length })} chevron onPress={() => setPage('history')} />
+      </List>
+      <List>
+        <ListRow icon="text-outline" title={t('accessH')} sub={t('textSizeH') + ' · ' + t('ts_' + (s.settings.textSize || 'm'))} chevron onPress={() => setPage('access')} />
+        <ListRow title={t('accentH')} chevron onPress={() => setPage('colour')}
+          right={<View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}><Txt muted size={14}>{t('col_' + (s.settings.accent || 'ink'))}</Txt><Swatch k={s.settings.accent || 'ink'} size={22} /></View>} />
+      </List>
       <Sec>{t('startTabH')}</Sec>
       <Wrap>{['today', 'parking', 'salik', 'fines', 'vehicles'].map((k) => <Chip key={k} title={t('tab_' + k)} on={(s.settings.startTab || 'today') === k} onPress={() => setSetting('startTab')(k)} />)}</Wrap>
       <LocationNotice />
-      <Sec>{t('remindersH')}</Sec>
+      <Press onPress={() => { const n = taps + 1; setTaps(n); if (n >= 5) setSetting('tripLog')(!s.settings.tripLog); }} accessible={false}>
+        <Sec>{t('remindersH')}</Sec>
+      </Press>
       <NotifNotice />
       <List>
         {toggleRow('remParking', t('remParking'))}
@@ -667,21 +851,26 @@ export function SettingsScreen({ go, onLang }) {
             <Btn ghost small title="+" onPress={() => setSetting('low')(Math.min(200, s.settings.low + 5))} />
           </View>} />
       </List>
+      <Txt muted size={13} style={{ paddingHorizontal: 4 }}>{t('inCarWait')}</Txt>
+      <Segmented value={s.settings.inCarWait || DEFAULT_IN_CAR_WAIT} onChange={setSetting('inCarWait')} options={IN_CAR_WAITS.map((n) => [n, t('nMin', { n })])} />
+      {s.settings.tripLog ? <TripLog /> : null}
       {Platform.OS === 'android' ? <>
         <List><ListRow icon="battery-half-outline" iconTone="warn" title={t('battT')} sub={t('battB')} chevron onPress={openBatterySettings} /></List>
       </> : null}
       <Sec>{t('freeSpots')}</Sec>
       <List>
-        {s.freeSpots.map((f) => <ListRow key={f.id} icon="location-outline" title={f.name}
+        {s.freeSpots.map((f) => <ListRow key={f.id} icon="location-outline" title={f.name} onPress={() => setNaming({ id: f.id, name: f.name })}
           right={<Btn plain small title={t('remove')} onPress={() => update((x) => { x.freeSpots = x.freeSpots.filter((y) => y.id !== f.id); })} />} />)}
-        <ListRow icon="add" title={t('addFreeHere')} onPress={async () => { const p = await currentPosition(); if (p) update((x) => { x.freeSpots.push({ id: newId(), name: t('freeSpotName', { n: x.freeSpots.length + 1 }), ...p }); }); }} />
+        <ListRow icon="add" title={t('addFreeHere')} onPress={async () => { const p = await currentPosition(); if (p) setNaming({ pos: p, name: '' }); }} />
       </List>
-      <Sec>{t('gatesH')}</Sec>
-      <Txt muted size={13} style={{ paddingHorizontal: 4 }}>{t('gatesNote')}</Txt>
+      {naming ? <NamePrompt title={naming.id ? t('rename') : t('spotNameT')} initial={naming.name} onClose={() => setNaming(null)}
+        onSave={async (v) => {
+          if (naming.id) await A.renameFreeSpot(naming.id, v);
+          else await update((x) => { x.freeSpots.push({ id: newId(), name: (v || '').trim().slice(0, 40) || t('freeSpotName', { n: x.freeSpots.length + 1 }), ...naming.pos }); });
+          setNaming(null);
+        }} /> : null}
       <List>
-        {GATES.map((g) => (
-          <ListRow key={g.id} title={gateName(g.id)} sub={s.settings.gateOverrides[g.id] ? t('corrected') : t('approx')}
-            right={<Btn ghost small title={saved === g.id ? '✓' : t('imHere')} onPress={async () => { const p = await currentPosition(); if (p) { await update((x) => { x.settings.gateOverrides[g.id] = p; }); setSaved(g.id); } }} />} />))}
+        <ListRow icon="swap-horizontal" iconTone="info" title={t('gatesH')} sub={t('gatesCount', { n: GATES.length })} chevron onPress={() => setPage('gates')} />
       </List>
       <Sec>{t('discH')}</Sec>
       <List>
@@ -693,9 +882,87 @@ export function SettingsScreen({ go, onLang }) {
       <Card><Txt size={14}>{t('privacyShort')}</Txt></Card>
       <List>
         <ListRow icon="lock-closed-outline" title={t('privacyLink')} chevron onPress={() => Linking.openURL(PRIVACY_URL)} />
-        <ListRow icon="shield-checkmark-outline" title={t('viewDisclaimer')} chevron onPress={() => openDisclaimer()} />
+        <ListRow icon="shield-checkmark-outline" title={t('discH')} chevron onPress={() => setPage('disc')} />
+        <ListRow icon="star-outline" iconTone="warn" title={t('rateApp')} chevron onPress={rateApp} />
       </List>
+      <AppFooter />
     </Screen>
+  );
+}
+
+/** Small sheet asking for a name (free spots). */
+function NamePrompt({ title, initial = '', onSave, onClose }) {
+  const c = useTheme(); const [v, setV] = useState(initial);
+  return (
+    <Modal visible transparent animationType="fade" onRequestClose={onClose}>
+      <View style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.4)', justifyContent: 'center', padding: 24 }}>
+        <View style={{ backgroundColor: c.card, borderRadius: 20, padding: 18, gap: 12 }}>
+          <Txt bold size={18}>{title}</Txt>
+          <Field value={v} onChangeText={setV} placeholder={t('spotNamePh')} autoFocus maxLength={40} onSubmitEditing={() => onSave(v)} />
+          <View style={{ flexDirection: 'row', gap: 10 }}>
+            <Btn ghost title={t('cancel')} onPress={onClose} style={{ flex: 1 }} />
+            <Btn title={t('save')} onPress={() => onSave(v)} style={{ flex: 1 }} />
+          </View>
+        </View>
+      </View>
+    </Modal>
+  );
+}
+
+// A newer version is in the store (Saif sets latestVersion in campaigns.json): offer to update.
+function UpdateCard() {
+  const s = useStore(); const cur = Application.nativeApplicationVersion;
+  if (!isNewerVersion(s.latestVersion, cur) || s.settings.updateDismissed === s.latestVersion) return null;
+  const open = () => Linking.openURL(Platform.OS === 'ios' ? `itms-apps://apps.apple.com/app/id${APP_STORE_ID}` : 'market://details?id=ae.parkingplus.app').catch(() => {});
+  return (
+    <Card tone="info">
+      <Row><Txt bold style={{ flex: 1 }}>{t('updateT')}</Txt><Btn plain small icon="close" title="" onPress={() => update((x) => { x.settings.updateDismissed = s.latestVersion; })} /></Row>
+      <Txt size={14}>{t('updateB', { v: s.latestVersion })}</Txt>
+      <Btn icon="download-outline" title={t('updateBtn')} onPress={open} />
+    </Card>
+  );
+}
+
+// "Price: about AED 2 + SMS fee" under the duration (feedback 1). Approximate: the sign at the spot wins.
+function PriceLine({ em, hours, type }) {
+  const p = parkingPrice(em, { hours, type });
+  if (!p) return null;
+  return (
+    <Row style={{ justifyContent: 'flex-start', gap: 6 }}>
+      <Txt muted size={13}>{t('priceH')}</Txt>
+      <Txt bold size={17}>{p.aed != null ? aed(p.aed) : `${aed(p.from)}–${aed(p.to)}`}</Txt>
+      <Txt muted size={13}>{p.aed != null ? t('plusSms') : t('plusSmsZone')}</Txt>
+    </Row>
+  );
+}
+
+// After "Free here" on the parking notification: ask for a name right on Today.
+function NamePendingCard() {
+  const s = useStore(); const [v, setV] = useState('');
+  const spot = s.freeSpots.find((f) => f.id === s.namePending);
+  if (!spot) return null;
+  return (
+    <Card>
+      <Txt bold>{t('spotNameT')}</Txt>
+      <Field value={v} onChangeText={setV} placeholder={t('spotNamePh')} maxLength={40} onSubmitEditing={() => A.renameFreeSpot(spot.id, v)} />
+      <View style={{ flexDirection: 'row', gap: 10 }}>
+        <Btn ghost title={t('skip')} onPress={() => update((x) => { x.namePending = null; })} style={{ flex: 1 }} />
+        <Btn title={t('save')} onPress={() => A.renameFreeSpot(spot.id, v)} style={{ flex: 1 }} />
+      </View>
+    </Card>
+  );
+}
+
+// Hidden testing aid: what the background task saw on the last drives and what it decided (src/location.js).
+function TripLog() {
+  const s = useStore(); const c = useTheme();
+  const lines = (s.tripLog || []).slice(-120).reverse();
+  return (
+    <Card>
+      <Row><Txt bold>{t('tripLog')}</Txt><Btn plain small title={t('clearLog')} onPress={() => update((x) => { x.tripLog = []; })} /></Row>
+      {lines.length ? <Text selectable style={{ fontFamily: Platform.OS === 'ios' ? 'Menlo' : 'monospace', fontSize: 11, color: c.muted, writingDirection: 'ltr', textAlign: 'left' }}>{lines.join('\n')}</Text>
+        : <Txt muted size={13}>{t('tripLogEmpty')}</Txt>}
+    </Card>
   );
 }
 

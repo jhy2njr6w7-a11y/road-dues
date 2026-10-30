@@ -14,12 +14,14 @@ export async function refreshCampaigns({ force = false } = {}) {
   const s = getState();
   if (!force && s.campaignsAt && Date.now() - new Date(s.campaignsAt).getTime() < MIN_GAP) return false;
   let list;
-  try { list = parseCampaigns(await downloadCampaigns()); } catch (e) { return false; }
+  let latest = null;
+  try { const raw = await downloadCampaigns(); list = parseCampaigns(raw); latest = typeof raw?.latestVersion === 'string' ? raw.latestVersion : null; } catch (e) { return false; }
   const seen = s.seenCampaigns;
   // Running campaigns we haven't announced yet. Upcoming ones get their own "starts today" reminder.
   const fresh = seen ? list.filter((c) => !seen.includes(c.id) && campaignStatus(c) === 'active') : [];
   const next = await update((x) => {
     x.campaigns = list;
+    x.latestVersion = latest; // newest store version Saif published: Today shows an update notice
     x.campaignsAt = new Date().toISOString();
     x.seenCampaigns = [...new Set([...(x.seenCampaigns || []), ...list.map((c) => c.id)])].slice(-200);
   });

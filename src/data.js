@@ -22,7 +22,7 @@ export const PARKING_EMIRATES = EM_ORDER.filter((k) => !EMIRATES[k].freeParking)
 // Paid parking windows in UAE local time. day: 0 = Sunday … 6 = Saturday. null = unknown (always ask).
 const PAID = {
   DXB: { days: [1, 2, 3, 4, 5, 6], spans: [[8, 22]] },
-  SHJ: { days: [6, 0, 1, 2, 3, 4], spans: [[8, 22]] },
+  SHJ: { days: [6, 0, 1, 2, 3, 4], spans: [[8, 24]] }, // until midnight since 1 Jul 2026, incl. Kalba, Khorfakkan, Al Dhaid (Sharjah Municipality)
   AUH: { days: [1, 2, 3, 4, 5, 6], spans: [[8, 24]] },
   AJM: { days: [6, 0, 1, 2, 3, 4], spans: [[8, 13], [17, 22]] },
 };
@@ -31,6 +31,22 @@ export function uaeParts(date) {
   const d = new Date(date.getTime() + 4 * 3600e3);
   return { day: d.getUTCDay(), hour: d.getUTCHours() + d.getUTCMinutes() / 60 };
 }
+// Approximate parking prices in AED (Oct 2026 guides; the sign at the spot always wins). Shown with "+ SMS fee".
+// Dubai depends on the zone letter and peak hours, so only a range per hour.
+export const PRICES = {
+  SHJ: { byHours: { 1: 2, 2: 5, 3: 8, 5: 12 } },
+  AUH: { perHour: { S: 2, P: 3 } },
+  AJM: { byHours: { 1: 2 } },
+  DXB: { perHourRange: [2, 6] },
+};
+export function parkingPrice(em, { hours = 1, type = 'S' } = {}) {
+  const p = PRICES[em];
+  if (!p) return null;
+  if (p.byHours) return p.byHours[hours] != null ? { aed: p.byHours[hours] } : null;
+  if (p.perHour) return p.perHour[type] != null ? { aed: p.perHour[type] * hours } : null;
+  return { from: p.perHourRange[0] * hours, to: p.perHourRange[1] * hours };
+}
+
 export function isPaidTime(em, date = new Date()) {
   if (EMIRATES[em]?.freeParking) return false; // no parking reminders there
   const p = PAID[em];
@@ -123,6 +139,15 @@ const dayEnd = (s) => { const d = parseDate(s); d.setHours(23, 59, 59, 999); ret
 const at9 = (d) => { const x = new Date(d); x.setHours(9, 0, 0, 0); return x; };
 
 /** Keeps only well-formed campaigns from the downloaded JSON; anything odd is dropped, never shown. */
+// "1.2.0" newer than "1.1.9"? For the update notice (campaigns.json ▸ latestVersion).
+export function isNewerVersion(latest, current) {
+  const ok = (v) => typeof v === 'string' && /^\d+(\.\d+){0,3}$/.test(v);
+  if (!ok(latest) || !ok(current)) return false;
+  const a = latest.split('.').map(Number), b = current.split('.').map(Number);
+  for (let i = 0; i < Math.max(a.length, b.length); i++) { const d = (a[i] || 0) - (b[i] || 0); if (d) return d > 0; }
+  return false;
+}
+
 export function parseCampaigns(json) {
   const list = Array.isArray(json?.campaigns) ? json.campaigns : [];
   const out = [];
@@ -171,6 +196,12 @@ export function validateVehicle(v, existing = []) {
   if (!/^\d{1,5}$/.test(num)) return { error: 'errNum' };
   if (existing.some((x) => x.em === v.em && x.code === code && x.num === num)) return { error: 'errDup' };
   return { vehicle: { ...v, code, num, model: (v.model || '').trim().slice(0, 24), color: (v.color || '').trim().slice(0, 16) } };
+}
+// A date (from parseDate, at noon) is not in the future if it is today or earlier. Comparing with "now"
+// rejected today's date every morning, so no fine could be added before 12 PM.
+export function notFuture(d, now = new Date()) {
+  const end = new Date(now); end.setHours(23, 59, 59, 999);
+  return d <= end;
 }
 export function parseDate(s) {
   const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(latinDigits(String(s).trim()));

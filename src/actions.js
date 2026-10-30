@@ -45,7 +45,7 @@ export function payCampaign(c) { withDisclaimer(() => Linking.openURL(c.payUrl |
 export function topUpSalik() { withDisclaimer(() => Linking.openURL(PAY_URLS.salik)); }
 
 /** Opens the SMS composer pre-filled. The user taps Send. Returns true if it should count as paid. */
-export async function sendParkingSms({ em, text, hours, zone, lat, lng }) {
+export async function sendParkingSms({ em, text, hours, zone, lat, lng, vehicle }) {
   const e = EMIRATES[em];
   if (!e?.sms || !text) return false;
   if (!(await SMS.isAvailableAsync())) { Alert.alert('SMS', 'This device cannot send SMS.'); return false; }
@@ -63,6 +63,9 @@ export async function sendParkingSms({ em, text, hours, zone, lat, lng }) {
   const until = new Date(Date.now() + h * 3600e3).toISOString();
   await update((x) => {
     x.parking = { ...(x.parking || { id: newId(), start: new Date().toISOString(), lat, lng }), em, status: 'paid', zone: e.input === 'zone' ? cleanCode(zone) : null, until, paidAt: new Date().toISOString(), hours: h };
+    // Settings ▸ Transaction history (on this phone only)
+    const car = vehicle ? { em: vehicle.em, code: vehicle.code, num: vehicle.num } : null;
+    x.history = [...(x.history || []), { id: newId(), date: new Date().toISOString(), em, hours: h, zone: x.parking.zone, text, car }].slice(-300);
     if (e.input === 'zone' && lat != null) {
       x.zones = x.zones.filter((z) => Math.abs(z.lat - lat) > 0.0015 || Math.abs(z.lng - lng) > 0.0015);
       x.zones.push({ lat, lng, zone: cleanCode(zone) });
@@ -84,7 +87,9 @@ export async function markFreeHere() {
     if (!x.parking) return;
     x.parking.status = 'free';
     if (x.parking.lat != null && !x.freeSpots.some((f) => Math.abs(f.lat - x.parking.lat) < 0.0015 && Math.abs(f.lng - x.parking.lng) < 0.0015)) {
-      x.freeSpots.push({ id: newId(), name: t('freeSpotName', { n: x.freeSpots.length + 1 }), lat: x.parking.lat, lng: x.parking.lng });
+      const id = newId();
+      x.freeSpots.push({ id, name: t('freeSpotName', { n: x.freeSpots.length + 1 }), lat: x.parking.lat, lng: x.parking.lng });
+      x.namePending = id; // Today asks for a name (Home, Work…)
     }
   });
   await cancelParkCheck();
@@ -95,3 +100,8 @@ export async function startParkingSession({ lat, lng, em }) {
   await update((x) => { if (!x.parking) x.parking = { id: newId(), start: new Date().toISOString(), lat, lng, em, status: 'awaiting' }; });
 }
 export const isIOS = Platform.OS === 'ios';
+
+export async function renameFreeSpot(id, name) {
+  const n = (name || '').trim().slice(0, 40);
+  await update((x) => { const f = x.freeSpots.find((y) => y.id === id); if (f && n) f.name = n; if (x.namePending === id) x.namePending = null; });
+}
