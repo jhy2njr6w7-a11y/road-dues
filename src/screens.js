@@ -8,6 +8,7 @@ import { EMIRATES, EM_ORDER, ISSUERS, GATES, gatePos, BRANDS, aed, buildSms, cle
 import { Card, Row, Sec, Txt, Figure, Btn, Chip, Segmented, Toggle, Pill, List, ListRow, Field, Wrap, Notice, Warn, BrandBadge, Bubble, Progress, Icon,
   useTheme, useArabicFont, styles, applyAppearance, Glass, Press } from './ui';
 import * as A from './actions';
+import * as Application from 'expo-application';
 import { currentPosition, requestLocation, locationStatus, startTracking } from './location';
 import { requestNotifPermission, setupCategories, notifStatus } from './notify';
 import { openBatterySettings } from './battery';
@@ -648,6 +649,7 @@ export function VehiclesScreen({ go }) {
 export function SettingsScreen({ go, onLang }) {
   const [page, setPage] = useState(null); // a sub-page of Settings: 'gates', ...
   if (page === 'gates') return <GatesPage onBack={() => setPage(null)} />;
+  if (page === 'disc') return <DisclaimerPage onBack={() => setPage(null)} />;
   return <SettingsMain go={go} onLang={onLang} setPage={setPage} />;
 }
 
@@ -678,6 +680,37 @@ function GatesPage({ onBack }) {
             </View>
           </Card>); })}
     </Screen>
+  );
+}
+
+// Settings ▸ Disclaimer: the full text as a page (our own wording), red note last.
+function DisclaimerPage({ onBack }) {
+  const c = useTheme();
+  const points = ['dp1', 'dp2', 'dp3', 'dp4', 'dp5'];
+  return (
+    <Screen>
+      <Title k="discH" onBack={onBack} />
+      <List>{points.map((k) => <View key={k} style={{ padding: 16 }}><Txt size={16}>{t(k)}</Txt></View>)}</List>
+      <Card tone="danger"><Txt bold color={c.red}>{t('dpRed')}</Txt></Card>
+    </Screen>
+  );
+}
+
+const APP_STORE_ID = '6827734475'; // App Store Connect ▸ App Information ▸ Apple ID
+function rateApp() {
+  Linking.openURL(Platform.OS === 'ios' ? `itms-apps://apps.apple.com/app/id${APP_STORE_ID}?action=write-review` : 'market://details?id=ae.parkingplus.app')
+    .catch(() => Linking.openURL(`https://apps.apple.com/app/id${APP_STORE_ID}`));
+}
+
+// Bottom of Settings: name, version (build) and developer.
+function AppFooter() {
+  const v = Application.nativeApplicationVersion; const b = Application.nativeBuildVersion;
+  return (
+    <View style={{ alignItems: 'center', gap: 2, paddingVertical: 18 }}>
+      <Txt muted size={13}>{t('appName')}</Txt>
+      {v ? <Txt muted size={13}>{t('appVersion', { v: b ? `${v} (${b})` : v })}</Txt> : null}
+      <Txt muted size={13}>{t('byDev', { name: 'SAIF ALQAYDI' })}</Txt>
+    </View>
   );
 }
 
@@ -743,8 +776,10 @@ function SettingsMain({ go, onLang, setPage }) {
       <Card><Txt size={14}>{t('privacyShort')}</Txt></Card>
       <List>
         <ListRow icon="lock-closed-outline" title={t('privacyLink')} chevron onPress={() => Linking.openURL(PRIVACY_URL)} />
-        <ListRow icon="shield-checkmark-outline" title={t('viewDisclaimer')} chevron onPress={() => openDisclaimer()} />
+        <ListRow icon="shield-checkmark-outline" title={t('discH')} chevron onPress={() => setPage('disc')} />
+        <ListRow icon="star-outline" iconTone="warn" title={t('rateApp')} chevron onPress={rateApp} />
       </List>
+      <AppFooter />
     </Screen>
   );
 }
