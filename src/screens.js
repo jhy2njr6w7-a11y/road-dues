@@ -9,6 +9,7 @@ import { Card, Row, Sec, Txt, Figure, Btn, Chip, Segmented, Toggle, Pill, List, 
   useTheme, useArabicFont, useTextScale, TEXT_SIZES, styles, applyAppearance, Glass, Press, ACCENTS } from './ui';
 import * as A from './actions';
 import * as Application from 'expo-application';
+import Svg, { Path, Line, Rect } from 'react-native-svg';
 import { currentPosition, requestLocation, locationStatus, startTracking } from './location';
 import { requestNotifPermission, setupCategories, notifStatus } from './notify';
 import { openBatterySettings } from './battery';
@@ -211,19 +212,45 @@ const EM_PALETTES = {
   1: { DXB: '#e4572e', SHJ: '#4338ca', AUH: '#0f9d76', AJM: '#a21caf' },
   2: { DXB: '#d1495b', SHJ: '#00798c', AUH: '#e09f3e', AJM: '#335c81' },
 };
-const EM_STYLE = { palette: 1, shape: 'square' }; // shape: 'square' | 'circle' | 'pin'
+const EM_STYLE = { palette: 1, shape: 'ticket' }; // shape: 'ticket' | 'receipt' | 'stub' (options sent 30 Oct 2026)
 export const EM_COLORS = { RAK: '#c4473c', FUJ: '#2f9467', UAQ: '#7357c9', ...EM_PALETTES[EM_STYLE.palette] };
 
-// The emirate's badge: a P (parking) in its colour
+// A real parking ticket in the emirate's colour (our own drawing). Cut-outs are real holes, so the
+// tile behind shows through in light and dark mode.
+function ticketPath(shape, w, h) {
+  const r = h * 0.16, n = h * 0.16;
+  if (shape === 'stub') { // notches top and bottom, a punched hole on the small side
+    const x = w * 0.68, hr = h * 0.1, cx = w * 0.84, cy = h / 2;
+    return `M${r},0 H${x - n} A${n},${n} 0 0 0 ${x + n},0 H${w - r} A${r},${r} 0 0 1 ${w},${r} V${h - r} A${r},${r} 0 0 1 ${w - r},${h} H${x + n} A${n},${n} 0 0 0 ${x - n},${h} H${r} A${r},${r} 0 0 1 0,${h - r} V${r} A${r},${r} 0 0 1 ${r},0 Z`
+      + ` M${cx - hr},${cy} a${hr},${hr} 0 1 0 ${2 * hr},0 a${hr},${hr} 0 1 0 ${-2 * hr},0 Z`;
+  }
+  if (shape === 'receipt') { // paper slip with a torn zigzag bottom
+    const z = h * 0.08, rr = w * 0.14, teeth = 5;
+    let d = `M${rr},0 H${w - rr} A${rr},${rr} 0 0 1 ${w},${rr} V${h - z}`;
+    for (let i = teeth * 2 - 1; i >= 0; i--) d += ` L${(w * i) / (teeth * 2)},${i % 2 ? h : h - z}`;
+    return d + ` V${rr} A${rr},${rr} 0 0 1 ${rr},0 Z`;
+  }
+  return `M${r},0 H${w - r} A${r},${r} 0 0 1 ${w},${r} V${h / 2 - n} A${n},${n} 0 0 0 ${w},${h / 2 + n} V${h - r} A${r},${r} 0 0 1 ${w - r},${h} H${r} A${r},${r} 0 0 1 0,${h - r} V${h / 2 + n} A${n},${n} 0 0 0 0,${h / 2 - n} V${r} A${r},${r} 0 0 1 ${r},0 Z`;
+}
 function TicketIcon({ em, size = 34 }) {
-  const col = EM_COLORS[em] || '#555';
-  const P = <Text style={{ color: '#fff', fontWeight: '900', fontSize: size * 0.55, includeFontPadding: false }}>P</Text>;
-  if (EM_STYLE.shape === 'pin') return (
-    <View style={{ width: size, height: size, alignItems: 'center' }}>
-      <Icon name="location" size={size} color={col} />
-      <View style={{ position: 'absolute', top: size * 0.12, width: size, alignItems: 'center' }}>{React.cloneElement(P, { style: [P.props.style, { fontSize: size * 0.42 }] })}</View>
-    </View>);
-  return <View style={{ width: size, height: size, borderRadius: EM_STYLE.shape === 'circle' ? size / 2 : size * 0.28, backgroundColor: col, alignItems: 'center', justifyContent: 'center' }}>{P}</View>;
+  const col = EM_COLORS[em] || '#555'; const shape = EM_STYLE.shape;
+  const tall = shape === 'receipt';
+  const w = tall ? size * 0.8 : size * 1.45, h = tall ? size * 1.1 : size;
+  const P = (x, y, fs) => <Text style={{ position: 'absolute', left: x - fs * 0.35, top: y - fs * 0.62, color: '#fff', fontWeight: '900', fontSize: fs, includeFontPadding: false }}>P</Text>;
+  return (
+    <View style={{ width: w, height: h }}>
+      <Svg width={w} height={h}>
+        <Path d={ticketPath(shape, w, h)} fill={col} fillRule="evenodd" />
+        {shape === 'ticket' ? <>
+          <Line x1={w * 0.36} y1={h * 0.14} x2={w * 0.36} y2={h * 0.88} stroke="#fff" strokeWidth={1.5} strokeDasharray={`${h * 0.08},${h * 0.07}`} />
+          {[0.42, 0.3, 0.36].map((l, i) => <Rect key={i} x={w * 0.47} y={h * (0.26 + i * 0.19)} width={w * l} height={h * 0.08} rx={h * 0.04} fill="#fff" />)}
+        </> : null}
+        {shape === 'stub' ? <Line x1={w * 0.68} y1={h * 0.2} x2={w * 0.68} y2={h * 0.82} stroke="#fff" strokeWidth={1.5} strokeDasharray={`${h * 0.07},${h * 0.07}`} /> : null}
+        {shape === 'receipt' ? [2, 1, 3, 1, 2, 1, 2, 3].reduce((a, wd) => { a.items.push(<Rect key={a.x} x={a.x} y={h * 0.58} width={wd * w * 0.025} height={h * 0.2} fill="#fff" />); a.x += wd * w * 0.025 + w * 0.04; return a; }, { x: w * 0.16, items: [] }).items : null}
+      </Svg>
+      {shape === 'ticket' ? P(w * 0.19, h / 2, h * 0.5) : shape === 'stub' ? P(w * 0.34, h / 2, h * 0.55) : P(w / 2, h * 0.3, w * 0.55)}
+    </View>
+  );
 }
 
 // Re-renders every second while mounted (live countdown)
