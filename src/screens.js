@@ -3,7 +3,7 @@ import { ScrollView, View, Text, Pressable, Modal, Linking, Alert, AppState, Pla
 import { useStore, update, newId } from './store';
 import { t, T, emName, hrsOf, fmtDate, fmtDay, fmtTime, LANGS, getLang, gateName } from './i18n';
 import { IN_CAR_WAITS, DEFAULT_IN_CAR_WAIT } from './park-detect';
-import { EMIRATES, EM_ORDER, ISSUERS, GATES, gatePos, isNewerVersion, BRANDS, aed, buildSms, cleanCode, ZONE_RE, fineOffer, discounted, daysLeft,
+import { EMIRATES, EM_ORDER, ISSUERS, GATES, gatePos, isNewerVersion, parkingPrice, BRANDS, aed, buildSms, cleanCode, ZONE_RE, fineOffer, discounted, daysLeft,
   validateVehicle, parseDate, emirateAt, distanceM, crossingCharge, latinDigits, visibleCampaigns, campaignStatus, campaignEnd, PAY_URLS, PARKING_EMIRATES } from './data';
 import { Card, Row, Sec, Txt, Figure, Btn, Chip, Segmented, Toggle, Pill, List, ListRow, Field, Wrap, Notice, Warn, BrandBadge, Bubble, Progress, Icon,
   useTheme, useArabicFont, useTextScale, TEXT_SIZES, styles, applyAppearance, Glass, Press, ACCENTS } from './ui';
@@ -205,16 +205,25 @@ export function TodayScreen({ go }) {
 }
 
 // Each emirate's colour, used for its parking ticket icon and tile
-export const EM_COLORS = { AUH: '#3aa6c2', DXB: '#2f5fd0', SHJ: '#e0a72e', AJM: '#8a6d45', RAK: '#c4473c', FUJ: '#2f9467', UAQ: '#7357c9' };
+// Our own emirate colours and badge (feedback 11: the old blue/yellow/light-blue/brown tickets looked like
+// another parking app). Saif picks from the options sent on 30 Oct 2026: change EM_STYLE to switch.
+const EM_PALETTES = {
+  1: { DXB: '#e4572e', SHJ: '#4338ca', AUH: '#0f9d76', AJM: '#a21caf' },
+  2: { DXB: '#d1495b', SHJ: '#00798c', AUH: '#e09f3e', AJM: '#335c81' },
+};
+const EM_STYLE = { palette: 1, shape: 'square' }; // shape: 'square' | 'circle' | 'pin'
+export const EM_COLORS = { RAK: '#c4473c', FUJ: '#2f9467', UAQ: '#7357c9', ...EM_PALETTES[EM_STYLE.palette] };
 
-// A parking ticket in the emirate's colour, with the P of parking signs
+// The emirate's badge: a P (parking) in its colour
 function TicketIcon({ em, size = 34 }) {
-  return (
-    <View style={{ width: size, height: size, alignItems: 'center', justifyContent: 'center', transform: [{ rotate: '-14deg' }] }}>
-      <Icon name="ticket" size={size} color={EM_COLORS[em] || '#1a56b8'} />
-      <Text style={{ position: 'absolute', color: '#fff', fontWeight: '900', fontSize: size * 0.36 }}>P</Text>
-    </View>
-  );
+  const col = EM_COLORS[em] || '#555';
+  const P = <Text style={{ color: '#fff', fontWeight: '900', fontSize: size * 0.55, includeFontPadding: false }}>P</Text>;
+  if (EM_STYLE.shape === 'pin') return (
+    <View style={{ width: size, height: size, alignItems: 'center' }}>
+      <Icon name="location" size={size} color={col} />
+      <View style={{ position: 'absolute', top: size * 0.12, width: size, alignItems: 'center' }}>{React.cloneElement(P, { style: [P.props.style, { fontSize: size * 0.42 }] })}</View>
+    </View>);
+  return <View style={{ width: size, height: size, borderRadius: EM_STYLE.shape === 'circle' ? size / 2 : size * 0.28, backgroundColor: col, alignItems: 'center', justifyContent: 'center' }}>{P}</View>;
 }
 
 // Re-renders every second while mounted (live countdown)
@@ -387,6 +396,7 @@ export function ParkingScreen({ go, prefill }) {
 
       {e.sms ? (
         <Card>
+          <PriceLine em={em} hours={e.hours ? hours : 1} type={type} />
           <Txt muted size={13}>{t('toNum', { num: e.sms, hours: hrsOf(em) })}</Txt>
           {text ? <Bubble text={text} /> : e.input === 'zone' ? <Txt muted>{t('enterZone')}</Txt> : null}
           <Btn icon="send" title={busy ? t('sending') : t('sendSms')} disabled={!text || busy} onPress={send} />
@@ -883,6 +893,19 @@ function UpdateCard() {
       <Txt size={14}>{t('updateB', { v: s.latestVersion })}</Txt>
       <Btn icon="download-outline" title={t('updateBtn')} onPress={open} />
     </Card>
+  );
+}
+
+// "Price: about AED 2 + SMS fee" under the duration (feedback 1). Approximate: the sign at the spot wins.
+function PriceLine({ em, hours, type }) {
+  const p = parkingPrice(em, { hours, type });
+  if (!p) return null;
+  return (
+    <Row style={{ justifyContent: 'flex-start', gap: 6 }}>
+      <Txt muted size={13}>{t('priceH')}</Txt>
+      <Txt bold size={17}>{p.aed != null ? aed(p.aed) : `${aed(p.from)}–${aed(p.to)}`}</Txt>
+      <Txt muted size={13}>{p.aed != null ? t('plusSms') : t('plusSmsZone')}</Txt>
+    </Row>
   );
 }
 

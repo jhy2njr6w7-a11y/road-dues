@@ -39,7 +39,7 @@ en:{
  parkFirstT:"Park and pay first",parkFirstB:"Park the car and send the SMS, then try this.",noDiscT:"No discounts left",noDiscB:"All fines are paid or past their discount window.",
  language:"Language",
  em_DXB:"Dubai",em_SHJ:"Sharjah",em_AUH:"Abu Dhabi",em_AJM:"Ajman",em_RAK:"Ras Al Khaimah",em_FUJ:"Fujairah",em_UAQ:"Umm Al Quwain",
- hrs_DXB:"Mon–Sat 08:00–22:00",hrs_SHJ:"Sat–Thu 08:00–22:00 (blue zones every day)",hrs_AUH:"08:00–24:00, free on Sundays",hrs_AJM:"Sat–Thu 08:00–13:00 and 17:00–22:00",hrs_other:"Check the parking sign",
+ hrs_DXB:"Mon–Sat 08:00–22:00",hrs_SHJ:"Sat–Thu 08:00–24:00 (blue zones every day)",hrs_AUH:"08:00–24:00, free on Sundays",hrs_AJM:"Sat–Thu 08:00–13:00 and 17:00–22:00",hrs_other:"Check the parking sign",
  iss_dxb:"Dubai Police",iss_adp:"Abu Dhabi Police",iss_shj:"Sharjah Police",
  note_lane:"Lane change without signal",note_yellow:"Parking on yellow line",note_speed:"Speeding, Sheikh Mohammed bin Zayed Rd"},
 ar:{
@@ -78,7 +78,7 @@ ar:{
  parkFirstT:"قف وادفع أولاً",parkFirstB:"أوقف السيارة وأرسل الرسالة، ثم جرّب هذا.",noDiscT:"لا توجد خصومات متبقية",noDiscB:"كل المخالفات مدفوعة أو انتهت فترة خصمها.",
  language:"اللغة",
  em_DXB:"دبي",em_SHJ:"الشارقة",em_AUH:"أبوظبي",em_AJM:"عجمان",em_RAK:"رأس الخيمة",em_FUJ:"الفجيرة",em_UAQ:"أم القيوين",
- hrs_DXB:"الإثنين–السبت 08:00–22:00",hrs_SHJ:"السبت–الخميس 08:00–22:00 (المناطق الزرقاء يومياً)",hrs_AUH:"08:00–24:00، مجاناً يوم الأحد",hrs_AJM:"السبت–الخميس 08:00–13:00 و17:00–22:00",hrs_other:"راجع لافتة المواقف",
+ hrs_DXB:"الإثنين–السبت 08:00–22:00",hrs_SHJ:"السبت–الخميس 08:00–24:00 (المناطق الزرقاء يومياً)",hrs_AUH:"08:00–24:00، مجاناً يوم الأحد",hrs_AJM:"السبت–الخميس 08:00–13:00 و17:00–22:00",hrs_other:"راجع لافتة المواقف",
  iss_dxb:"شرطة دبي",iss_adp:"شرطة أبوظبي",iss_shj:"شرطة الشارقة",
  note_lane:"تغيير المسار دون إشارة",note_yellow:"الوقوف على الخط الأصفر",note_speed:"تجاوز السرعة، شارع الشيخ محمد بن زايد"},
 hi:{
@@ -117,7 +117,7 @@ hi:{
  parkFirstT:"पहले पार्क करें और भुगतान करें",parkFirstB:"गाड़ी पार्क करें और SMS भेजें, फिर यह आज़माएँ।",noDiscT:"कोई छूट नहीं बची",noDiscB:"सभी जुर्माने चुकाए जा चुके हैं या छूट की अवधि खत्म हो गई है।",
  language:"भाषा",
  em_DXB:"दुबई",em_SHJ:"शारजाह",em_AUH:"अबू धाबी",em_AJM:"अजमान",em_RAK:"रास अल खैमाह",em_FUJ:"फुजैरा",em_UAQ:"उम्म अल क्वैन",
- hrs_DXB:"सोम–शनि 08:00–22:00",hrs_SHJ:"शनि–गुरु 08:00–22:00 (नीले ज़ोन हर दिन)",hrs_AUH:"08:00–24:00, रविवार को मुफ़्त",hrs_AJM:"शनि–गुरु 08:00–13:00 और 17:00–22:00",hrs_other:"पार्किंग बोर्ड देखें",
+ hrs_DXB:"सोम–शनि 08:00–22:00",hrs_SHJ:"शनि–गुरु 08:00–24:00 (नीले ज़ोन हर दिन)",hrs_AUH:"08:00–24:00, रविवार को मुफ़्त",hrs_AJM:"शनि–गुरु 08:00–13:00 और 17:00–22:00",hrs_other:"पार्किंग बोर्ड देखें",
  iss_dxb:"दुबई पुलिस",iss_adp:"अबू धाबी पुलिस",iss_shj:"शारजाह पुलिस",
  note_lane:"बिना संकेत लेन बदलना",note_yellow:"पीली लाइन पर पार्किंग",note_speed:"तेज़ गति, शेख मोहम्मद बिन ज़ायद रोड"},
 zh:{
@@ -156,7 +156,7 @@ zh:{
  parkFirstT:"请先停车并支付",parkFirstB:"先停车并发送短信，然后再试。",noDiscT:"没有剩余折扣",noDiscB:"所有罚单都已支付或已过折扣期。",
  language:"语言",
  em_DXB:"迪拜",em_SHJ:"沙迦",em_AUH:"阿布扎比",em_AJM:"阿治曼",em_RAK:"哈伊马角",em_FUJ:"富查伊拉",em_UAQ:"乌姆盖万",
- hrs_DXB:"周一至周六 08:00–22:00",hrs_SHJ:"周六至周四 08:00–22:00（蓝色区域每天收费）",hrs_AUH:"08:00–24:00，周日免费",hrs_AJM:"周六至周四 08:00–13:00 和 17:00–22:00",hrs_other:"请查看停车标志",
+ hrs_DXB:"周一至周六 08:00–22:00",hrs_SHJ:"周六至周四 08:00–24:00（蓝色区域每天收费）",hrs_AUH:"08:00–24:00，周日免费",hrs_AJM:"周六至周四 08:00–13:00 和 17:00–22:00",hrs_other:"请查看停车标志",
  iss_dxb:"迪拜警察",iss_adp:"阿布扎比警察",iss_shj:"沙迦警察",
  note_lane:"变道未打转向灯",note_yellow:"在黄线上停车",note_speed:"超速，谢赫·穆罕默德·本·扎耶德路"},
 ru:{
@@ -195,7 +195,7 @@ ru:{
  parkFirstT:"Сначала припаркуйтесь и оплатите",parkFirstB:"Припаркуйте машину и отправьте SMS, затем попробуйте снова.",noDiscT:"Скидок не осталось",noDiscB:"Все штрафы оплачены или срок скидки истёк.",
  language:"Язык",
  em_DXB:"Дубай",em_SHJ:"Шарджа",em_AUH:"Абу-Даби",em_AJM:"Аджман",em_RAK:"Рас-эль-Хайма",em_FUJ:"Фуджейра",em_UAQ:"Умм-эль-Кайвайн",
- hrs_DXB:"пн–сб 08:00–22:00",hrs_SHJ:"сб–чт 08:00–22:00 (синие зоны — ежедневно)",hrs_AUH:"08:00–24:00, по воскресеньям бесплатно",hrs_AJM:"сб–чт 08:00–13:00 и 17:00–22:00",hrs_other:"Смотрите знак парковки",
+ hrs_DXB:"пн–сб 08:00–22:00",hrs_SHJ:"сб–чт 08:00–24:00 (синие зоны — ежедневно)",hrs_AUH:"08:00–24:00, по воскресеньям бесплатно",hrs_AJM:"сб–чт 08:00–13:00 и 17:00–22:00",hrs_other:"Смотрите знак парковки",
  iss_dxb:"Полиция Дубая",iss_adp:"Полиция Абу-Даби",iss_shj:"Полиция Шарджи",
  note_lane:"Перестроение без поворотника",note_yellow:"Парковка на жёлтой линии",note_speed:"Превышение скорости, ул. Шейха Мохаммеда бин Зайеда"}
 };

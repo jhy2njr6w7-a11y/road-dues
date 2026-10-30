@@ -22,7 +22,7 @@ export const PARKING_EMIRATES = EM_ORDER.filter((k) => !EMIRATES[k].freeParking)
 // Paid parking windows in UAE local time. day: 0 = Sunday … 6 = Saturday. null = unknown (always ask).
 const PAID = {
   DXB: { days: [1, 2, 3, 4, 5, 6], spans: [[8, 22]] },
-  SHJ: { days: [6, 0, 1, 2, 3, 4], spans: [[8, 22]] },
+  SHJ: { days: [6, 0, 1, 2, 3, 4], spans: [[8, 24]] }, // until midnight since 1 Jul 2026, incl. Kalba, Khorfakkan, Al Dhaid (Sharjah Municipality)
   AUH: { days: [1, 2, 3, 4, 5, 6], spans: [[8, 24]] },
   AJM: { days: [6, 0, 1, 2, 3, 4], spans: [[8, 13], [17, 22]] },
 };
@@ -31,6 +31,22 @@ export function uaeParts(date) {
   const d = new Date(date.getTime() + 4 * 3600e3);
   return { day: d.getUTCDay(), hour: d.getUTCHours() + d.getUTCMinutes() / 60 };
 }
+// Approximate parking prices in AED (Oct 2026 guides; the sign at the spot always wins). Shown with "+ SMS fee".
+// Dubai depends on the zone letter and peak hours, so only a range per hour.
+export const PRICES = {
+  SHJ: { byHours: { 1: 2, 2: 5, 3: 8, 5: 12 } },
+  AUH: { perHour: { S: 2, P: 3 } },
+  AJM: { byHours: { 1: 2 } },
+  DXB: { perHourRange: [2, 6] },
+};
+export function parkingPrice(em, { hours = 1, type = 'S' } = {}) {
+  const p = PRICES[em];
+  if (!p) return null;
+  if (p.byHours) return p.byHours[hours] != null ? { aed: p.byHours[hours] } : null;
+  if (p.perHour) return p.perHour[type] != null ? { aed: p.perHour[type] * hours } : null;
+  return { from: p.perHourRange[0] * hours, to: p.perHourRange[1] * hours };
+}
+
 export function isPaidTime(em, date = new Date()) {
   if (EMIRATES[em]?.freeParking) return false; // no parking reminders there
   const p = PAID[em];
