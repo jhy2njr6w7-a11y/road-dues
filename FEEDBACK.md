@@ -42,6 +42,10 @@ When an item is built, move it to "Done" with the PR link.
     - startup awaits `loadState()` + `setupCategories()` and then `startTracking()` (permission checks, start updates, Motion permission) and `refreshCampaigns()`, and the foreground handler runs `loadState()` again;
     - every `update()` deep-copies the whole state with JSON and writes it all to storage; state now also holds the trip log (300 lines), history and up to 500 Salik crossings.
     Fix plan: add start-up timings to the trip log to see which step is slow; run tracking/campaign/category set-up after the first screen is interactive (InteractionManager); only process the newest ~20 GPS updates of a batch; cheaper `update()` (no full JSON copy, debounced storage write); keep the trip log outside the main state.
+21. **Bug (build 5): ~9 of 10 "Did you pay?" come when he starts driving again** (Saif, 1 Nov 2026). **Reproduced in the trip simulator:** park, the fallback asks after 10 min (correct), walk around, come back an hour later, pull out slowly → asked again at minute 67 *while driving*. Causes in src/park-detect.js:
+    - the step count is "steps since the car last moved", so after an hour parked it includes every step taken that hour; slow pulling-out or leaving the 100 m circle then looks like "walked away";
+    - when the fallback reminder fires, the stop isn't marked as asked, so the same stop can ask again.
+    Fix: only count **recent** steps (last ~2 min); once the in-car wait has passed (fallback already asked) treat the next movement as driving, never as walking away; add these trips (park → walk → return → drive off, with GPS normal and held back) to tests/logic.test.mjs.
 
 ## Done
 
