@@ -21,6 +21,8 @@ export const ANCHOR_RADIUS = 100; // metres; leaving this circle wakes the app e
 export const BAD_ACCURACY = 50;   // metres; indoors GPS jumps 100 m+ with poor accuracy: such readings are ignored
 export const FAR_UNKNOWN = 300;   // metres moved before an update with unknown speed (-1) counts as driving
 export const EXIT_MOVED = 150;    // metres from the stop before leaving the circle counts as the car driving off
+export const EXIT_COOLDOWN_MS = 20000; // build 5 log: dozens of 'left circle' a second (a circle drawn at a stale
+                                       // position fires again at once); only the first exit in 20 s counts
 export const IN_CAR_WAITS = [5, 10, 15]; // minutes, Settings ▸ "Ask if I stay in the car for"
 export const DEFAULT_IN_CAR_WAIT = 10;
 
@@ -45,6 +47,11 @@ export function onDriveEvent(drive, ev, distanceM, { wait = DEFAULT_IN_CAR_WAIT 
   const ask = () => (asked ? { drive: { ...d, asked: true }, action: 'none' } : { drive: { ...d, asked: true }, action: 'ask' });
 
   if (ev.type === 'exit') {
+    if (d.lastExit && ev.t - d.lastExit < EXIT_COOLDOWN_MS) return { drive: d, action: 'none' };
+    const r = onExit();
+    return { ...r, drive: { ...r.drive, lastExit: ev.t } };
+  }
+  function onExit() {
     if (!d.lastMoving) return { drive: nowDriving, action: 'arm' };
     if (walking) return ask();
     if (moved > EXIT_MOVED) return { drive: nowDriving, action: 'arm' }; // no steps: the car drove off after a stop

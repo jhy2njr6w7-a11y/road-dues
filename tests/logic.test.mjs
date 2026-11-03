@@ -148,6 +148,10 @@ ok('Trip (build 5 bug): parked indoors, GPS drifts every minute → still asked 
 ok('Trip: parked indoors with drift, then drive home → nothing while driving', () => {
   const f = trip([['drive', 300, 50], ['stop', 20], ['drift', 3600], ['drive', 40, 6], ['drive', 600, 50]], { gpsAfterStop: false });
   assert.deepEqual(f.filter((e) => e.kind === 'drive'), []); });
+ok('Build 5 log: 40 "left circle" in a few seconds at the same stale spot → reminder pushed back once at most', () => {
+  let d = { lastMoving: new Date(0).toISOString(), lastLat: 25.0742, lastLng: 56.3553, asked: false }; let arms = 0;
+  for (let i = 0; i < 40; i++) { const r = P.onDriveEvent(d, { type: 'exit', t: 600000 + i * 150, lat: 25.0742, lng: 56.3553 + 0.002, accuracy: 10, steps: 0 }, D.distanceM); d = r.drive; if (r.action === 'arm') arms++; }
+  assert.ok(arms <= 1, `${arms} arms`); });
 ok('Trip: unknown speed (-1) while driving still counts as driving', () => { let d = {}; for (let i = 0; i < 20; i++) d = P.onDriveEvent(d, { type: 'loc', t: i * 3000, lat: 25, lng: 56 + i * 0.0012, speed: i ? -1 : 15 }, D.distanceM).drive; assert.ok(new Date(d.lastMoving).getTime() >= 16 * 3000, 'still counted as driving every ~300 m'); });
 
 ok('Sharjah paid until midnight (from 1 Jul 2026)', () => { assert.equal(D.isPaidTime('SHJ', uae('2026-10-29T23:30:00')), true); assert.equal(D.isPaidTime('SHJ', uae('2026-10-30T23:30:00')), false); });

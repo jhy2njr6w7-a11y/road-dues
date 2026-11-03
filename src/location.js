@@ -107,9 +107,10 @@ async function stepsSince(iso) {
 async function handleAnchorExit() {
   const s = isLoaded() ? getState() : await loadState();
   if (s.settings.lang) setLangCode(s.settings.lang);
-  const p = await Location.getLastKnownPositionAsync({ maxAge: 60e3 }).catch(() => null)
-    || await Location.getCurrentPositionAsync({ accuracy: Location.Accuracy.Balanced }).catch(() => null);
-  if (!p) return;
+  // A fresh position only: a circle redrawn around a stale one fires "left" again at once (build 5 looped)
+  const p = await Location.getLastKnownPositionAsync({ maxAge: 10e3, requiredAccuracy: 50 }).catch(() => null)
+    || await Location.getCurrentPositionAsync({ accuracy: Location.Accuracy.High }).catch(() => null);
+  if (!p || Date.now() - p.timestamp > 30e3) return;
   const steps = await stepsSince(s.drive.lastMoving);
   await update((x) => { x.drive.anchorLat = null; }); // we are outside it now; the next 'arm' draws a new one here
   await decide([{ type: 'exit', t: Date.now(), lat: p.coords.latitude, lng: p.coords.longitude, accuracy: p.coords.accuracy, steps }], 'left circle');
