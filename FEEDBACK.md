@@ -46,6 +46,7 @@ When an item is built, move it to "Done" with the PR link.
     - the step count is "steps since the car last moved", so after an hour parked it includes every step taken that hour; slow pulling-out or leaving the 100 m circle then looks like "walked away";
     - when the fallback reminder fires, the stop isn't marked as asked, so the same stop can ask again.
     Fix: only count **recent** steps (last ~2 min); once the in-car wait has passed (fallback already asked) treat the next movement as driving, never as walking away; add these trips (park → walk → return → drive off, with GPS normal and held back) to tests/logic.test.mjs.
+22. **"Did you pay?" never comes while parked, only after he drives off again** (Saif, 3 Nov 2026). So the 10-min fallback keeps being pushed back while the car is parked. Most likely cause: **GPS drift while he is indoors** (parked, inside a building). Indoors iOS reports positions jumping 100 m+ with unknown speed (-1) or poor accuracy; `onDriveEvent` treats "moved > 100 m with unknown speed" as driving, and leaving the 100 m geofence with few steps as "the car drove off", so every jump re-arms the reminder and moves the circle. Then on the real drive-off, item 21 makes it ask. Fix: ignore updates and geofence exits with poor accuracy (> ~50 m); with unknown speed require a much bigger move (> 300 m) and two updates in a row; never re-arm from drift while the step counter shows he is not in a vehicle. Confirm first with Saif's trip log (Settings ▸ tap "التذكيرات" 5×) from one parked stop. Fix together with 21.
 
 ## Done
 
