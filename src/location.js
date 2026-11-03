@@ -4,10 +4,10 @@ import * as Location from 'expo-location';
 import * as TaskManager from 'expo-task-manager';
 import { Pedometer } from 'expo-sensors';
 import { Alert, Platform } from 'react-native';
-import { loadState, update, newId, getState } from './store';
+import { loadState, update, newId, getState, isLoaded } from './store';
 import { setLangCode, t, gateName } from './i18n';
 import { GATES, gatePos, distanceM, crossingCharge, emirateAt, isPaidTime, buildSms, EMIRATES } from './data';
-import { runDriveEvents, DRIVE_SPEED, SLOW_SPEED, ANCHOR_RADIUS, DEFAULT_IN_CAR_WAIT } from './park-detect';
+import { runDriveEvents, DRIVE_SPEED, ANCHOR_RADIUS, DEFAULT_IN_CAR_WAIT, RECENT_STEPS_S } from './park-detect';
 import { scheduleParkCheck, cancelParkCheck, notifySalik, cancelExpiry } from './notify';
 import { refreshCampaigns } from './campaigns';
 
@@ -15,22 +15,24 @@ export const TASK = 'road-dues-location';
 const GEO_TASK = 'road-dues-car-anchor';
 const GATE_RADIUS = 170;    // metres
 const FREE_RADIUS = 150;    // metres around a saved free spot
-const LOG_MAX = 300;        // trip log lines kept (Settings ▸ tap "Reminders" 5 times)
+const LOG_MAX = 150;        // trip log lines kept (Settings ▸ tap "Reminders" 5 times)
 
 const hms = (ms) => new Date(ms).toTimeString().slice(0, 8);
 const logLine = (x, line) => { x.tripLog = [...(x.tripLog || []), line].slice(-LOG_MAX); };
 
 export async function handleLocations(locations) {
-  const s = await loadState();
+  const s = isLoaded() ? getState() : await loadState(); // re-reading storage on every GPS batch slowed the app down
   if (s.settings.lang) setLangCode(s.settings.lang);
   const events = locations.map((l) => ({ type: 'loc', t: l.timestamp, lat: l.coords.latitude, lng: l.coords.longitude, speed: l.coords.speed, accuracy: l.coords.accuracy }));
   // Slow updates: walking or crawling? Ask the step counter once for the batch.
-  if (events.some((e) => e.speed == null || e.speed < SLOW_SPEED)) {
+  if (events.some((e) => e.speed == null || e.speed < DRIVE_SPEED)) {
     const steps = await stepsSince(s.drive.lastMoving);
     for (const e of events) e.steps = steps;
   }
   // Parking first: it is what must not miss its few seconds of background time.
-  await decide(events, 'gps');
+  // After a long sleep iOS can hand over hundreds of queued updates at once: the newest decide parking
+  // (all of them are still checked for Salik gates, which is cheap).
+  await decide(events.slice(-20), 'gps');
   await checkGates(events);
   await refreshCampaigns(); // last: can be slow on the road (at most every 3 h)
 }
@@ -38,12 +40,12 @@ export async function handleLocations(locations) {
 // 1) Parked, driving or walking? (rules in src/park-detect.js)
 async function decide(events, src) {
   const before = getState().drive;
-  const { drive, action } = runDriveEvents(before, events, distanceM);
+  const { drive, action } = runDriveEvents(before, events, distanceM, { wait: getState().settings.inCarWait || DEFAULT_IN_CAR_WAIT });
   const last = events[events.length - 1];
   await update((x) => {
     x.drive = { ...x.drive, ...drive };
     if (action === 'arm' && x.parking && x.parking.status !== 'free') x.parking = null; // driving again: not parked
-    for (const e of events) logLine(x, `${hms(e.t)} ${src} ${e.speed != null && e.speed >= 0 ? (e.speed * 3.6).toFixed(0) + ' km/h' : e.steps != null ? e.steps + ' steps' : '?'}`);
+    for (const e of events) logLine(x, `${hms(e.t)} ${src} ${e.speed != null && e.speed >= 0 ? (e.speed * 3.6).toFixed(0) + ' km/h' : '?'}${e.accuracy != null ? ' ±' + Math.round(e.accuracy) + 'm' : ''}${e.steps != null ? ' ' + e.steps + ' steps' : ''}`);
     logLine(x, `${hms(Date.now())}   → ${action}`);
   });
   if (action === 'arm') { await cancelExpiry(); await armParking(); await moveAnchor(last); }
@@ -91,24 +93,27 @@ async function moveAnchor(at) {
   } catch (e) { /* no background permission: GPS updates alone */ }
 }
 
-// Steps since the car last moved (iPhone motion chip keeps them even while the app sleeps); null if unknown.
+// Recent steps (last RECENT_STEPS_S s, not before the car last moved) from the iPhone motion chip, which keeps
+// them even while the app sleeps; null if unknown.
 async function stepsSince(iso) {
   if (Platform.OS !== 'ios' || !iso) return null;
   try {
     if (!(await Pedometer.isAvailableAsync()) || !(await Pedometer.getPermissionsAsync()).granted) return null;
-    return (await Pedometer.getStepCountAsync(new Date(iso), new Date())).steps;
+    const from = Math.max(new Date(iso).getTime(), Date.now() - RECENT_STEPS_S * 1000);
+    return (await Pedometer.getStepCountAsync(new Date(from), new Date())).steps;
   } catch (e) { return null; }
 }
 
 async function handleAnchorExit() {
-  const s = await loadState();
+  const s = isLoaded() ? getState() : await loadState();
   if (s.settings.lang) setLangCode(s.settings.lang);
-  const p = await Location.getLastKnownPositionAsync({ maxAge: 60e3 }).catch(() => null)
-    || await Location.getCurrentPositionAsync({ accuracy: Location.Accuracy.Balanced }).catch(() => null);
-  if (!p) return;
+  // A fresh position only: a circle redrawn around a stale one fires "left" again at once (build 5 looped)
+  const p = await Location.getLastKnownPositionAsync({ maxAge: 10e3, requiredAccuracy: 50 }).catch(() => null)
+    || await Location.getCurrentPositionAsync({ accuracy: Location.Accuracy.High }).catch(() => null);
+  if (!p || Date.now() - p.timestamp > 30e3) return;
   const steps = await stepsSince(s.drive.lastMoving);
   await update((x) => { x.drive.anchorLat = null; }); // we are outside it now; the next 'arm' draws a new one here
-  await decide([{ type: 'exit', t: Date.now(), lat: p.coords.latitude, lng: p.coords.longitude, steps }], 'left circle');
+  await decide([{ type: 'exit', t: Date.now(), lat: p.coords.latitude, lng: p.coords.longitude, accuracy: p.coords.accuracy, steps }], 'left circle');
 }
 
 // 2) Salik gates

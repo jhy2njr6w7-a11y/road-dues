@@ -238,7 +238,7 @@ function TicketIcon({ em, size = 34 }) {
   const w = tall ? size * 0.8 : size * 1.45, h = tall ? size * 1.1 : size;
   const P = (x, y, fs) => <Text style={{ position: 'absolute', left: x - fs * 0.35, top: y - fs * 0.62, color: '#fff', fontWeight: '900', fontSize: fs, includeFontPadding: false }}>P</Text>;
   return (
-    <View style={{ width: w, height: h }}>
+    <View style={{ width: w, height: h, direction: 'ltr' }}>{/* in Arabic (RTL) `left` would flip and put the P on the lines */}
       <Svg width={w} height={h}>
         <Path d={ticketPath(shape, w, h)} fill={col} fillRule="evenodd" />
         {shape === 'ticket' ? <>
@@ -281,7 +281,8 @@ function ParkingStatus({ go }) {
       </Card>
     );
   }
-  const v = s.vehicles.find((x) => x.id === s.defaultVeh) || s.vehicles[0];
+  // the car this ticket was paid for (not just the default car); unpaid stops show the default car
+  const v = (p.vehId && s.vehicles.find((x) => x.id === p.vehId)) || p.car || s.vehicles.find((x) => x.id === s.defaultVeh) || s.vehicles[0];
   const since = p.paidAt || p.start;
   const Line = ({ icon, children }) => (
     <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}><Icon name={icon} size={18} color={c.muted} />{children}</View>
@@ -795,6 +796,14 @@ function DisclaimerPage({ onBack }) {
 }
 
 const APP_STORE_ID = '6827734475'; // App Store Connect ▸ App Information ▸ Apple ID
+// Settings ▸ Send feedback: an email with the app version and phone system filled in (works without TestFlight).
+const FEEDBACK_EMAIL = 'darbak9900@gmail.com';
+function sendFeedback() {
+  const v = Application.nativeApplicationVersion; const b = Application.nativeBuildVersion;
+  const body = `\n\n—\nParking+ ${v || ''}${b ? ` (${b})` : ''} · ${Platform.OS} ${Platform.Version} · ${getLang()}`;
+  Linking.openURL(`mailto:${FEEDBACK_EMAIL}?subject=${encodeURIComponent('Parking+ feedback')}&body=${encodeURIComponent(body)}`).catch(() => Alert.alert(t('sendFeedback'), FEEDBACK_EMAIL));
+}
+
 function rateApp() {
   Linking.openURL(Platform.OS === 'ios' ? `itms-apps://apps.apple.com/app/id${APP_STORE_ID}?action=write-review` : 'market://details?id=ae.parkingplus.app')
     .catch(() => Linking.openURL(`https://apps.apple.com/app/id${APP_STORE_ID}`));
@@ -884,6 +893,7 @@ function SettingsMain({ go, onLang, setPage }) {
         <ListRow icon="lock-closed-outline" title={t('privacyLink')} chevron onPress={() => Linking.openURL(PRIVACY_URL)} />
         <ListRow icon="shield-checkmark-outline" title={t('discH')} chevron onPress={() => setPage('disc')} />
         <ListRow icon="star-outline" iconTone="warn" title={t('rateApp')} chevron onPress={rateApp} />
+        <ListRow icon="mail-outline" iconTone="info" title={t('sendFeedback')} sub={FEEDBACK_EMAIL} chevron onPress={sendFeedback} />
       </List>
       <AppFooter />
     </Screen>

@@ -93,24 +93,33 @@ ok('Every Salik gate has a name', () => D.GATES.forEach((g) => assert.ok(I.T.en[
 function trip(steps, { gpsAfterStop = true, stepCounter = true, wait = 10 } = {}) {
   const start = Date.UTC(2026, 9, 29, 6, 0, 0); // 10:00 UAE, a Thursday
   let t = start, x = 0, speed = 0;             // metres east of a Kalba street
-  const pos = () => ({ lat: 25.0742, lng: 56.3553 + x / 100800 });
-  let drive = {}, anchor = null, fireAt = null, lastGps = null, stepCount = 0, stepsAtMove = 0, stoppedOnce = false;
-  const fired = [];
-  const apply = (r) => {
+  const pos = (dx = 0) => ({ lat: 25.0742, lng: 56.3553 + (x + dx) / 100800 });
+  let drive = {}, anchor = null, fireAt = null, lastGps = null, stoppedOnce = false;
+  const stepTimes = []; const fired = [];
+  // like stepsSince() in src/location.js: steps in the last RECENT_STEPS_S s, not before the car last moved
+  const recentSteps = () => { const from = Math.max(drive.lastMoving ? new Date(drive.lastMoving).getTime() : 0, t - P.RECENT_STEPS_S * 1000); return stepTimes.filter((s) => s > from).length; };
+  const apply = (r, kind) => {
     drive = r.drive;
-    if (r.action === 'arm') { fireAt = t + wait * 60e3; stepsAtMove = stepCount; const p = pos(); if (!anchor || D.distanceM(p, anchor) >= 50) anchor = p; }
-    if (r.action === 'ask') { fired.push({ at: (t - start) / 1000, speed, how: 'now' }); fireAt = null; }
+    if (r.action === 'arm') { fireAt = t + wait * 60e3; const p = pos(); if (!anchor || D.distanceM(p, anchor) >= 50) anchor = p; }
+    if (r.action === 'ask') { fired.push({ at: (t - start) / 1000, speed, kind, how: 'now' }); fireAt = null; }
   };
+  const ev = (e) => apply(P.runDriveEvents(drive, [e], D.distanceM, { wait }), e.kind);
   for (const [kind, secs, kmh = 0] of steps) {
     for (let i = 0; i < secs; i++) {
-      t += 1000; speed = kind === 'walk' ? 1.4 : kmh / 3.6;
-      x += speed; if (kind === 'walk') stepCount += 1.8;
-      if (kind === 'stop' || kind === 'walk') stoppedOnce = true;
-      const p = pos(); const steps = stepCounter ? Math.round(stepCount - stepsAtMove) : null;
-      const gpsOn = gpsAfterStop || !stoppedOnce;
-      if (gpsOn && (!lastGps || D.distanceM(p, lastGps) >= 30)) { lastGps = p; apply(P.runDriveEvents(drive, [{ type: 'loc', t, ...p, speed: kind === 'walk' ? 1.4 : speed, steps }], D.distanceM)); }
-      if (anchor && D.distanceM(p, anchor) > P.ANCHOR_RADIUS) { anchor = null; apply(P.runDriveEvents(drive, [{ type: 'exit', t, ...p, steps }], D.distanceM)); }
-      if (fireAt && t >= fireAt) { fired.push({ at: (t - start) / 1000, speed, how: 'fallback' }); fireAt = null; }
+      t += 1000; const walk = kind === 'walk' || kind === 'walkback';
+      speed = walk ? 1.4 : kmh / 3.6;
+      x += kind === 'walkback' ? -1.4 : speed;
+      if (walk) { stepTimes.push(t); if (i % 5 === 0) stepTimes.push(t); } // ~1.2 steps a second
+      if (kind !== 'drive') stoppedOnce = true;
+      const steps = stepCounter ? recentSteps() : null; const p = pos();
+      const gpsOn = gpsAfterStop || !stoppedOnce || kind === 'drive' && i > 30;
+      if (kind === 'drift' && i % 60 === 0) { // indoors: a jump of 150-400 m with unknown speed and poor accuracy every minute
+        const q = pos(150 + (i % 250)); ev({ type: 'loc', t, ...q, speed: -1, accuracy: 120, steps, kind });
+        if (anchor && D.distanceM(q, anchor) > P.ANCHOR_RADIUS) { anchor = null; ev({ type: 'exit', t, ...q, accuracy: 90, steps, kind }); }
+      }
+      if (gpsOn && kind !== 'drift' && (!lastGps || D.distanceM(p, lastGps) >= 30)) { lastGps = p; ev({ type: 'loc', t, ...p, speed: walk ? 1.4 : speed, accuracy: 8, steps, kind }); }
+      if (kind !== 'drift' && anchor && D.distanceM(p, anchor) > P.ANCHOR_RADIUS) { anchor = null; ev({ type: 'exit', t, ...p, accuracy: 10, steps, kind }); }
+      if (fireAt && t >= fireAt) { fired.push({ at: (t - start) / 1000, speed, kind, how: 'fallback' }); fireAt = null; drive = { ...drive }; }
     }
   }
   return fired;
@@ -127,7 +136,23 @@ ok('Trip: park and stay in the car → asked after the in-car wait', () => { con
 ok('Trip: in-car wait 5 min setting', () => { const f = trip([['drive', 300, 50], ['stop', 15 * 60]], { wait: 5 }); assert.ok(Math.abs(f[0].at - 300 - 300) < 30); });
 ok('Trip: asked only once per stop', () => assert.equal(trip([['drive', 300, 50], ['stop', 20], ['walk', 600]]).length, 1));
 ok('Trip: no step counter (Android) walk away → asked by walking speed', () => { const f = trip([['drive', 300, 50], ['stop', 20], ['walk', 120]], { stepCounter: false }); assert.equal(f[0].how, 'now'); });
-ok('Trip: unknown speed (-1) while driving still counts as driving', () => { let d = {}; for (let i = 0; i < 20; i++) d = P.onDriveEvent(d, { type: 'loc', t: i * 3000, lat: 25, lng: 56 + i * 0.0012, speed: i ? -1 : 15 }, D.distanceM).drive; assert.equal(new Date(d.lastMoving).getTime(), 19 * 3000); });
+ok('Trip (build 5 bug): park, fallback asks, walk around 1 h, return, pull out slowly → no question while driving', () => {
+  const f = trip([['drive', 300, 50], ['stop', 15 * 60], ['walk', 600], ['stop', 3600], ['walkback', 600], ['stop', 30], ['drive', 40, 6], ['drive', 600, 50]]);
+  assert.deepEqual(f.filter((e) => e.kind === 'drive').map((e) => e.at), []); });
+ok('Trip (build 5 bug): park, walk off (asked), come back after 2 h, drive off → asked once only', () => {
+  const f = trip([['drive', 300, 50], ['stop', 20], ['walk', 300], ['stop', 7200], ['walkback', 300], ['stop', 30], ['drive', 40, 6], ['drive', 600, 50]]);
+  assert.equal(f.length, 1); assert.equal(f[0].kind, 'walk'); });
+ok('Trip (build 5 bug): parked indoors, GPS drifts every minute → still asked after the in-car wait', () => {
+  const f = trip([['drive', 300, 50], ['stop', 20], ['drift', 30 * 60]], { gpsAfterStop: false });
+  assert.equal(f.length, 1); assert.equal(f[0].how, 'fallback'); assert.ok(Math.abs(f[0].at - 300 - 600) < 30, `asked at ${f[0].at - 300} s`); });
+ok('Trip: parked indoors with drift, then drive home → nothing while driving', () => {
+  const f = trip([['drive', 300, 50], ['stop', 20], ['drift', 3600], ['drive', 40, 6], ['drive', 600, 50]], { gpsAfterStop: false });
+  assert.deepEqual(f.filter((e) => e.kind === 'drive'), []); });
+ok('Build 5 log: 40 "left circle" in a few seconds at the same stale spot → reminder pushed back once at most', () => {
+  let d = { lastMoving: new Date(0).toISOString(), lastLat: 25.0742, lastLng: 56.3553, asked: false }; let arms = 0;
+  for (let i = 0; i < 40; i++) { const r = P.onDriveEvent(d, { type: 'exit', t: 600000 + i * 150, lat: 25.0742, lng: 56.3553 + 0.002, accuracy: 10, steps: 0 }, D.distanceM); d = r.drive; if (r.action === 'arm') arms++; }
+  assert.ok(arms <= 1, `${arms} arms`); });
+ok('Trip: unknown speed (-1) while driving still counts as driving', () => { let d = {}; for (let i = 0; i < 20; i++) d = P.onDriveEvent(d, { type: 'loc', t: i * 3000, lat: 25, lng: 56 + i * 0.0012, speed: i ? -1 : 15 }, D.distanceM).drive; assert.ok(new Date(d.lastMoving).getTime() >= 16 * 3000, 'still counted as driving every ~300 m'); });
 
 ok('Sharjah paid until midnight (from 1 Jul 2026)', () => { assert.equal(D.isPaidTime('SHJ', uae('2026-10-29T23:30:00')), true); assert.equal(D.isPaidTime('SHJ', uae('2026-10-30T23:30:00')), false); });
 ok('Price Sharjah 2 h = AED 5', () => assert.deepEqual(D.parkingPrice('SHJ', { hours: 2 }), { aed: 5 }));

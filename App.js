@@ -1,5 +1,5 @@
 import React, { useEffect, useState, useCallback, useRef, useMemo } from 'react';
-import { View, Text, AppState, StatusBar, PanResponder, Animated, Platform } from 'react-native';
+import { View, Text, AppState, StatusBar, PanResponder, Animated, Platform, InteractionManager } from 'react-native';
 import { SafeAreaProvider, SafeAreaView } from 'react-native-safe-area-context';
 import { getLocales } from 'expo-localization';
 import './src/web-alert'; // web preview only: Alert.alert -> browser dialogs (no-op on phones)
@@ -89,13 +89,16 @@ export default function App() {
     const lang = st.settings.lang || (T[device] ? device : 'en');
     setLangCode(lang);
     if (!st.settings.lang) await update((x) => { x.settings.lang = lang; });
-    await setupCategories();
-    if (st.settings.onboarded) startTracking();
     // Settings ▸ Open the app on. A notification tap that already chose a screen wins.
     const start = TAB_KEYS.includes(st.settings.startTab) ? st.settings.startTab : 'today';
     setTab((cur) => (cur === 'today' ? start : cur));
     setReady(true);
-    refreshCampaigns();
+    // Everything else after the first screen responds (build 5 froze ~5 s on reopen doing this first)
+    InteractionManager.runAfterInteractions(async () => {
+      await setupCategories();
+      if (st.settings.onboarded) await startTracking();
+      refreshCampaigns();
+    });
   })(); }, []);
 
   // When the app comes back to the foreground: pick up changes made by the background task,
@@ -103,8 +106,8 @@ export default function App() {
   useEffect(() => {
     const sub = AppState.addEventListener('change', async (st) => {
       if (st !== 'active') return;
-      const x = await loadState();
-      refreshCampaigns();
+      const x = getState(); // the background task runs in this same app, so memory is already current
+      InteractionManager.runAfterInteractions(() => refreshCampaigns());
       const d = x.drive;
       const since = d.lastMoving ? Date.now() - new Date(d.lastMoving).getTime() : 0;
       const parked = d.asked || since > (x.settings.inCarWait || 10) * 60e3; // walked away, or sat longer than the in-car wait
@@ -123,7 +126,7 @@ export default function App() {
       if (!r) return;
       const data = r.notification.request.content.data || {};
       const action = r.actionIdentifier;
-      await loadState();
+      if (!isLoaded()) await loadState();
       if (data.kind === 'parking') {
         await A.startParkingSession({ lat: data.lat, lng: data.lng, em: data.em });
         if (action === ACT.paid) { await A.markParkingPaid(1); go('today'); }

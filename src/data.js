@@ -86,16 +86,17 @@ export function salikCharge(date) {
   if ((hour >= 6 && hour < 10) || (hour >= 16 && hour < 20)) return 6.3;
   return 4.2;
 }
-// Approximate positions. Users correct them in Settings ▸ Salik gates ▸ "I'm here".
+// Barsha and both Mamzar gates: positions Saif took from Google Maps (30 Oct 2026). The others are still
+// approximate; users correct them in Settings ▸ Salik gate positions ▸ "I'm here".
 export const GATES = [
   { id: 'garhoud', name: 'Al Garhoud Bridge', lat: 25.2338, lng: 55.3420 },
   { id: 'maktoum', name: 'Al Maktoum Bridge', lat: 25.2445, lng: 55.3228 },
   { id: 'airport', name: 'Airport Tunnel', lat: 25.2560, lng: 55.3530 },
-  { id: 'mamzar-s', name: 'Al Mamzar South', lat: 25.2880, lng: 55.3570, pair: 'mamzar-n' },
-  { id: 'mamzar-n', name: 'Al Mamzar North', lat: 25.2960, lng: 55.3640, pair: 'mamzar-s' },
+  { id: 'mamzar-s', name: 'Al Mamzar South', lat: 25.2862458, lng: 55.3590661, pair: 'mamzar-n' },
+  { id: 'mamzar-n', name: 'Al Mamzar North', lat: 25.2977938, lng: 55.3615112, pair: 'mamzar-s' },
   { id: 'safa-n', name: 'Al Safa North', lat: 25.1790, lng: 55.2330, pair: 'safa-s' },
   { id: 'safa-s', name: 'Al Safa South', lat: 25.1640, lng: 55.2170, pair: 'safa-n' },
-  { id: 'barsha', name: 'Al Barsha', lat: 25.1180, lng: 55.1980 },
+  { id: 'barsha', name: 'Al Barsha', lat: 25.1159017, lng: 55.1918380 },
   { id: 'jebelali', name: 'Jebel Ali', lat: 25.0260, lng: 55.1010 },
   { id: 'businessbay', name: 'Business Bay Crossing', lat: 25.1890, lng: 55.2930 },
 ];
