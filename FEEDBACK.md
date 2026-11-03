@@ -56,6 +56,7 @@ When an item is built, move it to "Done" with the PR link.
     - "crawling" needs a real speed (known ≥ ~1 m/s) and a move bigger than 30 m + the reading's accuracy; unknown speed with 0 steps never arms;
     - also seen: while driving at 65 km/h, 2 "left circle" a second (the cooldown correctly ignored them); move the circle at most every ~30 s while driving fast to save work.
     Add the 16:07 drift sequence from the log as a test (paid ticket must survive, no re-arm).
+25. **Asked at the first stop (correct, after 5 min), but not at a second stop ~1 km later after 5 min** (Saif, 3 Nov 2026). Same root cause as 24: the "crawling in traffic" rule (slow move ≥ 30 m + step counter below 20 → still driving → 'arm'). At a parked stop, GPS drift with 0 steps keeps arming, so the 5-min fallback is pushed back forever. The trip simulator also showed a second variant: just after getting out the step count is still small (3), so the first walking update arms, clears "asked" and the stop gets asked twice. Fix (with 24): crawling only with **0 steps** and a **known speed ≥ ~1 m/s** and a move > 30 m + accuracy; a few steps (1–19) = wait for more evidence ('none'); unknown speed never crawls. Tests: two stops 1 km apart (both asked once), drift at the second stop, getting out right after the fallback (no second ask).
 
 ## Done
 
