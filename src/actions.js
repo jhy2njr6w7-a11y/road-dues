@@ -65,6 +65,7 @@ export async function sendParkingSms({ em, text, hours, zone, lat, lng, vehicle 
     x.parking = { ...(x.parking || { id: newId(), start: new Date().toISOString(), lat, lng }), em, status: 'paid', zone: e.input === 'zone' ? cleanCode(zone) : null, until, paidAt: new Date().toISOString(), hours: h };
     // Settings ▸ Transaction history (on this phone only)
     const car = vehicle ? { em: vehicle.em, code: vehicle.code, num: vehicle.num } : null;
+    x.parking.vehId = vehicle?.id || null; x.parking.car = car; // the ticket shows the car it was paid for
     x.history = [...(x.history || []), { id: newId(), date: new Date().toISOString(), em, hours: h, zone: x.parking.zone, text, car }].slice(-300);
     if (e.input === 'zone' && lat != null) {
       x.zones = x.zones.filter((z) => Math.abs(z.lat - lat) > 0.0015 || Math.abs(z.lng - lng) > 0.0015);
