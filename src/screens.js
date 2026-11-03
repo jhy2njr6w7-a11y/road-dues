@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { ScrollView, View, Text, Pressable, Modal, Linking, Alert, AppState, Platform, Image } from 'react-native';
+import { ScrollView, View, Text, Pressable, Modal, Linking, Alert, AppState, Platform, Image, Share } from 'react-native';
 import { useStore, update, newId } from './store';
 import { t, T, emName, hrsOf, fmtDate, fmtDay, fmtTime, LANGS, getLang, gateName } from './i18n';
 import { IN_CAR_WAITS, DEFAULT_IN_CAR_WAIT } from './park-detect';
@@ -709,6 +709,8 @@ function GatesPage({ onBack }) {
     <Screen>
       <Title k="gatesH" onBack={onBack} />
       <Txt muted size={13} style={{ paddingHorizontal: 4 }}>{t('gatesNote')}</Txt>
+      {Object.keys(s.settings.gateOverrides).length ? <Btn ghost icon="share-outline" title={t('shareGates')} onPress={() => Share.share({ message: Object.entries(s.settings.gateOverrides)
+        .map(([id, p]) => `${gateName(id)} (${id}): ${p.lat.toFixed(6)}, ${p.lng.toFixed(6)}`).join('\n') })} /> : null}
       {GATES.map((g) => { const fixed = !!s.settings.gateOverrides[g.id];
         return (
           <Card key={g.id} style={{ gap: 10 }}>
