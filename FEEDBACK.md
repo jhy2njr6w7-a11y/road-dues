@@ -51,7 +51,11 @@ When an item is built, move it to "Done" with the PR link.
 24. **Paid a parking ticket, but it didn't show on Today** (Saif, 3 Nov 2026). Two possible causes in the code:
     - **The ticket got wiped:** `decide()` in src/location.js sets `x.parking = null` on every 'arm' (driving), even for a **paid** ticket. A false 'arm' (GPS jump, leaving the circle) right after paying deletes the ticket and its "ticket ending" reminder. Fix: never clear a paid ticket while it is still valid; on real driving, just mark it "left" and keep it until it ends.
     - **The send wasn't recorded:** the ticket is only created when iOS reports the SMS as `sent`. Paying from the Messages app directly, or iOS reporting anything else, leaves no ticket. Fix: if the result isn't `sent`, ask "Did you send it?" (like Android) instead of doing nothing.
-    To tell which: check Settings ▸ Transaction history (entry there = sent and recorded, so it was wiped) and the trip log for an "→ arm" after the payment time.
+    **Confirmed from Saif's screenshots (3 Nov 2026, build 6):** history has the payment at 4:07 PM, so it was recorded and then **wiped**. The trip log after 16:07 shows the car parked but GPS drifting ±34–42 m (below the 50 m cut-off) with 0 steps: `gps ? ±34m 0 steps → arm`, `gps ? ±38m → arm`, `gps 2 km/h ±42m → arm`. The "crawling in traffic" rule (moved ≥ 30 m slowly, step counter says not walking → still driving) took the drift for a crawling car, armed, and `decide()` deleted the paid ticket. Fixes:
+    - never clear a paid, still-valid ticket on 'arm';
+    - "crawling" needs a real speed (known ≥ ~1 m/s) and a move bigger than 30 m + the reading's accuracy; unknown speed with 0 steps never arms;
+    - also seen: while driving at 65 km/h, 2 "left circle" a second (the cooldown correctly ignored them); move the circle at most every ~30 s while driving fast to save work.
+    Add the 16:07 drift sequence from the log as a test (paid ticket must survive, no re-arm).
 
 ## Done
 
