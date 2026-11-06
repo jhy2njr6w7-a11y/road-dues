@@ -62,6 +62,8 @@ When an item is built, move it to "Done" with the PR link.
 
 ## Done
 
+- **Build 7 (PR #33, branch `claude/build-7`):** items 23, 24, 25, 26, 27 built.
+
 - **PR #32 (merged 3 Nov 2026):** Garhoud and Jebel Ali gate positions (web listings, unverified on site) + "Share my gate positions" button. Still approximate: Maktoum, Airport, Safa N/S, Business Bay.
 
 - **Build 6 (PR #31, branch `claude/build-6`):** items 16, 17, 19, 20, 21, 22 built; 18 partly (Barsha, Mamzar S/N positions; 7 gates still needed from Saif).
