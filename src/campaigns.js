@@ -1,7 +1,7 @@
 // Fine discount campaigns: download the public list, remember it, and keep reminders in sync.
 // Nothing about the user is sent; it is a plain download of campaigns.json.
 import { update, getState } from './store';
-import { parseCampaigns, campaignStatus } from './data';
+import { parseCampaigns, parseFreeDays, campaignStatus } from './data';
 import { downloadCampaigns } from './campaign-source';
 import { rescheduleCampaignReminders, notifyCampaignNow } from './notify';
 
@@ -14,13 +14,14 @@ export async function refreshCampaigns({ force = false } = {}) {
   const s = getState();
   if (!force && s.campaignsAt && Date.now() - new Date(s.campaignsAt).getTime() < MIN_GAP) return false;
   let list;
-  let latest = null;
-  try { const raw = await downloadCampaigns(); list = parseCampaigns(raw); latest = typeof raw?.latestVersion === 'string' ? raw.latestVersion : null; } catch (e) { return false; }
+  let latest = null, freeDays = [];
+  try { const raw = await downloadCampaigns(); list = parseCampaigns(raw); latest = typeof raw?.latestVersion === 'string' ? raw.latestVersion : null; freeDays = parseFreeDays(raw); } catch (e) { return false; }
   const seen = s.seenCampaigns;
   // Running campaigns we haven't announced yet. Upcoming ones get their own "starts today" reminder.
   const fresh = seen ? list.filter((c) => !seen.includes(c.id) && campaignStatus(c) === 'active') : [];
   const next = await update((x) => {
     x.campaigns = list;
+    x.freeDays = freeDays;  // holidays with free parking: no reminder, and a warning before paying
     x.latestVersion = latest; // newest store version Saif published: Today shows an update notice
     x.campaignsAt = new Date().toISOString();
     x.seenCampaigns = [...new Set([...(x.seenCampaigns || []), ...list.map((c) => c.id)])].slice(-200);
