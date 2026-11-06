@@ -7,7 +7,7 @@ import { Alert, Platform } from 'react-native';
 import { loadState, update, newId, getState, isLoaded } from './store';
 import { setLangCode, t, gateName } from './i18n';
 import { GATES, gatePos, distanceM, crossingCharge, emirateAt, isPaidTime, buildSms, EMIRATES } from './data';
-import { runDriveEvents, DRIVE_SPEED, ANCHOR_RADIUS, DEFAULT_IN_CAR_WAIT, RECENT_STEPS_S } from './park-detect';
+import { runDriveEvents, DRIVE_SPEED, ANCHOR_RADIUS, BAD_ACCURACY, DEFAULT_IN_CAR_WAIT, RECENT_STEPS_S } from './park-detect';
 import { scheduleParkCheck, cancelParkCheck, notifySalik, cancelExpiry } from './notify';
 import { refreshCampaigns } from './campaigns';
 
@@ -15,7 +15,8 @@ export const TASK = 'road-dues-location';
 const GEO_TASK = 'road-dues-car-anchor';
 const GATE_RADIUS = 170;    // metres
 const FREE_RADIUS = 150;    // metres around a saved free spot
-const LOG_MAX = 150;        // trip log lines kept (Settings ▸ tap "Reminders" 5 times)
+const LOG_MAX = 150;
+let lastPreciseAsk = 0, coarseRun = 0; // coarse readings in a row (across batches)        // trip log lines kept (Settings ▸ tap "Reminders" 5 times)
 
 const hms = (ms) => new Date(ms).toTimeString().slice(0, 8);
 const logLine = (x, line) => { x.tripLog = [...(x.tripLog || []), line].slice(-LOG_MAX); };
@@ -28,6 +29,17 @@ export async function handleLocations(locations) {
   if (events.some((e) => e.speed == null || e.speed < DRIVE_SPEED)) {
     const steps = await stepsSince(s.drive.lastMoving);
     for (const e of events) e.steps = steps;
+  }
+  // After a stop iOS often hands a backgrounded app only coarse Wi-Fi/cell positions (±100-1400 m in Saif's logs).
+  // A run of those: ask once for a precise fix, which turns GPS back on (at most once a minute).
+  for (const e of events) coarseRun = e.accuracy != null && e.accuracy <= BAD_ACCURACY ? 0 : coarseRun + 1;
+  if (coarseRun >= 3 && Date.now() - lastPreciseAsk > 60e3) {
+    lastPreciseAsk = Date.now();
+    const p = await Promise.race([Location.getCurrentPositionAsync({ accuracy: Location.Accuracy.BestForNavigation }).catch(() => null), new Promise((r) => setTimeout(() => r(null), 8000))]);
+    if (p && p.coords.accuracy != null && p.coords.accuracy <= BAD_ACCURACY) {
+      events.push({ type: 'loc', t: p.timestamp, lat: p.coords.latitude, lng: p.coords.longitude, speed: p.coords.speed, accuracy: p.coords.accuracy, steps: events[0]?.steps ?? null });
+    }
+    await update((x) => logLine(x, `${hms(Date.now())}   precise fix ${p ? '±' + Math.round(p.coords.accuracy) + 'm' : 'failed'}`));
   }
   // Parking first: it is what must not miss its few seconds of background time.
   // After a long sleep iOS can hand over hundreds of queued updates at once: the newest decide parking
@@ -44,11 +56,17 @@ async function decide(events, src) {
   const last = events[events.length - 1];
   await update((x) => {
     x.drive = { ...x.drive, ...drive };
-    if (action === 'arm' && x.parking && x.parking.status !== 'free') x.parking = null; // driving again: not parked
+    // driving again: an unpaid stop is over; a paid ticket stays until it ends (a false 'arm' wiped one in build 6)
+    const paidValid = x.parking?.status === 'paid' && x.parking.until && new Date(x.parking.until).getTime() > Date.now();
+    if (action === 'arm' && x.parking && x.parking.status !== 'free' && !paidValid) x.parking = null;
     for (const e of events) logLine(x, `${hms(e.t)} ${src} ${e.speed != null && e.speed >= 0 ? (e.speed * 3.6).toFixed(0) + ' km/h' : '?'}${e.accuracy != null ? ' ±' + Math.round(e.accuracy) + 'm' : ''}${e.steps != null ? ' ' + e.steps + ' steps' : ''}`);
     logLine(x, `${hms(Date.now())}   → ${action}`);
   });
-  if (action === 'arm') { await cancelExpiry(); await armParking(); await moveAnchor(last); }
+  if (action === 'arm') {
+    const p = getState().parking;
+    if (!(p?.status === 'paid' && p.until && new Date(p.until).getTime() > Date.now())) await cancelExpiry();
+    await armParking(); await moveAnchor(last);
+  }
   if (action === 'ask') await askNow();
 }
 

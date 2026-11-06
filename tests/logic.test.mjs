@@ -113,12 +113,20 @@ function trip(steps, { gpsAfterStop = true, stepCounter = true, wait = 10 } = {}
       if (kind !== 'drive') stoppedOnce = true;
       const steps = stepCounter ? recentSteps() : null; const p = pos();
       const gpsOn = gpsAfterStop || !stoppedOnce || kind === 'drive' && i > 30;
+      if (kind === 'jitter' && i % 8 === 0) { // parked, GPS wobbling ±35 m at ±34-42 m accuracy, ~0 speed (log 3 Nov 16:07)
+        const q = pos(((i * 37) % 70) - 35); ev({ type: 'loc', t, ...q, speed: i % 16 ? -1 : 0.55, accuracy: 34 + (i % 9), steps, kind });
+      }
+      if (kind === 'coarse' && i % 4 === 0) { // driving on after a light, iOS gives only Wi-Fi/cell positions (logs 18:24, 16:57)
+        const accs = [52, 111, 69, 1414, 259, 281, 181, 142, 150, 185, 272, 94, 130, 700, 799]; const a = accs[(i / 4) % accs.length];
+        const q = pos((((i * 53) % 200) - 100) / 100 * a * 0.7); ev({ type: 'loc', t, ...q, speed: -1, accuracy: a, steps, kind });
+        if (anchor && D.distanceM(q, anchor) > P.ANCHOR_RADIUS) { anchor = null; ev({ type: 'exit', t, ...q, accuracy: a, steps, kind }); }
+      }
       if (kind === 'drift' && i % 60 === 0) { // indoors: a jump of 150-400 m with unknown speed and poor accuracy every minute
         const q = pos(150 + (i % 250)); ev({ type: 'loc', t, ...q, speed: -1, accuracy: 120, steps, kind });
         if (anchor && D.distanceM(q, anchor) > P.ANCHOR_RADIUS) { anchor = null; ev({ type: 'exit', t, ...q, accuracy: 90, steps, kind }); }
       }
-      if (gpsOn && kind !== 'drift' && (!lastGps || D.distanceM(p, lastGps) >= 30)) { lastGps = p; ev({ type: 'loc', t, ...p, speed: walk ? 1.4 : speed, accuracy: 8, steps, kind }); }
-      if (kind !== 'drift' && anchor && D.distanceM(p, anchor) > P.ANCHOR_RADIUS) { anchor = null; ev({ type: 'exit', t, ...p, accuracy: 10, steps, kind }); }
+      if (gpsOn && !['drift', 'jitter', 'coarse'].includes(kind) && (!lastGps || D.distanceM(p, lastGps) >= 30)) { lastGps = p; ev({ type: 'loc', t, ...p, speed: walk ? 1.4 : speed, accuracy: 8, steps, kind }); }
+      if (!['drift', 'jitter', 'coarse'].includes(kind) && anchor && D.distanceM(p, anchor) > P.ANCHOR_RADIUS) { anchor = null; ev({ type: 'exit', t, ...p, accuracy: 10, steps, kind }); }
       if (fireAt && t >= fireAt) { fired.push({ at: (t - start) / 1000, speed, kind, how: 'fallback' }); fireAt = null; drive = { ...drive }; }
     }
   }
@@ -152,6 +160,18 @@ ok('Build 5 log: 40 "left circle" in a few seconds at the same stale spot → re
   let d = { lastMoving: new Date(0).toISOString(), lastLat: 25.0742, lastLng: 56.3553, asked: false }; let arms = 0;
   for (let i = 0; i < 40; i++) { const r = P.onDriveEvent(d, { type: 'exit', t: 600000 + i * 150, lat: 25.0742, lng: 56.3553 + 0.002, accuracy: 10, steps: 0 }, D.distanceM); d = r.drive; if (r.action === 'arm') arms++; }
   assert.ok(arms <= 1, `${arms} arms`); });
+ok('Log 3 Nov 16:07: paid, parked, GPS wobbling ±35 m with 0 steps → nothing re-arms (the paid ticket stays)', () => {
+  const f = trip([['drive', 300, 50], ['stop', 20], ['jitter', 15 * 60]], { wait: 5 });
+  assert.equal(f.length, 1); assert.equal(f[0].how, 'fallback'); assert.ok(Math.abs(f[0].at - 300 - 300) < 30, `asked at ${f[0].at - 300} s`); });
+ok('Saif 3 Nov: two stops 1 km apart, GPS wobbling at the second → asked at both, once each', () => {
+  const f = trip([['drive', 300, 50], ['stop', 6 * 60], ['walk', 60], ['walkback', 60], ['stop', 20], ['drive', 70, 50], ['stop', 20], ['jitter', 10 * 60]], { wait: 5 });
+  assert.equal(f.length, 2, JSON.stringify(f)); });
+ok('Getting out right after the fallback asked → not asked a second time', () => {
+  const f = trip([['drive', 300, 50], ['stop', 6 * 60], ['walk', 120]], { wait: 5 });
+  assert.equal(f.length, 1, JSON.stringify(f)); });
+ok('Logs 18:24 and 16:57: stop at a light, then only coarse Wi-Fi/cell positions while driving on → no question while driving', () => {
+  const f = trip([['drive', 300, 30], ['stop', 45], ['coarse', 12 * 60, 30]], { wait: 5, gpsAfterStop: false });
+  assert.deepEqual(f.filter((e) => e.kind === 'coarse'), []); });
 ok('Trip: unknown speed (-1) while driving still counts as driving', () => { let d = {}; for (let i = 0; i < 20; i++) d = P.onDriveEvent(d, { type: 'loc', t: i * 3000, lat: 25, lng: 56 + i * 0.0012, speed: i ? -1 : 15 }, D.distanceM).drive; assert.ok(new Date(d.lastMoving).getTime() >= 16 * 3000, 'still counted as driving every ~300 m'); });
 
 ok('Sharjah paid until midnight (from 1 Jul 2026)', () => { assert.equal(D.isPaidTime('SHJ', uae('2026-10-29T23:30:00')), true); assert.equal(D.isPaidTime('SHJ', uae('2026-10-30T23:30:00')), false); });
