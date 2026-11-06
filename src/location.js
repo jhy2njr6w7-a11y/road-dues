@@ -6,7 +6,7 @@ import { Pedometer } from 'expo-sensors';
 import { Alert, Platform } from 'react-native';
 import { loadState, update, newId, getState, isLoaded } from './store';
 import { setLangCode, t, gateName } from './i18n';
-import { GATES, gatePos, distanceM, crossingCharge, emirateAt, isPaidTime, buildSms, EMIRATES } from './data';
+import { GATES, gatePos, distanceM, crossingCharge, emirateAt, isPaidTime, freeDayOn, buildSms, EMIRATES } from './data';
 import { runDriveEvents, DRIVE_SPEED, ANCHOR_RADIUS, BAD_ACCURACY, DEFAULT_IN_CAR_WAIT, RECENT_STEPS_S } from './park-detect';
 import { scheduleParkCheck, cancelParkCheck, notifySalik, cancelExpiry } from './notify';
 import { refreshCampaigns } from './campaigns';
@@ -80,6 +80,7 @@ function parkingSpot(when) {
   if (!em) return { skip: 'no emirate' };
   if (cur.freeSpots.some((f) => distanceM(spot, f) < FREE_RADIUS)) return { skip: 'free spot' };
   if (!isPaidTime(em, when)) return { skip: 'free hours' };
+  if (freeDayOn(em, when, cur.freeDays)) return { skip: 'holiday' };
   const vehicle = cur.vehicles.find((v) => v.id === cur.defaultVeh) || cur.vehicles[0];
   const zone = cur.zones.find((z) => distanceM(spot, z) < FREE_RADIUS)?.zone || '';
   return { em, spot, smsText: buildSms(em, vehicle, { zone, hours: 1, type: 'S' }) };

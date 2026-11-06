@@ -1,9 +1,9 @@
-import React, { useEffect, useState } from 'react';
-import { ScrollView, View, Text, Pressable, Modal, Linking, Alert, AppState, Platform, Image, Share } from 'react-native';
+import React, { useEffect, useState, useRef, useMemo } from 'react';
+import { ScrollView, View, Text, Pressable, Modal, Linking, Alert, AppState, Platform, Image, Share, Animated, PanResponder, useWindowDimensions } from 'react-native';
 import { useStore, update, newId } from './store';
 import { t, T, emName, hrsOf, fmtDate, fmtDay, fmtTime, LANGS, getLang, gateName } from './i18n';
 import { IN_CAR_WAITS, DEFAULT_IN_CAR_WAIT } from './park-detect';
-import { EMIRATES, EM_ORDER, ISSUERS, GATES, gatePos, isNewerVersion, parkingPrice, notFuture, BRANDS, aed, buildSms, cleanCode, ZONE_RE, fineOffer, discounted, daysLeft,
+import { EMIRATES, EM_ORDER, ISSUERS, GATES, gatePos, isNewerVersion, parkingPrice, notFuture, freeDayOn, isPaidTime, BRANDS, aed, buildSms, cleanCode, ZONE_RE, fineOffer, discounted, daysLeft,
   validateVehicle, parseDate, emirateAt, distanceM, crossingCharge, latinDigits, visibleCampaigns, campaignStatus, campaignEnd, PAY_URLS, PARKING_EMIRATES } from './data';
 import { Card, Row, Sec, Txt, Figure, Btn, Chip, Segmented, Toggle, Pill, List, ListRow, Field, Wrap, Notice, Warn, BrandBadge, Bubble, Progress, Icon,
   useTheme, useArabicFont, useTextScale, TEXT_SIZES, styles, applyAppearance, Glass, Press, ACCENTS } from './ui';
@@ -385,7 +385,18 @@ export function ParkingScreen({ go, prefill }) {
     if (!locating && prefill?.autoSend && text && !autoSent.current) { autoSent.current = true; send(); }
   }, [locating, text]);
 
-  async function send() {
+  // Feedback 27: parking is free right now (holiday or free hours/day): say so before paying
+  function freeNowWarning() {
+    const now = new Date(); const fd = freeDayOn(em, now, s.freeDays);
+    if (!fd && isPaidTime(em, now)) return null;
+    return fd ? t('freeHolidayB', { name: fd.name[getLang()] || fd.name.en || t('holiday'), em: emName(em) }) : t('freeHoursB', { em: emName(em), hours: hrsOf(em) });
+  }
+  function send() {
+    const warn = freeNowWarning();
+    if (!warn) return sendNow();
+    Alert.alert(t('freeNowT'), warn, [{ text: t('cancel'), style: 'cancel' }, { text: t('payAnyway'), onPress: sendNow }]);
+  }
+  async function sendNow() {
     if (busy) return; setBusy(true);
     try {
       if (!s.parking && pos) await A.startParkingSession({ lat: pos.lat, lng: pos.lng, em });
@@ -687,12 +698,30 @@ export function VehiclesScreen({ go }) {
 // ---------- Settings
 export function SettingsScreen({ go, onLang }) {
   const [page, setPage] = useState(null); // a sub-page of Settings: 'gates', ...
-  if (page === 'gates') return <GatesPage onBack={() => setPage(null)} />;
-  if (page === 'disc') return <DisclaimerPage onBack={() => setPage(null)} />;
-  if (page === 'colour') return <ColourPage onBack={() => setPage(null)} />;
-  if (page === 'access') return <AccessPage onBack={() => setPage(null)} />;
-  if (page === 'history') return <HistoryPage onBack={() => setPage(null)} />;
-  return <SettingsMain go={go} onLang={onLang} setPage={setPage} />;
+  const back = () => setPage(null);
+  const Page = { gates: GatesPage, disc: DisclaimerPage, colour: ColourPage, access: AccessPage, history: HistoryPage }[page];
+  if (Page) return <SwipeBack key={page} onBack={back}><Page onBack={back} /></SwipeBack>;
+  return <SwipeBack key="main" onBack={() => go('today')}><SettingsMain go={go} onLang={onLang} setPage={setPage} /></SwipeBack>;
+}
+
+// Swipe in from the screen edge to go back, like iPhone apps (from the right edge in Arabic). The page follows
+// the finger; let go past a third of the screen (or flick) to go back.
+const NATIVE_ANIM = Platform.OS !== 'web';
+function SwipeBack({ onBack, children }) {
+  const rtl = getLang() === 'ar'; const { width } = useWindowDimensions();
+  const x = useRef(new Animated.Value(0)).current;
+  const backRef = useRef(onBack); backRef.current = onBack;
+  const pan = useMemo(() => PanResponder.create({
+    onMoveShouldSetPanResponderCapture: (e, g) => (rtl ? g.x0 > width - 28 && g.dx < -8 : g.x0 < 28 && g.dx > 8) && Math.abs(g.dx) > Math.abs(g.dy) * 1.5,
+    onPanResponderMove: (e, g) => x.setValue(rtl ? Math.min(0, g.dx) : Math.max(0, g.dx)),
+    onPanResponderRelease: (e, g) => {
+      const far = Math.abs(g.dx) > width / 3 || (rtl ? g.vx < -0.5 : g.vx > 0.5);
+      if (far) Animated.timing(x, { toValue: rtl ? -width : width, duration: 180, useNativeDriver: NATIVE_ANIM }).start(() => backRef.current());
+      else Animated.spring(x, { toValue: 0, useNativeDriver: NATIVE_ANIM }).start();
+    },
+    onPanResponderTerminate: () => Animated.spring(x, { toValue: 0, useNativeDriver: NATIVE_ANIM }).start(),
+  }), [rtl, width]);
+  return <Animated.View style={{ flex: 1, transform: [{ translateX: x }] }} {...pan.panHandlers}>{children}</Animated.View>;
 }
 
 // Settings ▸ Salik gate positions: every gate, open it in Maps, "I'm here" to correct it, reset a mistaken one.

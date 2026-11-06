@@ -180,6 +180,12 @@ ok('Price Abu Dhabi premium 2 h = AED 6', () => assert.deepEqual(D.parkingPrice(
 ok('Price Dubai is a range', () => assert.deepEqual(D.parkingPrice('DXB', { hours: 1 }), { from: 2, to: 6 }));
 ok('No price for Fujairah', () => assert.equal(D.parkingPrice('FUJ'), null));
 ok("Fine dated today is fine in the morning", () => { const morning = new Date(2026, 9, 30, 9, 0); assert.equal(D.notFuture(D.parseDate('2026-10-30'), morning), true); assert.equal(D.notFuture(D.parseDate('2026-10-31'), morning), false); });
+ok('Free days from campaigns.json', () => {
+  const fd = D.parseFreeDays({ freeDays: [{ from: '2026-12-02', to: '2026-12-03', emirates: ['DXB', 'SHJ', 'XX'], name: { en: 'National Day', ar: 'عيد الاتحاد' } }, { from: 'bad' }] });
+  assert.equal(fd.length, 1); assert.deepEqual(fd[0].emirates, ['DXB', 'SHJ']);
+  assert.equal(D.freeDayOn('SHJ', uae('2026-12-03T23:30:00'), fd)?.name.en, 'National Day');
+  assert.equal(D.freeDayOn('SHJ', uae('2026-12-04T00:30:00'), fd), null);
+  assert.equal(D.freeDayOn('AUH', uae('2026-12-02T10:00:00'), fd), null); });
 ok('Update notice: version compare', () => { assert.equal(D.isNewerVersion('1.0.1', '1.0.0'), true); assert.equal(D.isNewerVersion('1.0.0', '1.0.0'), false); assert.equal(D.isNewerVersion('1.10.0', '1.9.9'), true); assert.equal(D.isNewerVersion('1.0', '1.0.1'), false); assert.equal(D.isNewerVersion('x', '1.0.0'), false); assert.equal(D.isNewerVersion('1.1.0', null), false); });
 ok('campaigns.json latestVersion is a version', () => assert.match(shipped.latestVersion, /^\d+\.\d+\.\d+$/));
 

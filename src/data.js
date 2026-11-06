@@ -31,6 +31,20 @@ export function uaeParts(date) {
   const d = new Date(date.getTime() + 4 * 3600e3);
   return { day: d.getUTCDay(), hour: d.getUTCHours() + d.getUTCMinutes() / 60 };
 }
+// Free-parking days (Eid, National Day…) that Saif publishes in campaigns.json ▸ freeDays, because the dates move
+// with the Hijri calendar and each emirate announces its own: [{ from: 'YYYY-MM-DD', to, emirates: ['DXB',…], name: { en, ar, … } }]
+export function parseFreeDays(json) {
+  const list = Array.isArray(json?.freeDays) ? json.freeDays : [];
+  const ymd = /^\d{4}-\d{2}-\d{2}$/;
+  return list.slice(0, 50).filter((f) => f && ymd.test(f.from) && ymd.test(f.to || f.from) && Array.isArray(f.emirates))
+    .map((f) => ({ from: f.from, to: f.to || f.from, emirates: f.emirates.filter((e) => EMIRATES[e]), name: f.name && typeof f.name === 'object' ? f.name : {} }));
+}
+/** The published free day covering this emirate at this moment (UAE date), or null. */
+export function freeDayOn(em, date, freeDays = []) {
+  const day = new Date(date.getTime() + 4 * 3600e3).toISOString().slice(0, 10);
+  return freeDays.find((f) => f.emirates.includes(em) && day >= f.from && day <= f.to) || null;
+}
+
 // Approximate parking prices in AED (Oct 2026 guides; the sign at the spot always wins). Shown with "+ SMS fee".
 // Dubai depends on the zone letter and peak hours, so only a range per hour.
 export const PRICES = {

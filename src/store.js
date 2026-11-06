@@ -9,6 +9,7 @@ export const DEFAULT_STATE = {
   vehicles: [],             // {id, brand, model, color, em, code, num}
   defaultVeh: null,
   fines: [],                // {id, iss, amount, date, note, severe, manualPct, manualUntil, paid, paidAmount}
+  freeDays: [],            // free-parking holidays from campaigns.json
   history: [],             // parking SMS sent: {id, date, em, hours, zone, text, car} (Settings ▸ Transaction history)
   crossings: [],            // {id, gate, date, charge, auto}
   parking: null,            // {id, start, lat, lng, em, status: 'awaiting'|'paid'|'free', zone, until}
